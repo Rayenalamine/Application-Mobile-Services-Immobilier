@@ -39,7 +39,7 @@ class Propriete {
 }
 
 // ============================================================
-// DONNÉES STATIQUES : liste des 4 propriétés fictives
+// DONNÉES STATIQUES : liste des 5 propriétés fictives
 // Ces données sont codées directement dans l'application (pas de base de données)
 // ============================================================
 
@@ -99,6 +99,20 @@ final List<Propriete> listeProprietes = [
         'Appartement cosy avec vue imprenable sur la mer Méditerranée. '
         'Situé à deux pas de la médina d\'Hammamet et des restaurants. '
         'Parfait comme résidence principale ou comme pied-à-terre pour les vacances.',
+  ),
+  const Propriete(
+    titre: 'Maison spacieuse à Bizerte',
+    localisation: 'La Corniche, Bizerte',
+    prix: 520000,
+    type: 'Maison',
+    imageUrl:
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
+    nombreChambres: 4,
+    nombreSallesDeBain: 2,
+    description:
+        'Belle maison contemporaine située près de la corniche de Bizerte. '
+        'Elle offre un grand séjour lumineux, un jardin arboré, une cuisine moderne '
+        'et une terrasse ensoleillée à proximité des plages.',
   ),
 ];
 
