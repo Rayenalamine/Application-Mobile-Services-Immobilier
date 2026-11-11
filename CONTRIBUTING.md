@@ -141,3 +141,4 @@ git branch -d feature/nom-de-votre-fonctionnalite
 - ❌ **Ne jamais committer de mots de passe, clés secrètes ou fichiers `local.properties`.**
 - ✅ **Toujours exécuter les tests avant d'ouvrir une Pull Request.**
 - ✅ **Toujours synchroniser votre branche avec `upstream main` avant de commencer.**
+

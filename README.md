@@ -51,3 +51,4 @@ Ce projet applique les bonnes pratiques professionnelles de collaboration via Gi
 - **Règle absolue :** Aucun push direct sur la branche `main`. Toutes les modifications sont examinées et fusionnées via des Pull Requests (PR) validées par le propriétaire du dépôt.
 
 👉 **Avant toute contribution, veuillez lire attentivement le guide : [`CONTRIBUTING.md`](CONTRIBUTING.md)**.
+
