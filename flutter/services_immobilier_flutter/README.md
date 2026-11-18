@@ -1,7 +1,11 @@
 # Services Immobilier – Application Flutter
 
-**Version 1 – Prototype fonctionnel de base**  
-Mini-projet universitaire – Développement d'applications mobiles
+**Version 2 (Tâche V2-T01 — Modularisation achevée par le Membre 1)**
+*Historique de base : Version 1 – Prototype fonctionnel*
+Mini-projet universitaire – Développement d'applications mobiles (Enseignant : M. Wahid Hamdi)
+
+> [!NOTE]
+> **Évolution Version 2 (V2-T01) :** Le code monolithique de la Version 1 a été restructuré en architecture modulaire par fonctionnalités (`lib/core/` et `lib/features/properties/`) par le Membre 1. Toutes les fonctionnalités V1 et les 4 biens fictifs ont été rigoureusement préservés. Les constantes de couleurs et d'espacements utilisées sont des jetons provisoires en attente de la formalisation du Design System officiel par le Membre 3.
 
 ---
 
