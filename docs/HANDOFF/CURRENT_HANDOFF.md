@@ -1,53 +1,58 @@
 # COMPTE-RENDU ACTIF DE PASSATION (CURRENT HANDOFF)
 
-**Date & Heure :** 18 novembre 2026 — 21:20  
+**Date & Heure :** 18 novembre 2026 — 21:25  
 **Intervenant sortant :** Antigravity (Assistant Senior) pour **Membre 1 (Propriétaire du Dépôt)**  
-**Destinataire :** Membre 1 (Propriétaire du Dépôt) & Membre 2 (Coéquipier 1)  
-**Branche Git active :** `feature/V2-T01-member-1-flutter`  
-**Dernière tâche exécutée :** `V2-T01` (Assignation Membre 1 — Application Flutter vérifiée et auditée)  
-**Statut de la tâche :** En cours (Membre 1 audité et prêt ✅ — Membres 2 et 3 non commencés)  
-**Dernier commit Git validé sur `origin/main` :** `ce7cc78`
+**Destinataire :** Membre 1 (Propriétaire du Dépôt) & Membres 2 et 3 (Coéquipiers)  
+**Dépôt officiel :** `https://github.com/Rayenalamine/Application-Mobile-Services-Immobilier.git`  
+**Branche Git officielle poussée :** `feature/V2-T01-member-1-flutter`  
+**Commit validé et poussé :** `99348a7` (`feat(flutter): complete V2-T01 member 1 modularization`)  
+**Lien Pull Request GitHub :** [Ouvrir la Pull Request V2-T01 sur GitHub](https://github.com/Rayenalamine/Application-Mobile-Services-Immobilier/pull/new/feature/V2-T01-member-1-flutter)  
+**Statut de la tâche :** Assignation Membre 1 terminée, testée, commitée et poussée ✅ — Membres 2 et 3 non commencés.
 
 ---
 
-## 1. SITUATION DU PROJET ET TRAVAIL EFFECTUÉ PAR LE MEMBRE 1
+## 1. TRAVAIL ACHEVÉ PAR LE MEMBRE 1
 
-1. **Refactorisation modulaire de l'application Flutter (`flutter/services_immobilier_flutter/`) :**
-   - L'ancien fichier monolithique `lib/main.dart` (~380 lignes) a été décomposé en 7 modules étanches dans `lib/core/` et `lib/features/properties/`.
-   - **Constantes partagées :** `AppColors` et `AppSpacing` centralisent les tokens de design provisoires (documentés explicitement comme provisoires en attente de la formalisation officielle par le Membre 3).
-   - **Modèle de domaine :** `Propriete` a été extrait dans `lib/features/properties/domain/models/property.dart` avec constructeur `const` et getter `prixFormate`.
-   - **Données fictives :** Les 4 annonces fictives de démonstration et de test sont préservées à 100% dans `lib/features/properties/data/mock_properties.dart`.
-   - **Composants d'affichage :** `CartePropriete`, `ImagePropriete` (avec loadingBuilder et fallback d'erreur) et `BadgeType` sont isolés dans `lib/features/properties/presentation/widgets/property_card.dart`.
-   - **Écrans :** `EcranAccueil` (avec `SectionBienvenue`) et `EcranDetails` (avec `CarteCaracteristique`) sont désormais des écrans autonomes.
-   - **Point d'entrée :** `lib/main.dart` est épuré (~36 lignes) et ne contient aucun export superficiel de compatibilité.
-2. **Suite de tests automatisés (Tests de widgets) :**
-   - `test/widget_test.dart` vérifie 4 comportements majeurs :
-     1. Démarrage et affichage de l'accueil et de la bannière.
-     2. Présence et accessibilité par défilement des 4 annonces fictives.
-     3. Navigation vers la fiche détaillée et affichage des caractéristiques complètes.
-     4. Retour à l'écran d'accueil via le bouton explicite et vérification du pop de la route.
-   - **Historique de test consigné :** Une première exécution du Test 2 avait échoué sur la recherche de la deuxième carte (`Villa avec piscine à Sousse`), car `ListView.builder` n'instancie que les widgets visibles dans le viewport par défaut (800x600 px). Résolu en utilisant `tester.scrollUntilVisible(...)`.
-3. **Périmètres strictement non touchés :**
-   - **Aucune ligne de code React Native** n'a été créée (le dossier `react-native/` ne contient toujours que `.gitkeep`).
-   - Le Membre 2 n'a pas commencé son travail.
-   - **Le document officiel `docs/DESIGN_SYSTEM.md` n'a pas été créé**, car il est réservé à l'assignation du Membre 3.
-   - Aucun fichier backend n'a été créé.
-   - **Création de la branche isolée `feature/V2-T01-member-1-flutter`** : aucun commit direct sur `main`, aucun push.
+1. **Refactorisation modulaire Flutter (`flutter/services_immobilier_flutter/`) :**
+   - `lib/core/constants/app_colors.dart` et `app_spacing.dart` (jetons de design provisoires).
+   - `lib/features/properties/domain/models/property.dart` (modèle immuable `Propriete` et accesseur `prixFormate`).
+   - `lib/features/properties/data/mock_properties.dart` (les 4 biens fictifs tunisiens préservés à 100%).
+   - `lib/features/properties/presentation/widgets/property_card.dart` (`CartePropriete`, `ImagePropriete` avec loading et fallback d'erreur, et `BadgeType`).
+   - `lib/features/properties/presentation/screens/home_screen.dart` (`EcranAccueil` et `SectionBienvenue`).
+   - `lib/features/properties/presentation/screens/property_details_screen.dart` (`EcranDetails` et `CarteCaracteristique`).
+   - `lib/main.dart` épuré à 36 lignes (point d'entrée `ServicesImmobilierApp`, aucun export superflu).
+2. **Tests de widgets et vérifications :**
+   - 4 tests de widgets validés à 100% dans `test/widget_test.dart` (Démarrage, 4 annonces avec scroll, détails complets, navigation retour).
+   - `flutter analyze` : 0 issue.
+   - `flutter build web` : Compilation Web réussie en 35.3s.
+   - `flutter run -d chrome` : Exécution réelle sur Chrome validée avec succès.
+3. **Sécurité Git :**
+   - Commit `99348a7` créé sur `feature/V2-T01-member-1-flutter`.
+   - Branche poussée avec succès sur `origin/feature/V2-T01-member-1-flutter`.
+   - Aucun push direct sur `main`.
 
 ---
 
-## 2. RÉSULTATS DES VÉRIFICATIONS RÉELLES CONSTATÉES
+## 2. INSTRUCTIONS STRICTES DE COORDINATION POUR LES MEMBRES 2 ET 3
 
-- `flutter analyze` : `No issues found! (ran in 3.4s)` $\rightarrow$ **0 erreur, 0 avertissement**.
-- `flutter test --reporter expanded` (Tests de widgets) : `00:01 +4: All tests passed!` $\rightarrow$ **4 tests de widgets passés sur 4**.
-- `flutter build web` (Compilation Web) : `√ Built build\web (65.3s)` $\rightarrow$ **Compilation Web réussie**.
-- `flutter run -d chrome` (Exécution manuelle en direct) : Démarré avec succès sur Chrome via le service de débogage Dart, puis arrêté proprement.
-- **Rappel de rigueur technique :** Les tests Web ne valident pas la compatibilité native Android. Aucun test natif Android ou Windows C++ n'a été effectué.
+> [!IMPORTANT]
+> **RÈGLE DE SYNCHRONISATION DES FORKS :**  
+> Les Membres 2 et 3 ne doivent **JAMAIS** démarrer leur travail depuis la branche de fonctionnalité `feature/V2-T01-member-1-flutter`.  
+> Ils doivent respecter la procédure suivante :
+> 1. Attendre que le **Propriétaire du Dépôt (Membre 1)** examine et fusionne (Merge) la Pull Request sur la branche `main` du dépôt officiel.
+> 2. Une fois le merge effectué sur `main`, chaque coéquipier synchronise son Fork personnel :
+>    ```bash
+>    git checkout main
+>    git fetch upstream
+>    git merge upstream/main
+>    git push origin main
+>    ```
+> 3. Créer ensuite leur propre branche de fonctionnalité depuis leur `main` à jour (ex: `feature/V2-T01-member-2-react-native`).
+> 4. **Lecture obligatoire** de [`docs/AI_ONBOARDING.md`](../AI_ONBOARDING.md), [`docs/PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) et [`docs/WORK_PROTOCOL.md`](../WORK_PROTOCOL.md) avant d'écrire la moindre ligne de code.
 
 ---
 
-## 3. PROCHAINE ACTION AUTORISÉE
+## 3. TRAVAUX RESTANTS POUR CLÔTURER V2-T01
 
-- **Prochaine étape :** Revue finale et acceptation de l'assignation du Membre 1 par le Propriétaire du Dépôt.
-- **Autorisation suivante :** Lancement de l'assignation du **Membre 2** pour `V2-T01` (Initialisation React Native TypeScript avec Expo dans `react-native/darlink_react_native/`).
-- **Règle absolue :** **S'ARRÊTER ET ATTENDRE L'ACCORD DU PROPRIÉTAIRE.**
+- **Membre 2 (Coéquipier 1) :** Initialisation du projet React Native en TypeScript dans `react-native/darlink_react_native/` avec Expo et arborescence miroir.
+- **Membre 3 (Coéquipier 2) :** Rédaction et validation du système de design officiel dans `docs/DESIGN_SYSTEM.md`.
