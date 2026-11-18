@@ -77,7 +77,9 @@ void main() {
       final premierBoutonDetails =
           find.widgetWithText(ElevatedButton, 'Voir détails').first;
       expect(premierBoutonDetails, findsOneWidget);
-
+      // Fait défiler légèrement la liste pour dégager le bouton de la zone inférieure
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -150));
+      await tester.pumpAndSettle();
       await tester.tap(premierBoutonDetails);
       await tester.pumpAndSettle(); // Attente de la transition de navigation
 
@@ -108,6 +110,8 @@ void main() {
       // Ouverture de l'écran de détails
       final boutonDetails =
           find.widgetWithText(ElevatedButton, 'Voir détails').first;
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -150));
+      await tester.pumpAndSettle();
       await tester.tap(boutonDetails);
       await tester.pumpAndSettle();
 
