@@ -1,11 +1,11 @@
 // ============================================================
-// DARLINK — POINT D'ENTRÉE PRINCIPAL DE L'APPLICATION (V2-T01)
-// Initialise et configure MaterialApp avec le thème et l'écran d'accueil
+// DARLINK — POINT D'ENTRÉE PRINCIPAL DE L'APPLICATION (V2-T04)
+// Configure MaterialApp avec NavigationBar Material 3 et thèmes
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'core/constants/app_colors.dart';
-import 'features/properties/presentation/screens/home_screen.dart';
+import 'features/navigation/presentation/screens/main_navigation_screen.dart';
 
 /// Point d'entrée standard de l'application Flutter DarLink.
 void main() {
@@ -36,8 +36,8 @@ class ServicesImmobilierApp extends StatelessWidget {
         fontFamily: 'Roboto',
       ),
 
-      // Définition de l'écran initial de l'application
-      home: const EcranAccueil(),
+      // Écran principal configuré avec la barre de navigation Material 3 (V2-T04)
+      home: const EcranNavigationPrincipale(),
     );
   }
 }
