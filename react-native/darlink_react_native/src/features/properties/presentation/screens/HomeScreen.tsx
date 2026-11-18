@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN D'ACCUEIL REACT NATIVE (V2-T04 - Membre 2)
-// Parité complète avec EcranAccueil Flutter
+// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (React Native Screen 1)
+// Design transparent glassmorphique conforme à la maquette de référence
 // ============================================================
 
 import React, { useState } from 'react';
@@ -12,119 +12,148 @@ import {
   Image,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
-import { AppSpacing } from '../../../../core/constants/spacing';
 import { mockProperties } from '../../data/mockProperties';
-import { Property, formatPrice } from '../../domain/models/property';
+import { Property } from '../../domain/models/property';
+import { PropertyCard } from '../../../../core/components/PropertyCard';
+import { PropertyDetailsScreen } from './PropertyDetailsScreen';
+
+const FILTER_PILLS = [
+  'Tous',
+  'Prix',
+  'Appartement',
+  'Villa',
+  'Maison',
+  'Chambres',
+] as const;
 
 export const HomeScreen: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>('Tous');
 
+  // Filtrage selon le filtre actif
+  const filteredProperties = mockProperties.filter((p) => {
+    if (activeFilter === 'Tous' || activeFilter === 'Prix' || activeFilter === 'Chambres') {
+      return true;
+    }
+    return p.type.toLowerCase() === activeFilter.toLowerCase();
+  });
+
+  // Si un bien est sélectionné, on affiche l'écran de détails luxe (Screen 2)
   if (selectedProperty) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Détails du bien</Text>
-        </View>
-        <ScrollView style={styles.container} contentContainerStyle={styles.detailsContent}>
-          <Image
-            source={{ uri: selectedProperty.imageUrl }}
-            style={styles.detailsImage}
-            resizeMode="cover"
-          />
-          <View style={styles.detailsBody}>
-            <View style={styles.detailsBadgeContainer}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{selectedProperty.type}</Text>
-              </View>
-              <Text style={styles.detailsPrice}>{formatPrice(selectedProperty.prix)}</Text>
-            </View>
-
-            <Text style={styles.detailsTitle}>{selectedProperty.titre}</Text>
-            <Text style={styles.detailsLocation}>📍 {selectedProperty.localisation}</Text>
-
-            <View style={styles.specsRow}>
-              <View style={styles.specBox}>
-                <Text style={styles.specNumber}>{selectedProperty.nombreChambres}</Text>
-                <Text style={styles.specLabel}>Chambres</Text>
-              </View>
-              <View style={styles.specBox}>
-                <Text style={styles.specNumber}>{selectedProperty.nombreSallesDeBain}</Text>
-                <Text style={styles.specLabel}>Salles de bain</Text>
-              </View>
-            </View>
-
-            <Text style={styles.sectionHeader}>Description</Text>
-            <Text style={styles.descriptionText}>{selectedProperty.description}</Text>
-
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setSelectedProperty(null)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.backButtonText}>← Retour à la liste</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <PropertyDetailsScreen
+        property={selectedProperty}
+        onBack={() => setSelectedProperty(null)}
+      />
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Services Immobilier</Text>
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 1. EN-TÊTE UTILISATEUR & STATUT DU REPO OWNER */}
+        <View style={styles.headerRow}>
+          <View style={styles.userInfo}>
+            <View style={styles.avatarBorder}>
+              <Image
+                source={{
+                  uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                }}
+                style={styles.avatarImage}
+              />
+            </View>
+            <View style={styles.userTextContainer}>
+              <Text style={styles.greetingText}>Bonjour ! 👋</Text>
+              <Text style={styles.userNameText}>Rayen Lamine</Text>
+            </View>
+          </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Bannière de bienvenue */}
-        <View style={styles.welcomeBanner}>
-          <Text style={styles.welcomeTitle}>Trouvez votre futur logement en Tunisie</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Découvrez notre sélection exclusive d'appartements, villas et maisons traditionnelles.
+          {/* Bouton Carte / Map */}
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() =>
+              Alert.alert('Carte interactive', 'Affichage de la carte prévu en phase V8.')
+            }
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir la carte"
+          >
+            <Text style={styles.mapIcon}>🗺️</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE */}
+        <View style={styles.searchBar}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <Text style={styles.searchPlaceholder}>
+            Tunis, Sousse, Djerba, Hammamet...
+          </Text>
+          <View style={styles.tuneButton}>
+            <Text style={styles.tuneIcon}>⚙️</Text>
+          </View>
+        </View>
+
+        {/* 3. RANGÉE DE JETONS DE FILTRES HORIZONTAUX */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScrollView}
+          contentContainerStyle={styles.filterContainer}
+        >
+          {FILTER_PILLS.map((filtre) => {
+            const isSelected = activeFilter === filtre;
+            return (
+              <TouchableOpacity
+                key={filtre}
+                style={[
+                  styles.filterPill,
+                  isSelected && styles.filterPillSelected,
+                ]}
+                onPress={() => setActiveFilter(filtre)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    isSelected && styles.filterTextSelected,
+                  ]}
+                >
+                  {filtre}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* 4. BANNIÈRE DISCRÈTE & SECTION TITRE */}
+        <View style={styles.bannerContainer}>
+          <Text style={styles.bannerTitle}>Services Immobilier</Text>
+          <Text style={styles.bannerSubtitle}>
+            Trouvez le bien immobilier de vos rêves en Tunisie.
           </Text>
         </View>
 
-        {/* Titre de section */}
-        <View style={styles.sectionTitleContainer}>
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Nos biens immobiliers</Text>
-          <Text style={styles.sectionSubtitle}>{mockProperties.length} annonces disponibles</Text>
+          <Text style={styles.sectionCount}>
+            {filteredProperties.length} annonces disponibles
+          </Text>
         </View>
 
-        {/* Liste des cartes */}
-        {mockProperties.map((prop) => (
-          <View key={prop.id ?? prop.titre} style={styles.card}>
-            <Image source={{ uri: prop.imageUrl }} style={styles.cardImage} resizeMode="cover" />
-            <View style={styles.badgeOverlay}>
-              <Text style={styles.badgeText}>{prop.type}</Text>
-            </View>
-
-            <View style={styles.cardBody}>
-              <Text style={styles.cardTitle} numberOfLines={1}>
-                {prop.titre}
-              </Text>
-              <Text style={styles.cardLocation} numberOfLines={1}>
-                📍 {prop.localisation}
-              </Text>
-
-              <View style={styles.cardFeatures}>
-                <Text style={styles.featureText}>🛏️ {prop.nombreChambres} ch.</Text>
-                <Text style={styles.featureText}>🚿 {prop.nombreSallesDeBain} sdb.</Text>
-              </View>
-
-              <View style={styles.cardFooter}>
-                <Text style={styles.cardPrice}>{formatPrice(prop.prix)}</Text>
-                <TouchableOpacity
-                  style={styles.detailsButton}
-                  onPress={() => setSelectedProperty(prop)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.detailsButtonText}>Voir détails</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+        {/* 5. LISTE IMMERSIVE DES CARTES DE BIENS */}
+        {filteredProperties.map((property) => (
+          <PropertyCard
+            key={property.id ?? property.titre}
+            property={property}
+            onPress={(p) => setSelectedProperty(p)}
+          />
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -134,213 +163,160 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.darkBackground,
   },
-  header: {
-    height: 56,
-    backgroundColor: AppColors.primary,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 110,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarBorder: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    padding: 2,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 21,
+    backgroundColor: AppColors.darkSurface,
+  },
+  userTextContainer: {
+    marginLeft: 12,
+  },
+  greetingText: {
+    color: AppColors.darkTextSecondary,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  userNameText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  mapButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: AppColors.darkSurface,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: AppColors.darkBorder,
   },
-  headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
+  mapIcon: {
+    fontSize: 16,
   },
-  container: {
-    flex: 1,
-    paddingHorizontal: AppSpacing.l,
-  },
-  welcomeBanner: {
-    backgroundColor: AppColors.primary,
-    borderRadius: AppSpacing.cardRadius,
-    padding: AppSpacing.l,
-    marginTop: AppSpacing.m,
-    marginBottom: AppSpacing.m,
-  },
-  welcomeTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: AppSpacing.xs,
-  },
-  welcomeSubtitle: {
-    color: '#E3F2FD',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  sectionTitleContainer: {
-    marginVertical: AppSpacing.s,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: AppColors.primary,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    color: AppColors.textSecondary,
-    marginTop: 2,
-  },
-  card: {
-    backgroundColor: AppColors.surface,
-    borderRadius: AppSpacing.cardRadius,
-    marginBottom: AppSpacing.l,
-    overflow: 'hidden',
-    borderColor: AppColors.border,
-    borderWidth: 0.8,
-    elevation: 2,
-  },
-  cardImage: {
-    width: '100%',
-    height: 190,
-    backgroundColor: AppColors.placeholder,
-  },
-  badgeOverlay: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: AppColors.secondary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: AppSpacing.badgeRadius,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  cardBody: {
-    padding: AppSpacing.l,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: AppColors.textPrimary,
-  },
-  cardLocation: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
-    marginTop: 4,
-  },
-  cardFeatures: {
+  searchBar: {
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: AppColors.darkSurface,
     flexDirection: 'row',
-    marginTop: AppSpacing.s,
-    gap: 16,
-  },
-  featureText: {
-    fontSize: 13,
-    color: AppColors.textSecondary,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: AppSpacing.m,
-    paddingTop: AppSpacing.s,
-    borderTopWidth: 0.8,
-    borderTopColor: AppColors.border,
-  },
-  cardPrice: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: AppColors.primary,
-  },
-  detailsButton: {
-    backgroundColor: AppColors.primary,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    marginBottom: 16,
   },
-  detailsButtonText: {
-    color: '#FFFFFF',
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    color: AppColors.darkTextTertiary,
+    fontSize: 13,
+  },
+  tuneButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tuneIcon: {
+    fontSize: 14,
+  },
+  filterScrollView: {
+    marginBottom: 16,
+    marginHorizontal: -20,
+  },
+  filterContainer: {
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 24,
+    backgroundColor: AppColors.darkSurface,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  filterPillSelected: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  filterText: {
+    color: AppColors.darkTextSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
-  detailsContent: {
-    paddingBottom: 32,
-  },
-  detailsImage: {
-    width: '100%',
-    height: 260,
-    backgroundColor: AppColors.placeholder,
-  },
-  detailsBody: {
-    padding: AppSpacing.l,
-    backgroundColor: AppColors.surface,
-  },
-  detailsBadgeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: AppSpacing.m,
-  },
-  badge: {
-    backgroundColor: AppColors.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: AppSpacing.badgeRadius,
-  },
-  detailsPrice: {
-    fontSize: 22,
+  filterTextSelected: {
+    color: '#0F1015',
     fontWeight: '700',
-    color: AppColors.primary,
   },
-  detailsTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: AppColors.textPrimary,
-    marginBottom: 6,
+  bannerContainer: {
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 99, 235, 0.25)',
+    marginBottom: 18,
   },
-  detailsLocation: {
+  bannerTitle: {
+    color: '#60A5FA',
     fontSize: 15,
-    color: AppColors.textSecondary,
-    marginBottom: AppSpacing.l,
-  },
-  specsRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: AppSpacing.l,
-  },
-  specBox: {
-    flex: 1,
-    backgroundColor: AppColors.background,
-    padding: AppSpacing.m,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  specNumber: {
-    fontSize: 20,
     fontWeight: '700',
-    color: AppColors.primary,
+    marginBottom: 4,
   },
-  specLabel: {
+  bannerSubtitle: {
+    color: AppColors.darkTextSecondary,
     fontSize: 12,
-    color: AppColors.textSecondary,
-    marginTop: 2,
+    lineHeight: 18,
   },
   sectionHeader: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: AppColors.textPrimary,
-    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 14,
   },
-  descriptionText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: AppColors.textSecondary,
-    marginBottom: AppSpacing.xl,
-  },
-  backButton: {
-    backgroundColor: AppColors.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  backButtonText: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    letterSpacing: -0.3,
+  },
+  sectionCount: {
+    fontSize: 12,
+    color: AppColors.darkTextSecondary,
+    fontWeight: '500',
   },
 });

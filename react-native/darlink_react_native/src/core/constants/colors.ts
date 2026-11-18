@@ -1,27 +1,58 @@
 // ============================================================
-// DARLINK — CONSTANTES DE COULEURS PARTAGÉES (V2-T01 - Membre 2)
-// Palette miroir de l'application mobile React Native
+// DARLINK — SYSTÈME DE COULEURS LUXE MODERNE & GLASSMORPHISM (React Native)
+// Palette Dark & Light miroir de Flutter (Screen 1, 2, 3)
 // ============================================================
 
 export const AppColors = {
-  /** Couleur primaire : bleu moderne pour les éléments d'action */
-  primary: '#1E88E5',
-  /** Couleur secondaire : vert d'eau pour les éléments d'accentuation */
-  secondary: '#26A69A',
-  /** Fond général clair de l'application */
-  background: '#F5F5F7',
-  /** Surface des cartes et conteneurs */
-  surface: '#FFFFFF',
-  /** Couleur principale du texte (titres et éléments majeurs) */
-  textPrimary: '#1C1B1F',
-  /** Couleur secondaire du texte (descriptions, sous-titres, libellés) */
-  textSecondary: '#49454F',
-  /** Couleur d'erreur ou d'alerte */
-  error: '#B3261E',
-  /** Couleur grise pour les bordures légères */
-  border: '#E0E0E0',
-  /** Gris clair pour les placeholders et fonds d'images en chargement */
-  placeholder: '#EEEEEE',
+  // ------------------------------------------------------------
+  // PALETTE FLAGSHIP — DARK LUXURY (Charcoal & Verre dépoli)
+  // ------------------------------------------------------------
+  darkBackground: '#0F1015',
+  darkSurface: '#181920',
+  darkSurfaceElevated: '#22242D',
+  darkGlassBackground: 'rgba(24, 25, 32, 0.85)',
+  darkGlassCard: 'rgba(19, 20, 28, 0.88)',
+  darkBorder: 'rgba(255, 255, 255, 0.14)',
+  darkBorderSubtle: 'rgba(255, 255, 255, 0.08)',
+  darkTextPrimary: '#FFFFFF',
+  darkTextSecondary: '#9CA3AF',
+  darkTextTertiary: '#6B7280',
+
+  // ------------------------------------------------------------
+  // PALETTE MODERNE — LIGHT LUXURY
+  // ------------------------------------------------------------
+  lightBackground: '#F3F4F8',
+  lightSurface: '#FFFFFF',
+  lightSurfaceElevated: '#FFFFFF',
+  lightGlassBackground: 'rgba(255, 255, 255, 0.90)',
+  lightGlassCard: 'rgba(255, 255, 255, 0.85)',
+  lightBorder: 'rgba(0, 0, 0, 0.08)',
+  lightTextPrimary: '#111827',
+  lightTextSecondary: '#4B5563',
+  lightTextTertiary: '#9CA3AF',
+
+  // ------------------------------------------------------------
+  // ACCENTS & STATUTS
+  // ------------------------------------------------------------
+  accentGreen: '#10B981', // Statut "À Vendre" / Disponible
+  accentBlue: '#2563EB',  // Boutons et liens d'action
+  accentIndigo: '#4F46E5',
+  accentRed: '#EF4444',   // Bouton favori et alertes
+  white: '#FFFFFF',
+  black: '#000000',
+
+  // ------------------------------------------------------------
+  // ALIAS RÉTRO-COMPATIBLES
+  // ------------------------------------------------------------
+  primary: '#2563EB',
+  secondary: '#10B981',
+  background: '#0F1015',
+  surface: '#181920',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#9CA3AF',
+  border: 'rgba(255, 255, 255, 0.14)',
+  placeholder: '#1F2128',
+  error: '#EF4444',
 } as const;
 
 export type AppColorKey = keyof typeof AppColors;
