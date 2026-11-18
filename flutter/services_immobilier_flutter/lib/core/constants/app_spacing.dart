@@ -25,6 +25,9 @@ class AppSpacing {
   /// Espacement très grand : 32.0 px
   static const double xl = 32.0;
 
+  /// Espacement extra large : 48.0 px
+  static const double xxl = 48.0;
+
   // ------------------------------------------------------------
   // Rayons de courbure des coins arrondis (Border Radius)
   // ------------------------------------------------------------

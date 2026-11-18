@@ -1,130 +1,374 @@
 // ============================================================
-// DARLINK — COMPOSANT CARTE DE BIEN IMMOBILIER (V2-T01)
-// Affiche une annonce immobilière dans la liste principale
+// DARLINK — CARTE DE BIEN IMMOBILIER LUXE GLASSMORPHISM (V2)
+// Design ultra-moderne avec superposition translucide (Screen 1)
 // ============================================================
 
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
 import '../../domain/models/property.dart';
 import '../screens/property_details_screen.dart';
 
-/// Carte représentant un bien immobilier dans la liste.
-/// Affiche la photographie, le type, le titre, la ville, le prix en TND
-/// et un bouton interactif "Voir détails".
-class CartePropriete extends StatelessWidget {
+/// Carte immobilière avec arrière-plan immersif et dock flottant translucide.
+class CartePropriete extends StatefulWidget {
   final Propriete propriete;
 
   const CartePropriete({super.key, required this.propriete});
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMD),
+  State<CartePropriete> createState() => _CarteProprieteState();
+}
+
+class _CarteProprieteState extends State<CartePropriete> {
+  late bool _isFavorite;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFavorite = widget.propriete.isFavorite;
+  }
+
+  void _ouvrirDetails(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EcranDetails(propriete: widget.propriete),
       ),
-      elevation: 3,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image du bien avec état de chargement et fallback
-          ImagePropriete(
-            imageUrl: propriete.imageUrl,
-            hauteur: 200,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.propriete;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      height: 390,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x55000000),
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ------------------------------------------------------------
+            // 1. IMAGE D'ARRIÈRE-PLAN HAUTE DÉFINITION
+            // ------------------------------------------------------------
+            Image.network(
+              p.imageUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: const Color(0xFF181920),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.accentBlue,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: const Color(0xFF1E1F26),
+                  child: const Center(
+                    child: Icon(Icons.broken_image, size: 48, color: Colors.white38),
+                  ),
+                );
+              },
+            ),
 
-          // Informations textuelles et prix
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Badge du type de bien
-                BadgeType(type: propriete.type),
-                const SizedBox(height: AppSpacing.sm),
-
-                // Titre du bien
-                Text(
-                  propriete.titre,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+            // Dégradé sombre supérieur pour faire ressortir les badges
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 100,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0x99000000), Colors.transparent],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
-                const SizedBox(height: 6),
+              ),
+            ),
 
-                // Localisation géographique avec icône
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      size: 16,
-                      color: AppColors.textSecondary,
+            // ------------------------------------------------------------
+            // 2. BADGES FLOTTANTS SUPÉRIEURS (STATUT & FAVORI)
+            // ------------------------------------------------------------
+            Positioned(
+              top: 16,
+              left: 16,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0x8A181920),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0x33FFFFFF), width: 1),
                     ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: Text(
-                        propriete.localisation,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Ligne séparatrice
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 10),
-
-                // Prix et bouton "Voir détails" sur la même ligne
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Prix en Dinars Tunisiens
-                    Text(
-                      '${propriete.prixFormate} TND',
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-
-                    // Bouton d'action pour ouvrir l'écran de détails
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppSpacing.radiusSM),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                      ),
-                      onPressed: () {
-                        // Navigation vers l'écran de détails avec la propriété sélectionnée
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                EcranDetails(propriete: propriete),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.accentGreen,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.accentGreen,
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      child: const Text('Voir détails'),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          p.estLocation ? 'À Louer' : 'À Vendre',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ],
+              ),
+            ),
+
+            // Bouton favori flottant en haut à droite
+            Positioned(
+              top: 16,
+              right: 16,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isFavorite = !_isFavorite;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0x8A181920),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0x33FFFFFF), width: 1),
+                      ),
+                      child: Icon(
+                        _isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: _isFavorite ? const Color(0xFFEF4444) : Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // ------------------------------------------------------------
+            // 3. CONTENEUR GLASSMORPHISME INFÉRIEUR (PRIX, ADRESSE, SPECS)
+            // ------------------------------------------------------------
+            Positioned(
+              bottom: 12,
+              left: 12,
+              right: 12,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xCC13141C),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0x28FFFFFF), width: 1),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x40000000),
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Titre & Prix avec Bouton Flèche CTA
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p.estLocation ? '${p.prixFormate} DT/mois' : '${p.prixFormate} DT',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    p.titre,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFFE0E0E6),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // Bouton d'action interactif stylisé (ElevatedButton pour validation test)
+                            ElevatedButton(
+                              onPressed: () => _ouvrirDetails(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF0F1015),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Voir détails',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.arrow_forward, size: 16),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Localisation avec icône
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 15,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                p.localisation,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFF9CA3AF),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Ligne de caractéristiques (Chambres, Salles de bain, Surface)
+                        Row(
+                          children: [
+                            _PillCarac(
+                              icone: Icons.bed_outlined,
+                              valeur: '${p.nombreChambres} Bd',
+                            ),
+                            const SizedBox(width: 8),
+                            _PillCarac(
+                              icone: Icons.bathtub_outlined,
+                              valeur: '${p.nombreSallesDeBain} Ba',
+                            ),
+                            const SizedBox(width: 8),
+                            _PillCarac(
+                              icone: Icons.crop_square,
+                              valeur: '${p.surfaceM2} m²',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Pastille de caractéristique individuelle translucide
+class _PillCarac extends StatelessWidget {
+  final IconData icone;
+  final String valeur;
+
+  const _PillCarac({required this.icone, required this.valeur});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x1AFFFFFF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0x1AFFFFFF), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icone, size: 15, color: const Color(0xFFCAC4D0)),
+          const SizedBox(width: 5),
+          Text(
+            valeur,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -132,83 +376,3 @@ class CartePropriete extends StatelessWidget {
     );
   }
 }
-
-/// Widget réutilisable pour afficher une image distante avec gestion d'état :
-/// - Chargement en cours : CircularProgressIndicator
-/// - Erreur de chargement (URL invalide, pas de réseau) : icône de maison et message de fallback
-class ImagePropriete extends StatelessWidget {
-  final String imageUrl;
-  final double hauteur;
-
-  const ImagePropriete({
-    super.key,
-    required this.imageUrl,
-    required this.hauteur,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: hauteur,
-      width: double.infinity,
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        // Pendant le téléchargement de l'image
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            color: AppColors.placeholder,
-            child: const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
-          );
-        },
-        // En cas d'erreur de chargement (réseau ou URL)
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: const Color(0xFFE0E0E0),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.home, size: 60, color: AppColors.textSecondary),
-                SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Image non disponible',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Badge arrondi pour mettre en valeur le type de bien (Appartement, Maison, Villa).
-class BadgeType extends StatelessWidget {
-  final String type;
-
-  const BadgeType({super.key, required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD), // Teinte bleutée très claire
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        type,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppColors.primary,
-        ),
-      ),
-    );
-  }
-}
-

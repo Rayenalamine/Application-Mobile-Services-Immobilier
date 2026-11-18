@@ -1,7 +1,6 @@
 // ============================================================
-// DARLINK — NAVIGATION PRINCIPALE PAR ONGLETS (V2-T04 - Membre 2)
-// Navigation inférieure Material 3 avec 4 onglets :
-// Accueil, Recherche, Favoris, Profil (Parité totale Flutter)
+// DARLINK — NAVIGATION FLOTTANTE PAR ONGLETS (React Native Screen 1 & 2)
+// Dock flottant translucide centré type Glassmorphism
 // ============================================================
 
 import React, { useState } from 'react';
@@ -27,9 +26,9 @@ interface TabItem {
 }
 
 const TABS: readonly TabItem[] = [
-  { key: 'home', label: 'Accueil', icon: '🏠' },
+  { key: 'home', label: 'Accueil', icon: '⊞' },
   { key: 'search', label: 'Recherche', icon: '🔍' },
-  { key: 'favorites', label: 'Favoris', icon: '❤️' },
+  { key: 'favorites', label: 'Favoris', icon: '♡' },
   { key: 'profile', label: 'Profil', icon: '👤' },
 ] as const;
 
@@ -55,29 +54,33 @@ export const MainNavigationScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
-      {/* Barre de navigation inférieure Material 3 */}
-      <View style={styles.bottomBar}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={styles.tabButton}
-              onPress={() => setActiveTab(tab.key)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={tab.label}
-              accessibilityState={{ selected: isActive }}
-            >
-              <View style={[styles.iconPill, isActive && styles.iconPillActive]}>
-                <Text style={styles.tabIcon}>{tab.icon}</Text>
-              </View>
-              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      {/* Dock de navigation flottant centré type Glassmorphism */}
+      <View style={styles.dockWrapper}>
+        <View style={styles.floatingDock}>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.tabButton}
+                onPress={() => setActiveTab(tab.key)}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={tab.label}
+                accessibilityState={{ selected: isActive }}
+              >
+                <View style={[styles.iconPill, isActive && styles.iconPillActive]}>
+                  <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
+                    {isActive && tab.key === 'favorites' ? '❤️' : tab.icon}
+                  </Text>
+                </View>
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -86,31 +89,39 @@ export const MainNavigationScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.darkBackground,
   },
   screenContainer: {
     flex: 1,
   },
-  bottomBar: {
-    height: 64,
+  dockWrapper: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  floatingDock: {
+    height: 70,
     flexDirection: 'row',
-    backgroundColor: AppColors.surface,
-    borderTopWidth: 0.8,
-    borderTopColor: AppColors.border,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    backgroundColor: 'rgba(22, 23, 32, 0.92)',
+    borderRadius: 36,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+    alignItems: 'center',
+    paddingHorizontal: 8,
   },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 6,
   },
   iconPill: {
-    width: 48,
+    width: 44,
     height: 28,
     borderRadius: 14,
     justifyContent: 'center',
@@ -118,19 +129,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   iconPillActive: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#FFFFFF',
   },
   tabIcon: {
-    fontSize: 18,
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  tabIconActive: {
+    color: '#0F1015',
+    fontWeight: '800',
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '500',
-    color: AppColors.textSecondary,
+    color: '#6B7280',
     marginTop: 2,
   },
   tabLabelActive: {
-    color: AppColors.primary,
+    color: '#FFFFFF',
     fontWeight: '700',
   },
 });

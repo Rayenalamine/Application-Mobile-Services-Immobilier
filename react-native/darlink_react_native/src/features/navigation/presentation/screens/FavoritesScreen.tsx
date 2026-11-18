@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DES FAVORIS REACT NATIVE (V2-T04 - Membre 2)
-// Parité complète avec EcranFavoris Flutter
+// DARLINK — ÉCRAN DES FAVORIS LUXE GLASSMORPHISM (React Native)
+// Parité complète avec EcranFavoris Flutter et le thème sombre de luxe
 // ============================================================
 
 import React from 'react';
@@ -11,7 +11,6 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
-import { AppSpacing } from '../../../../core/constants/spacing';
 
 export const FavoritesScreen: React.FC = () => {
   return (
@@ -21,20 +20,21 @@ export const FavoritesScreen: React.FC = () => {
       </View>
 
       <View style={styles.container}>
+        {/* Cercle d'icône avec verre dépoli & lueur */}
         <View style={styles.iconCircle}>
           <Text style={styles.heartIcon}>❤️</Text>
         </View>
 
-        <Text style={styles.title}>Aucun favori pour le moment</Text>
+        <Text style={styles.title}>Aucun favori enregistré</Text>
         <Text style={styles.subtitle}>
-          Explorez nos annonces immobilières et appuyez sur l'icône cœur pour retrouver vos biens préférés ici.
+          Retrouvez ici les annonces que vous aurez ajoutées à vos favoris en appuyant sur le cœur de la fiche détaillée.
         </Text>
 
+        {/* Carte Frosted Glass note roadmap */}
         <View style={styles.noticeCard}>
-          <Text style={styles.noticeTitle}>Persistance locale V6-T02</Text>
+          <Text style={styles.noticeIcon}>🔖</Text>
           <Text style={styles.noticeText}>
-            La persistance hors-ligne des favoris sur mobile sera intégrée en Version 6
-            (AsyncStorage / SQLite).
+            Persistance locale et backend prévue en phase V6-T02
           </Text>
         </View>
       </View>
@@ -45,71 +45,73 @@ export const FavoritesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.darkBackground,
   },
   header: {
     height: 56,
-    backgroundColor: AppColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
   },
   headerTitle: {
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
+    letterSpacing: -0.3,
   },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: AppSpacing.xl,
+    paddingHorizontal: 32,
+    marginTop: -40,
   },
   iconCircle: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#FFEBEE',
+    backgroundColor: 'rgba(37, 99, 235, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: AppSpacing.l,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(37, 99, 235, 0.35)',
   },
   heartIcon: {
-    fontSize: 44,
+    fontSize: 42,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: AppColors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: AppSpacing.s,
+    marginBottom: 10,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 14,
-    color: AppColors.textSecondary,
+    color: AppColors.darkTextSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: AppSpacing.xl,
+    lineHeight: 22,
+    marginBottom: 32,
+    maxWidth: 300,
   },
   noticeCard: {
-    backgroundColor: AppColors.surface,
-    padding: AppSpacing.l,
-    borderRadius: AppSpacing.cardRadius,
-    borderWidth: 0.8,
-    borderColor: AppColors.border,
+    flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    backgroundColor: AppColors.darkSurface,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: AppColors.darkBorder,
   },
-  noticeTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: AppColors.primary,
-    marginBottom: 4,
+  noticeIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   noticeText: {
     fontSize: 12,
-    color: AppColors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
+    color: AppColors.darkTextSecondary,
+    fontWeight: '500',
   },
 });

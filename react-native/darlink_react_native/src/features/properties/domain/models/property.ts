@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — MODÈLE DE DONNÉES : PROPERTY (V2-T01 - Membre 2)
-// Représente une annonce immobilière avec ses caractéristiques
+// DARLINK — MODÈLE DE DONNÉES : PROPERTY (React Native Luxe)
+// Représente une annonce immobilière avec caractéristiques enrichies
 // ============================================================
 
 export type PropertyType = 'Appartement' | 'Maison' | 'Villa';
@@ -27,6 +27,19 @@ export interface Property {
   readonly nombreSallesDeBain: number;
   /** Description complète du bien */
   readonly description: string;
+
+  /** Surface habitable en m² */
+  readonly surfaceM2?: number;
+  /** Année de construction */
+  readonly anneeConstruction?: number;
+  /** Niveau de standing (ex: 'Haut standing', 'Prestige') */
+  readonly standing?: string;
+  /** Indique si le bien est proposé à la location */
+  readonly estLocation?: boolean;
+  /** Galerie de photos intérieures complémentaires */
+  readonly imagesGalerie?: string[];
+  /** État de favori */
+  readonly isFavorite?: boolean;
 }
 
 /**
