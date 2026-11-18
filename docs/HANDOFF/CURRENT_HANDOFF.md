@@ -1,68 +1,64 @@
 # COMPTE-RENDU ACTIF DE PASSATION (CURRENT HANDOFF)
 
-**Date & Heure :** 18 novembre 2026 — 21:45
-**Intervenant sortant :** Antigravity (Assistant Senior) pour **Membre 1 (Propriétaire du Dépôt)**
-**Destinataires :** Membre 1 (Propriétaire du Dépôt) & Membres 2 et 3 (Coéquipiers)
-**Dépôt officiel :** `https://github.com/Rayenalamine/Application-Mobile-Services-Immobilier.git`
-**Branches Git officielles poussées :**
-- `feature/V2-T01-member-1-flutter` (Commit `99348a7`)
-- `feature/V2-T02-member-1-theme-spec` (Commit `8d641a8`)
-- `feature/V2-T04-member-1-flutter-navigation` (En cours de push)
+**Date & Heure :** 18 novembre 2026 — 22:15  
+**Intervenant sortant :** Antigravity pour **Membre 2 (Coéquipier 1)**  
+**Destinataires :** Membre 1 (Propriétaire du Dépôt) & Membre 3 (Coéquipier 2)  
+**Dépôt officiel :** `https://github.com/Rayenalamine/Application-Mobile-Services-Immobilier.git`  
+**Branche Git active :** `feature/V2-member-2-deliverables`  
 
 ---
 
-## 1. BILAN EXHAUSTIF DU MEMBRE 1 SUR LA VERSION 2 (V2)
+## 1. BILAN EXHAUSTIF DU MEMBRE 2 SUR LA VERSION 2 (V2)
 
-L'intégralité du travail autonome et exécutable assigné au **Membre 1** sur la Version 2 est achevée :
+L'intégralité du travail assigné au **Membre 2** sur la Version 2 a été exécuté, testé et documenté :
 
-1. **V2-T01 (Modularisation Flutter) — COMPLETED :**
-   - Découpage propre de l'application monolithique V1 en couches `core/` et `features/properties/`.
-   - Modèle immuable `Propriete`, données fictives préservées, composants `CartePropriete`, `EcranAccueil`, `EcranDetails`.
-   - 4 tests de widgets validés à 100%, `flutter analyze` : 0 issue.
-   - Poussé sur `origin/feature/V2-T01-member-1-flutter`.
-   - PR : `https://github.com/Rayenalamine/Application-Mobile-Services-Immobilier/pull/new/feature/V2-T01-member-1-flutter`.
+1. **V2-T01 (Initialisation React Native TypeScript) — COMPLETED :**
+   - Application Expo initialisée avec le template TypeScript strict dans `react-native/darlink_react_native/`.
+   - Constantes de design partagées créées : `src/core/constants/colors.ts`, `spacing.ts`.
+   - Modèle immuable typé `Property` et formateur `formatPrice` dans `src/features/properties/domain/models/property.ts`.
+   - Jeu de données miroir des 4 annonces tunisiennes dans `src/features/properties/data/mockProperties.ts`.
+   - Contrôle qualité : `npx tsc --noEmit` validé avec **0 issue**.
 
-2. **V2-T02 (Spécification des Thèmes & Contraste WCAG AA) — COMPLETED :**
-   - Rédaction du livrable contractuel [`docs/THEME_SPECIFICATION.md`](../THEME_SPECIFICATION.md).
-   - Définition de la matrice sémantique complète pour le mode Clair (Light) et Sombre (Dark).
-   - Validation mathématique rigoureuse de 13 ratios de contraste WCAG 2.1 niveau AA (> 4.5:1 pour le texte normal).
-   - Échelle typographique standardisée pour Flutter et React Native.
-   - Instructions de raccordement pour le Membre 2 (Flutter) et Membre 3 (React Native).
-   - Poussé sur `origin/feature/V2-T02-member-1-theme-spec`.
-   - PR : `https://github.com/Rayenalamine/Application-Mobile-Services-Immobilier/pull/new/feature/V2-T02-member-1-theme-spec`.
+2. **V2-T02 (Système de thèmes Flutter & Typographie) — COMPLETED :**
+   - Implémentation de `lib/core/theme/app_theme.dart` selon la spécification de Membre 1 (`THEME_SPECIFICATION.md`).
+   - Thèmes clair (`lightTheme`) et sombre (`darkTheme`) configurés avec `ColorScheme` et `TextTheme` M3.
+   - Gestion réactive du mode via `ValueNotifier<ThemeMode>` et `basculerTheme()`.
+   - Connexion dans `lib/main.dart` avec `ValueListenableBuilder<ThemeMode>`.
+   - 4 tests unitaires et de widgets ajoutés dans `test/theme_test.dart`.
+   - Contrôle qualité : `flutter analyze` : 0 issue, `flutter test` : 13/13 tests passés (100%).
 
-3. **V2-T03 (Composants UI React Native) — BLOCKED :**
-   - Statut : **Bloqué (BLOCKED)**.
-   - Raison : Le projet hôte `react-native/darlink_react_native/` n'existe pas encore. Son initialisation a été attribuée au Membre 2 dans la tâche V2-T01 (qui est en attente). Conformément à la règle stricte de protection du périmètre, le Membre 1 ne peut pas réaliser cette tâche avant l'intervention du Membre 2.
+3. **V2-T03 (Spécification des États UI) — COMPLETED :**
+   - Rédaction du livrable contractuel [`docs/UI_COMPONENTS_SPEC.md`](../UI_COMPONENTS_SPEC.md).
+   - Spécification des 4 composants (`PropertyCard`, `PrimaryButton`, `LoadingSkeleton`, `EmptyStateView`).
+   - Matrice des 5 états UI (Normal, Pressé, Chargement, Erreur, Désactivé) et fixtures JSON de test.
+   - **Conséquence directe :** L'assignation du **Membre 1** sur V2-T03 est formellement **débloquée**.
 
-4. **V2-T04 (Barre de navigation Material 3 Flutter) — COMPLETED :**
-   - Implémentation du conteneur `EcranNavigationPrincipale` avec `NavigationBar` Material 3 et `IndexedStack`.
-   - 4 destinations créées et reliées :
-     1. **Accueil** : `EcranAccueil` (liste des 4 biens fictifs avec accès aux fiches détaillées).
-     2. **Recherche** : `EcranRecherche` (champ de recherche, filtres Villa/Appartement/Maison, villes tunisiennes, mention V5-T02).
-     3. **Favoris** : `EcranFavoris` (état vide stylisé, mention V6-T02).
-     4. **Profil** : `EcranProfil` (utilisateur invité, session démo, métadonnées académiques M. Wahid Hamdi, mention V4-T01).
-   - Suite de 5 tests de widgets dédiés à la navigation dans `test/navigation_test.dart`.
-   - 9 tests de widgets réussis au total (100%), `flutter analyze` : 0 issue, `flutter build web` : validé (56.1s).
-   - Poussé sur `origin/feature/V2-T04-member-1-flutter-navigation`.
+4. **V2-T04 (Navigation par onglets React Native & Écran d'accueil) — COMPLETED :**
+   - Conteneur `MainNavigationScreen.tsx` avec barre de navigation inférieure Material 3 (4 onglets).
+   - Écran `HomeScreen.tsx` avec bannière de bienvenue, liste des 4 biens fictifs et écran de détails complet.
+   - Écran `SearchScreen.tsx` avec barre de recherche et filtres tunisiens.
+   - Écran `FavoritesScreen.tsx` avec état vide stylisé.
+   - Écran `ProfileScreen.tsx` avec profil invité et métadonnées académiques (M. Wahid Hamdi).
+   - `App.tsx` raccordé et validé avec `npx tsc --noEmit` (**0 issue**).
 
 ---
 
-## 2. INSTRUCTIONS DE TRAVAIL POUR LES COÉQUIPIERS (MEMBRES 2 ET 3)
+## 2. SYNTHÈSE DES TESTS ET DE LA QUALITÉ DU CODE
 
-### Pour le Membre 2 (Coéquipier 1) :
-1. **V2-T01 :** Initialiser le projet Expo TypeScript dans `react-native/darlink_react_native/` avec `blank-typescript`, configurer le typage strict (`strict: true`) et créer l'arborescence miroir (`src/core/`, `src/features/`).
-2. **V2-T02 :** Implémenter la couche de thèmes Flutter dans `flutter/services_immobilier_flutter/lib/core/theme/app_theme.dart` en suivant scrupuleusement [`docs/THEME_SPECIFICATION.md`](../THEME_SPECIFICATION.md).
-3. **V2-T03 :** Rédiger la spécification des états UI dans `docs/UI_COMPONENTS_SPEC.md`.
-4. **V2-T04 :** Configurer la navigation par onglets React Native avec `@react-navigation/bottom-tabs`.
-
-### Pour le Membre 3 (Coéquipier 2) :
-1. **V2-T01 :** Rédiger la spécification officielle du Design System dans `docs/DESIGN_SYSTEM.md`.
-2. **V2-T02 :** Implémenter le `ThemeProvider`, le hook `useAppTheme` et le composant `Text` dans `react-native/darlink_react_native/src/core/theme/` selon [`docs/THEME_SPECIFICATION.md`](../THEME_SPECIFICATION.md).
-3. **V2-T03 :** Développer les widgets Flutter partagés dans `flutter/services_immobilier_flutter/lib/core/widgets/`.
-4. **V2-T04 :** Documenter le routage transverse et la gestion du bouton retour Android physique dans `docs/NAVIGATION.md`.
+| Suite de vérification | Commande | Résultat | Statut |
+|---|---|---|---|
+| **TypeScript React Native** | `npx tsc --noEmit` | `0 error` | ✅ Validé |
+| **Linter Flutter** | `flutter analyze` | `No issues found! (0 error, 0 warning)` | ✅ Validé |
+| **Tests de Widgets Flutter** | `flutter test` | `00:04 +13: All tests passed!` | ✅ 13/13 réussis |
 
 ---
 
-## 3. RÈGLE STRICTE GIT POUR LES MEMBRES 2 ET 3
-Les coéquipiers travaillent **exclusivement sur leurs forks personnels** et soumettent leurs contributions via Pull Request. Aucun commit direct sur `main` du dépôt officiel n'est permis.
+## 3. PROCHAINES ACTIONS POUR L'ÉQUIPE
+
+1. **Pour le Membre 1 :**
+   - Implémenter les composants UI React Native dans `react-native/darlink_react_native/src/core/components/` (désormais débloqué).
+2. **Pour le Membre 3 :**
+   - Finaliser la spécification des Design Tokens dans `docs/DESIGN_SYSTEM.md` (V2-T01).
+   - Implémenter `ThemeProvider` en React Native (V2-T02).
+   - Développer les widgets Flutter équivalents dans `lib/core/widgets/` (V2-T03).
+   - Rédiger la spécification de routage `docs/NAVIGATION.md` (V2-T04).

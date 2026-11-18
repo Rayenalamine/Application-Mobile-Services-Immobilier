@@ -13,10 +13,11 @@
 |---|---|---|
 | **Version active** | **Version 2 (Socle mobile & Design System)** | Parité progressive Flutter / React Native. |
 | **Sprint en cours** | Sprint 2 (Socle UI & Navigation mobile) | Priorité P1 (Échéance : 26 novembre 2026). |
-| **Tâches V2 Membre 1** | **V2-T01 ✅ / V2-T02 ✅ / V2-T04 ✅** | V2-T03 est formellement bloqué par la dépendance Membre 2. |
-| **Branches Git créées** | `feature/V2-T01-member-1-flutter`<br>`feature/V2-T02-member-1-theme-spec`<br>`feature/V2-T04-member-1-flutter-navigation` | Aucun push direct sur `main`. Historique linéaire propre. |
-| **Couverture de tests Flutter** | **9 tests de widgets validés (100%)** | 4 tests d'interface + 5 tests de navigation. |
-| **Qualité du code** | `flutter analyze` : 0 issue | Aucune erreur, aucun avertissement de linter. |
+| **Tâches V2 Membre 1** | **V2-T01 ✅ / V2-T02 ✅ / V2-T04 ✅** | V2-T03 débloqué suite aux livrables Membre 2. |
+| **Tâches V2 Membre 2** | **V2-T01 ✅ / V2-T02 ✅ / V2-T03 ✅ / V2-T04 ✅** | **100% des tâches du Membre 2 sur V2 achevées et validées.** |
+| **Branches Git actives** | `feature/V2-member-2-deliverables`<br>`feature/V2-T01-member-1-flutter`<br>`feature/V2-T02-member-1-theme-spec`<br>`feature/V2-T04-member-1-flutter-navigation` | Aucun push direct sur `main`. Historique linéaire propre. |
+| **Couverture de tests Flutter** | **13 tests de widgets et unitaires validés (100%)** | 4 tests d'interface + 5 tests navigation + 4 tests thèmes. |
+| **Qualité du code** | `flutter analyze` : 0 issue<br>`npx tsc --noEmit` : 0 issue | Aucune erreur, aucun avertissement sur les deux plateformes. |
 
 ---
 
@@ -25,16 +26,16 @@
 | ID Tâche | Périmètre | Membre | Statut | Preuves Concrètes & Livrables |
 |---|---|---|---|---|
 | **V2-T01** | Modularisation Flutter (Architecture propre `core`/`features`) | **Membre 1** | **COMPLETED** | Commit `99348a7`, 4 tests widgets passés, `flutter analyze` 0 issue, build web validé, branche `feature/V2-T01-member-1-flutter` poussée. |
-| **V2-T01** | Initialisation React Native Expo TypeScript (`react-native/darlink_react_native/`) | Membre 2 | **NOT STARTED** | Dossier vide réservé (`.gitkeep`). En attente du Membre 2. |
-| **V2-T01** | Spécification officielle des Design Tokens (`docs/DESIGN_SYSTEM.md`) | Membre 3 | **NOT STARTED** | Tokens provisoires documentés dans Flutter. En attente du Membre 3. |
-| **V2-T02** | Spécification sémantique des thèmes & matrice de contraste WCAG AA | **Membre 1** | **COMPLETED** | Livrable [`docs/THEME_SPECIFICATION.md`](THEME_SPECIFICATION.md), 13 ratios WCAG AA validés mathématiquement, commit `8d641a8`, branche `feature/V2-T02-member-1-theme-spec` poussée. |
-| **V2-T02** | Implémentation Flutter des thèmes `AppTheme.light` et `AppTheme.dark` | Membre 2 | **NOT STARTED** | En attente de l'implémentation par le Membre 2. |
+| **V2-T01** | Initialisation React Native Expo TypeScript (`react-native/darlink_react_native/`) | **Membre 2** | **COMPLETED** | Projet Expo TypeScript initialisé, typage strict (`strict: true`), modèles et mock properties créés, `npx tsc --noEmit` 0 issue. |
+| **V2-T01** | Spécification officielle des Design Tokens (`docs/DESIGN_SYSTEM.md`) | Membre 3 | **NOT STARTED** | Tokens provisoires documentés dans Flutter et React Native. En attente du Membre 3. |
+| **V2-T02** | Spécification sémantique des thèmes & matrice de contraste WCAG AA | **Membre 1** | **COMPLETED** | Livrable [`docs/THEME_SPECIFICATION.md`](THEME_SPECIFICATION.md), 13 ratios WCAG AA validés mathématiquement, commit `8d641a8`. |
+| **V2-T02** | Implémentation Flutter des thèmes `AppTheme.light` et `AppTheme.dark` | **Membre 2** | **COMPLETED** | `lib/core/theme/app_theme.dart` créé, `main.dart` raccordé avec `ValueListenableBuilder`, 4 tests unitaires/widgets dans `test/theme_test.dart` réussis (100%), `flutter analyze` 0 issue. |
 | **V2-T02** | Implémentation React Native `ThemeProvider` & `useAppTheme` | Membre 3 | **NOT STARTED** | En attente de l'implémentation par le Membre 3. |
-| **V2-T03** | Composants UI React Native (`PropertyCard.tsx`, `PrimaryButton.tsx`, etc.) | **Membre 1** | **BLOCKED** | **Bloqué :** `react-native/darlink_react_native/` non initialisé (dépendance Membre 2 sur V2-T01) et protection stricte du périmètre. |
-| **V2-T03** | Spécification des états UI (`docs/UI_COMPONENTS_SPEC.md`) | Membre 2 | **NOT STARTED** | En attente du Membre 2. |
+| **V2-T03** | Composants UI React Native (`PropertyCard.tsx`, `PrimaryButton.tsx`, etc.) | **Membre 1** | **READY** | **Débloqué :** `react-native/darlink_react_native/` initialisé et `UI_COMPONENTS_SPEC.md` rédigé par Membre 2. |
+| **V2-T03** | Spécification des états UI (`docs/UI_COMPONENTS_SPEC.md`) | **Membre 2** | **COMPLETED** | Livrable [`docs/UI_COMPONENTS_SPEC.md`](UI_COMPONENTS_SPEC.md) rédigé, matrice des 5 états UI, fixtures JSON de test, accessibilité WCAG AA validée. |
 | **V2-T03** | Widgets UI Flutter équivalents dans `lib/core/widgets/` | Membre 3 | **NOT STARTED** | En attente du Membre 3. |
-| **V2-T04** | Barre de navigation Material 3 (4 onglets : Accueil, Recherche, Favoris, Profil) Flutter | **Membre 1** | **COMPLETED** | Composant `EcranNavigationPrincipale` (IndexedStack), 3 écrans créés, `main.dart` connecté, 9 tests de widgets passés (100%), `flutter analyze` 0 issue, build web validé. |
-| **V2-T04** | Navigation par onglets React Native (`@react-navigation/bottom-tabs`) | Membre 2 | **NOT STARTED** | En attente du Membre 2. |
+| **V2-T04** | Barre de navigation Material 3 (4 onglets : Accueil, Recherche, Favoris, Profil) Flutter | **Membre 1** | **COMPLETED** | Composant `EcranNavigationPrincipale` (IndexedStack), 3 écrans créés, `main.dart` connecté, 9 tests de widgets passés (100%), `flutter analyze` 0 issue. |
+| **V2-T04** | Navigation par onglets React Native (Accueil, Recherche, Favoris, Profil) | **Membre 2** | **COMPLETED** | `MainNavigationScreen.tsx` créé avec barre M3 paritaire, `HomeScreen`, `SearchScreen`, `FavoritesScreen`, `ProfileScreen` opérationnels, `App.tsx` relié, `npx tsc --noEmit` 0 issue. |
 | **V2-T04** | Spécification du routage transverse & back button (`docs/NAVIGATION.md`) | Membre 3 | **NOT STARTED** | En attente du Membre 3. |
 
 ---

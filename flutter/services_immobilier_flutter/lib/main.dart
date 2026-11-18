@@ -1,10 +1,10 @@
 // ============================================================
-// DARLINK — POINT D'ENTRÉE PRINCIPAL DE L'APPLICATION (V2-T04)
-// Configure MaterialApp avec NavigationBar Material 3 et thèmes
+// DARLINK — POINT D'ENTRÉE PRINCIPAL DE L'APPLICATION (V2-T02 & V2-T04)
+// Configure MaterialApp avec NavigationBar Material 3 et thèmes dynamiques
 // ============================================================
 
 import 'package:flutter/material.dart';
-import 'core/constants/app_colors.dart';
+import 'core/theme/app_theme.dart';
 import 'features/navigation/presentation/screens/main_navigation_screen.dart';
 
 /// Point d'entrée standard de l'application Flutter DarLink.
@@ -12,32 +12,24 @@ void main() {
   runApp(const ServicesImmobilierApp());
 }
 
-/// Widget racine configurant MaterialApp, le titre global et le thème Material 3.
+/// Widget racine configurant MaterialApp, le titre global et le thème réactif Material 3.
 class ServicesImmobilierApp extends StatelessWidget {
   const ServicesImmobilierApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Services Immobilier',
-      debugShowCheckedModeBanner: false,
-
-      // Configuration du thème général s'appuyant sur les Design Tokens provisoires
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
-          primary: AppColors.primary,
-          surface: AppColors.surface,
-          error: AppColors.error,
-        ),
-        scaffoldBackgroundColor: AppColors.background,
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
-
-      // Écran principal configuré avec la barre de navigation Material 3 (V2-T04)
-      home: const EcranNavigationPrincipale(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppTheme.themeModeNotifier,
+      builder: (context, mode, child) {
+        return MaterialApp(
+          title: 'Services Immobilier',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: mode,
+          home: const EcranNavigationPrincipale(),
+        );
+      },
     );
   }
 }
