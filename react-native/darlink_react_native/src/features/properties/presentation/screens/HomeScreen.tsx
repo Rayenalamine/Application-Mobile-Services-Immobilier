@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (React Native Screen 1)
-// Design transparent glassmorphique conforme à la maquette de référence
+// Design adaptatif Clair / Sombre, monogramme initiales épuré
 // ============================================================
 
 import React, { useState } from 'react';
@@ -9,7 +9,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   SafeAreaView,
   Alert,
@@ -19,6 +18,7 @@ import { mockProperties } from '../../data/mockProperties';
 import { Property } from '../../domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { PropertyDetailsScreen } from './PropertyDetailsScreen';
+import { useTheme } from '../../../../core/theme/ThemeContext';
 
 const FILTER_PILLS = [
   'Tous',
@@ -32,6 +32,7 @@ const FILTER_PILLS = [
 export const HomeScreen: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
+  const { isDark, toggleTheme, colors } = useTheme();
 
   // Filtrage selon le filtre actif
   const filteredProperties = mockProperties.filter((p) => {
@@ -52,50 +53,97 @@ export const HomeScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. EN-TÊTE UTILISATEUR & STATUT DU REPO OWNER */}
+        {/* 1. EN-TÊTE UTILISATEUR AVEC MONOGRAMME INITIALES ET BASCULE DU THÈME */}
         <View style={styles.headerRow}>
           <View style={styles.userInfo}>
-            <View style={styles.avatarBorder}>
-              <Image
-                source={{
-                  uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-                }}
-                style={styles.avatarImage}
-              />
+            {/* Monogramme épuré sans photo */}
+            <View
+              style={[
+                styles.monogramAvatar,
+                {
+                  backgroundColor: isDark ? '#22242D' : '#E9EBF0',
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.monogramText, { color: colors.textPrimary }]}>RL</Text>
             </View>
+
             <View style={styles.userTextContainer}>
-              <Text style={styles.greetingText}>Bonjour ! 👋</Text>
-              <Text style={styles.userNameText}>Rayen Lamine</Text>
+              <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
+                Bonjour ! 👋
+              </Text>
+              <Text style={[styles.userNameText, { color: colors.textPrimary }]}>
+                Rayen Lamine
+              </Text>
             </View>
           </View>
 
-          {/* Bouton Carte / Map */}
-          <TouchableOpacity
-            style={styles.mapButton}
-            onPress={() =>
-              Alert.alert('Carte interactive', 'Affichage de la carte prévu en phase V8.')
-            }
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Ouvrir la carte"
-          >
-            <Text style={styles.mapIcon}>🗺️</Text>
-          </TouchableOpacity>
+          {/* Boutons d'action : Bascule Thème Sombre/Clair + Carte */}
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[
+                styles.headerActionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={toggleTheme}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Basculer le mode sombre ou clair"
+            >
+              <Text style={styles.actionEmoji}>{isDark ? '☀️' : '🌙'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.headerActionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={() =>
+                Alert.alert('Carte interactive', 'Affichage de la carte prévu en phase V8.')
+              }
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Ouvrir la carte"
+            >
+              <Text style={styles.actionEmoji}>🗺️</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE */}
-        <View style={styles.searchBar}>
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              shadowOpacity: isDark ? 0.2 : 0.04,
+            },
+          ]}
+        >
           <Text style={styles.searchIcon}>🔍</Text>
-          <Text style={styles.searchPlaceholder}>
+          <Text style={[styles.searchPlaceholder, { color: colors.textTertiary }]}>
             Tunis, Sousse, Djerba, Hammamet...
           </Text>
-          <View style={styles.tuneButton}>
+          <View
+            style={[
+              styles.tuneButton,
+              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+            ]}
+          >
             <Text style={styles.tuneIcon}>⚙️</Text>
           </View>
         </View>
@@ -114,7 +162,12 @@ export const HomeScreen: React.FC = () => {
                 key={filtre}
                 style={[
                   styles.filterPill,
-                  isSelected && styles.filterPillSelected,
+                  {
+                    backgroundColor: isSelected
+                      ? (isDark ? '#FFFFFF' : '#0F1015')
+                      : colors.surface,
+                    borderColor: isSelected ? 'transparent' : colors.border,
+                  },
                 ]}
                 onPress={() => setActiveFilter(filtre)}
                 activeOpacity={0.8}
@@ -122,7 +175,12 @@ export const HomeScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.filterText,
-                    isSelected && styles.filterTextSelected,
+                    {
+                      color: isSelected
+                        ? (isDark ? '#0F1015' : '#FFFFFF')
+                        : colors.textSecondary,
+                      fontWeight: isSelected ? '700' : '500',
+                    },
                   ]}
                 >
                   {filtre}
@@ -133,16 +191,26 @@ export const HomeScreen: React.FC = () => {
         </ScrollView>
 
         {/* 4. BANNIÈRE DISCRÈTE & SECTION TITRE */}
-        <View style={styles.bannerContainer}>
-          <Text style={styles.bannerTitle}>Services Immobilier</Text>
-          <Text style={styles.bannerSubtitle}>
-            Trouvez le bien immobilier de vos rêves en Tunisie.
+        <View
+          style={[
+            styles.bannerContainer,
+            {
+              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.08)',
+              borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : 'rgba(37, 99, 235, 0.2)',
+            },
+          ]}
+        >
+          <Text style={styles.bannerTitle}>Services Immobilier DarLink</Text>
+          <Text style={[styles.bannerSubtitle, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
+            Trouvez le bien immobilier de vos rêves en Tunisie avec visite guidée.
           </Text>
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nos biens immobiliers</Text>
-          <Text style={styles.sectionCount}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Nos biens immobiliers
+          </Text>
+          <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
             {filteredProperties.length} annonces disponibles
           </Text>
         </View>
@@ -163,7 +231,6 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AppColors.darkBackground,
   },
   scrollView: {
     flex: 1,
@@ -183,56 +250,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarBorder: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    padding: 2,
+  monogramAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 21,
-    backgroundColor: AppColors.darkSurface,
+  monogramText: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   userTextContainer: {
     marginLeft: 12,
   },
   greetingText: {
-    color: AppColors.darkTextSecondary,
     fontSize: 12,
     fontWeight: '500',
   },
   userNameText: {
-    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '700',
   },
-  mapButton: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerActionBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: AppColors.darkSurface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: AppColors.darkBorder,
   },
-  mapIcon: {
-    fontSize: 16,
+  actionEmoji: {
+    fontSize: 17,
   },
   searchBar: {
     height: 52,
     borderRadius: 26,
-    backgroundColor: AppColors.darkSurface,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
     marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
   },
   searchIcon: {
     fontSize: 16,
@@ -240,14 +309,12 @@ const styles = StyleSheet.create({
   },
   searchPlaceholder: {
     flex: 1,
-    color: AppColors.darkTextTertiary,
     fontSize: 13,
   },
   tuneButton: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -266,39 +333,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 9,
     borderRadius: 24,
-    backgroundColor: AppColors.darkSurface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  filterPillSelected: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
   },
   filterText: {
-    color: AppColors.darkTextSecondary,
     fontSize: 13,
-    fontWeight: '600',
-  },
-  filterTextSelected: {
-    color: '#0F1015',
-    fontWeight: '700',
   },
   bannerContainer: {
-    backgroundColor: 'rgba(37, 99, 235, 0.1)',
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.25)',
     marginBottom: 18,
   },
   bannerTitle: {
-    color: '#60A5FA',
+    color: '#2563EB',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
   },
   bannerSubtitle: {
-    color: AppColors.darkTextSecondary,
     fontSize: 12,
     lineHeight: 18,
   },
@@ -311,12 +363,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
   sectionCount: {
     fontSize: 12,
-    color: AppColors.darkTextSecondary,
     fontWeight: '500',
   },
 });

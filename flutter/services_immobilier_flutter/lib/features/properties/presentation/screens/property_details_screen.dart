@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — ÉCRAN DE DÉTAILS DU BIEN LUXE (Screen 2)
-// Galerie de pièces, indicateur 360, caractéristiques et dock CTA
+// Galerie de pièces, atouts du bien, agent dédié et dock CTA adaptatif
 // ============================================================
 
 import 'dart:ui' show ImageFilter;
@@ -40,9 +40,18 @@ class _EcranDetailsState extends State<EcranDetails> {
   Widget build(BuildContext context) {
     final p = widget.propriete;
     final images = _toutesLesImages;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = AppColors.backgroundOf(context);
+    final cardBg = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final textSec = AppColors.textSecondaryOf(context);
+    final bottomDockBg = isDark ? const Color(0xE60F1015) : const Color(0xF2FFFFFF);
+    final bottomDockBorder = isDark ? const Color(0x1FFFFFFF) : const Color(0x18000000);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1015),
+      backgroundColor: bgColor,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -50,10 +59,10 @@ class _EcranDetailsState extends State<EcranDetails> {
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Détails du bien',
           style: TextStyle(
-            color: Colors.white,
+            color: isDark ? Colors.white : const Color(0xFF111827),
             fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
@@ -62,7 +71,8 @@ class _EcranDetailsState extends State<EcranDetails> {
           padding: const EdgeInsets.only(left: 12),
           child: Center(
             child: _GlassCircleButton(
-              icon: Icons.arrow_back,
+              icon: Icons.arrow_back_ios_new_rounded,
+              isDark: isDark,
               onTap: () => Navigator.pop(context),
             ),
           ),
@@ -75,7 +85,8 @@ class _EcranDetailsState extends State<EcranDetails> {
               children: [
                 _GlassCircleButton(
                   icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                  iconColor: _isFavorite ? const Color(0xFFEF4444) : Colors.white,
+                  iconColor: _isFavorite ? AppColors.accentRed : null,
+                  isDark: isDark,
                   onTap: () {
                     setState(() {
                       _isFavorite = !_isFavorite;
@@ -85,6 +96,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                 const SizedBox(width: 8),
                 _GlassCircleButton(
                   icon: Icons.share_outlined,
+                  isDark: isDark,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -130,9 +142,9 @@ class _EcranDetailsState extends State<EcranDetails> {
                           _imageAffichee,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(
-                            color: const Color(0xFF1E1F26),
+                            color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
                             child: const Center(
-                              child: Icon(Icons.broken_image, size: 48, color: Colors.white38),
+                              child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
                             ),
                           ),
                         ),
@@ -150,11 +162,17 @@ class _EcranDetailsState extends State<EcranDetails> {
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0x99181920),
+                              color: isDark ? const Color(0x99181920) : const Color(0xCCFFFFFF),
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0x33FFFFFF)),
+                              border: Border.all(
+                                color: isDark ? const Color(0x33FFFFFF) : const Color(0x18000000),
+                              ),
                             ),
-                            child: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
+                            child: Icon(
+                              Icons.play_arrow_rounded,
+                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -171,20 +189,26 @@ class _EcranDetailsState extends State<EcranDetails> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0x99181920),
+                              color: isDark ? const Color(0x99181920) : const Color(0xCCFFFFFF),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: const Color(0x33FFFFFF)),
+                              border: Border.all(
+                                color: isDark ? const Color(0x33FFFFFF) : const Color(0x18000000),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.photo_library_outlined, size: 14, color: Colors.white),
+                                Icon(
+                                  Icons.photo_library_outlined,
+                                  size: 14,
+                                  color: isDark ? Colors.white : const Color(0xFF111827),
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   '${_indexImage + 1}/${images.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : const Color(0xFF111827),
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
@@ -223,19 +247,19 @@ class _EcranDetailsState extends State<EcranDetails> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isSelected ? Colors.white : const Color(0x22FFFFFF),
-                                  width: isSelected ? 2 : 1,
+                                  color: isSelected ? AppColors.accentBlue : borderColor,
+                                  width: isSelected ? 2.5 : 1,
                                 ),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
+                                borderRadius: BorderRadius.circular(14),
                                 child: Image.network(
                                   images[index],
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) => Container(
-                                    color: const Color(0xFF1E1F26),
+                                    color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
                                     child: const Center(
-                                      child: Icon(Icons.image_outlined, size: 24, color: Colors.white38),
+                                      child: Icon(Icons.image_outlined, size: 24, color: Colors.grey),
                                     ),
                                   ),
                                 ),
@@ -258,12 +282,11 @@ class _EcranDetailsState extends State<EcranDetails> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0x2210B981),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0x4410B981)),
+                          color: const Color(0x1F10B981),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0x4D10B981)),
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
                               width: 8,
@@ -273,13 +296,13 @@ class _EcranDetailsState extends State<EcranDetails> {
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               p.estLocation ? 'À Louer' : 'À Vendre',
                               style: const TextStyle(
                                 color: AppColors.accentGreen,
-                                fontWeight: FontWeight.w700,
                                 fontSize: 12,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -288,14 +311,14 @@ class _EcranDetailsState extends State<EcranDetails> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0x1AFFFFFF),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0x22FFFFFF)),
+                          color: isDark ? const Color(0x22FFFFFF) : const Color(0x0C000000),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: borderColor),
                         ),
                         child: Text(
-                          p.estLocation ? 'Location annuelle' : 'Prix négociable',
-                          style: const TextStyle(
-                            color: Color(0xFFCAC4D0),
+                          p.estLocation ? 'Bail 1 an renouvelable' : '${p.prixParM2} DT / m²',
+                          style: TextStyle(
+                            color: textSec,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -305,9 +328,9 @@ class _EcranDetailsState extends State<EcranDetails> {
                   ),
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
 
-                // 4. PRIX & TITRE & LOCALISATION
+                // 4. PRIX MONUMENTAL ET TITRE COMPLET
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
@@ -318,11 +341,11 @@ class _EcranDetailsState extends State<EcranDetails> {
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Text(
-                            p.estLocation ? '${p.prixFormate} DT' : '${p.prixFormate} DT',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            p.prixAffiche,
+                            style: TextStyle(
+                              color: textPrim,
                               fontSize: 32,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -330,9 +353,9 @@ class _EcranDetailsState extends State<EcranDetails> {
                           // Mention sémantique pour validation test
                           Text(
                             'Prix : ${p.prixFormate} TND',
-                            style: const TextStyle(
-                              color: Color(0xFF9CA3AF),
-                              fontSize: 14,
+                            style: TextStyle(
+                              color: textSec,
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -341,8 +364,8 @@ class _EcranDetailsState extends State<EcranDetails> {
                       const SizedBox(height: 6),
                       Text(
                         p.titre,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: textPrim,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
@@ -350,12 +373,12 @@ class _EcranDetailsState extends State<EcranDetails> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.location_on, color: Color(0xFF9CA3AF), size: 16),
+                          Icon(Icons.location_on_rounded, color: textSec, size: 16),
                           const SizedBox(width: 4),
                           Text(
                             p.localisation,
-                            style: const TextStyle(
-                              color: Color(0xFF9CA3AF),
+                            style: TextStyle(
+                              color: textSec,
                               fontSize: 14,
                             ),
                           ),
@@ -373,10 +396,10 @@ class _EcranDetailsState extends State<EcranDetails> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Caractéristiques',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: textPrim,
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                         ),
@@ -389,6 +412,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                               icone: Icons.bed_outlined,
                               titre: 'Chambres',
                               valeur: '${p.nombreChambres} Bed',
+                              isDark: isDark,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -397,14 +421,16 @@ class _EcranDetailsState extends State<EcranDetails> {
                               icone: Icons.bathtub_outlined,
                               titre: 'Salles de bain',
                               valeur: '${p.nombreSallesDeBain} Bath',
+                              isDark: isDark,
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: _BoxCarac(
-                              icone: Icons.crop_square,
+                              icone: Icons.crop_square_rounded,
                               titre: 'Surface',
                               valeur: '${p.surfaceM2} m²',
+                              isDark: isDark,
                             ),
                           ),
                         ],
@@ -421,9 +447,16 @@ class _EcranDetailsState extends State<EcranDetails> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF181920),
+                      color: cardBg,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0x1FFFFFFF)),
+                      border: Border.all(color: borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -432,45 +465,45 @@ class _EcranDetailsState extends State<EcranDetails> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(10),
-                                decoration: const BoxDecoration(
-                                  color: Color(0x1AFFFFFF),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0x1AFFFFFF) : const Color(0x0C000000),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.home_work_outlined, color: Colors.white, size: 20),
+                                child: Icon(Icons.home_work_outlined, color: textPrim, size: 20),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Type de bien', style: TextStyle(color: Color(0xFF6B7280), fontSize: 11)),
-                                    Text(p.type, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                    Text('Type de bien', style: TextStyle(color: textSec, fontSize: 11)),
+                                    Text(p.type, style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 13)),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        Container(width: 1, height: 36, color: const Color(0x1FFFFFFF)),
+                        Container(width: 1, height: 36, color: borderColor),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(10),
-                                decoration: const BoxDecoration(
-                                  color: Color(0x1AFFFFFF),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0x1AFFFFFF) : const Color(0x0C000000),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.verified_outlined, color: Colors.white, size: 20),
+                                child: Icon(Icons.verified_outlined, color: textPrim, size: 20),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Année / Standing', style: TextStyle(color: Color(0xFF6B7280), fontSize: 11)),
-                                    Text('${p.anneeConstruction}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                                    Text('Année / Standing', style: TextStyle(color: textSec, fontSize: 11)),
+                                    Text('${p.anneeConstruction} • ${p.standing}', style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   ],
                                 ),
                               ),
@@ -484,16 +517,116 @@ class _EcranDetailsState extends State<EcranDetails> {
 
                 const SizedBox(height: 20),
 
-                // 7. DESCRIPTION COMPLÈTE
+                // 7. SECTION ATOUTS & COMMODITÉS DU BIEN
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
+                        'Atouts & Commodités',
+                        style: TextStyle(
+                          color: textPrim,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: p.commodites.map((item) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: cardBg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle_rounded, size: 16, color: AppColors.accentGreen),
+                                const SizedBox(width: 6),
+                                Text(
+                                  item,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: textPrim,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 8. CARTE AGENT IMMOBILIER DÉDIÉ
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.accentBlue.withValues(alpha: 0.15),
+                          child: const Text('SB', style: TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(p.agentNom, style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
+                              const SizedBox(height: 2),
+                              Text('Conseillère Prestige DarLink', style: TextStyle(color: textSec, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.accentGreen),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Appel de ${p.agentNom} (${p.agentTel})')),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 9. DESCRIPTION
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         'Description',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: textPrim,
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                         ),
@@ -501,8 +634,8 @@ class _EcranDetailsState extends State<EcranDetails> {
                       const SizedBox(height: 8),
                       Text(
                         p.description,
-                        style: const TextStyle(
-                          color: Color(0xFF9CA3AF),
+                        style: TextStyle(
+                          color: textSec,
                           fontSize: 14,
                           height: 1.6,
                         ),
@@ -513,8 +646,6 @@ class _EcranDetailsState extends State<EcranDetails> {
               ],
             ),
           ),
-
-
 
           // ------------------------------------------------------------
           // DOCK FLOTTANT INFÉRIEUR (CTA : CONTACTER / RÉSERVER)
@@ -529,9 +660,9 @@ class _EcranDetailsState extends State<EcranDetails> {
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
                   decoration: BoxDecoration(
-                    color: const Color(0xE60F1015),
-                    border: const Border(
-                      top: BorderSide(color: Color(0x1FFFFFFF), width: 1),
+                    color: bottomDockBg,
+                    border: Border(
+                      top: BorderSide(color: bottomDockBorder, width: 1),
                     ),
                   ),
                   child: Row(
@@ -540,16 +671,16 @@ class _EcranDetailsState extends State<EcranDetails> {
                       OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0x33FFFFFF)),
+                          side: BorderSide(color: borderColor),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Retour à la liste',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: textPrim,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -568,13 +699,13 @@ class _EcranDetailsState extends State<EcranDetails> {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF0F1015),
+                            backgroundColor: isDark ? Colors.white : AppColors.accentBlue,
+                            foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            elevation: 0,
+                            elevation: isDark ? 0 : 3,
                           ),
                           child: const Text(
                             'Planifier une visite',
@@ -601,30 +732,56 @@ class _BoxCarac extends StatelessWidget {
   final IconData icone;
   final String titre;
   final String valeur;
+  final bool isDark;
 
   const _BoxCarac({
     required this.icone,
     required this.titre,
     required this.valeur,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cardBg = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final textSec = AppColors.textSecondaryOf(context);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF181920),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x1AFFFFFF)),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icone, color: const Color(0xFF9CA3AF), size: 20),
-          const SizedBox(height: 8),
-          Text(titre, style: const TextStyle(color: Color(0xFF6B7280), fontSize: 11)),
+          Icon(icone, color: textSec, size: 22),
+          const SizedBox(height: 6),
+          Text(
+            valeur,
+            style: TextStyle(
+              color: textPrim,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(valeur, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+          Text(
+            titre,
+            style: TextStyle(
+              color: textSec,
+              fontSize: 11,
+            ),
+          ),
         ],
       ),
     );
@@ -633,32 +790,41 @@ class _BoxCarac extends StatelessWidget {
 
 class _GlassCircleButton extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
+  final Color? iconColor;
+  final bool isDark;
   final VoidCallback onTap;
 
   const _GlassCircleButton({
     required this.icon,
-    this.iconColor = Colors.white,
+    this.iconColor,
+    required this.isDark,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: GestureDetector(
+          onTap: onTap,
           child: Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: const Color(0x8A181920),
+              color: isDark ? const Color(0x99181920) : const Color(0xCCFFFFFF),
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0x33FFFFFF)),
+              border: Border.all(
+                color: isDark ? const Color(0x33FFFFFF) : const Color(0x18000000),
+                width: 1,
+              ),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
+            child: Icon(
+              icon,
+              color: iconColor ?? (isDark ? Colors.white : const Color(0xFF111827)),
+              size: 18,
+            ),
           ),
         ),
       ),

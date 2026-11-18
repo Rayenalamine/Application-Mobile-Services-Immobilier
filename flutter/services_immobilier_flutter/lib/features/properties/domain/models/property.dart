@@ -1,10 +1,10 @@
 // ============================================================
-// DARLINK — MODÈLE DE DONNÉES : PROPRIETE (V2 LUXURY)
+// DARLINK — MODÈLE DE DONNÉES : PROPRIETE (V2 LUXURY PRO)
 // Modèle immuable enrichi pour l'interface moderne & galeries
 // ============================================================
 
 /// Représente un bien immobilier dans l'application DarLink.
-/// Cette classe est immuable et supporte les détails avancés (surface, année, galerie).
+/// Cette classe est immuable et supporte les détails avancés (surface, commodités, agent).
 class Propriete {
   /// Titre de l'annonce immobilière
   final String titre;
@@ -48,6 +48,15 @@ class Propriete {
   /// Statut favori
   final bool isFavorite;
 
+  /// Liste des commodités et atouts du bien
+  final List<String> commodites;
+
+  /// Nom de l'agent immobilier dédié
+  final String agentNom;
+
+  /// Téléphone de l'agent
+  final String agentTel;
+
   /// Constructeur constant pour créer un objet Propriete immuable.
   const Propriete({
     required this.titre,
@@ -64,6 +73,15 @@ class Propriete {
     this.estLocation = false,
     this.imagesGalerie = const [],
     this.isFavorite = false,
+    this.commodites = const [
+      'Climatisation centrale',
+      'Parking privé sous-sol',
+      'Cuisine équipée',
+      'Sécurité 24/7',
+      'Balcon terrasse',
+    ],
+    this.agentNom = 'Sonia Ben Salem',
+    this.agentTel = '+216 71 888 999',
   });
 
   /// Retourne le prix formaté avec séparateur de milliers (ex: 320000 -> "320 000").
@@ -72,24 +90,26 @@ class Propriete {
   /// Retourne le libellé complet du prix avec devise et période
   String get prixAffiche => estLocation ? '$prixFormate DT/mois' : '$prixFormate DT';
 
-  /// Fonction utilitaire statique pour formater un prix en dinars tunisiens.
-  static String formaterPrix(double prix) {
-    final String prixEntier = prix.toInt().toString();
-    final StringBuffer resultat = StringBuffer();
-    int compteur = 0;
+  /// Calcule le prix au mètre carré
+  int get prixParM2 => surfaceM2 > 0 ? (prix / surfaceM2).round() : 0;
 
-    for (int i = prixEntier.length - 1; i >= 0; i--) {
-      if (compteur > 0 && compteur % 3 == 0) {
-        resultat.write(' ');
+  /// Fonction utilitaire statique pour formater un prix en dinars tunisiens.
+  static String formaterPrix(double montant) {
+    final entier = montant.round().toString();
+    final buffer = StringBuffer();
+    final longueur = entier.length;
+
+    for (int i = 0; i < longueur; i++) {
+      if (i > 0 && (longueur - i) % 3 == 0) {
+        buffer.write(' ');
       }
-      resultat.write(prixEntier[i]);
-      compteur++;
+      buffer.write(entier[i]);
     }
 
-    return resultat.toString().split('').reversed.join('');
+    return buffer.toString();
   }
 
-  /// Retourne une copie avec certains champs modifiés
+  /// Méthode de commodité copyWith
   Propriete copyWith({
     String? titre,
     String? localisation,
@@ -105,6 +125,9 @@ class Propriete {
     bool? estLocation,
     List<String>? imagesGalerie,
     bool? isFavorite,
+    List<String>? commodites,
+    String? agentNom,
+    String? agentTel,
   }) {
     return Propriete(
       titre: titre ?? this.titre,
@@ -121,6 +144,9 @@ class Propriete {
       estLocation: estLocation ?? this.estLocation,
       imagesGalerie: imagesGalerie ?? this.imagesGalerie,
       isFavorite: isFavorite ?? this.isFavorite,
+      commodites: commodites ?? this.commodites,
+      agentNom: agentNom ?? this.agentNom,
+      agentTel: agentTel ?? this.agentTel,
     );
   }
 }

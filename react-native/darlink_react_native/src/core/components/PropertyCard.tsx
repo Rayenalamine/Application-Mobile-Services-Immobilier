@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — CARTE DE PROPRIÉTÉ LUXE GLASSMORPHISM (React Native)
-// Parité exacte avec la maquette Screen 1 et le composant Flutter
+// Adaptatif Clair / Sombre, parité exacte avec le composant Flutter
 // ============================================================
 
 import React, { useState } from 'react';
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { AppColors } from '../constants/colors';
 import { Property, formatPrice } from '../../features/properties/domain/models/property';
+import { useTheme } from '../theme/ThemeContext';
 
 interface PropertyCardProps {
   readonly property: Property;
@@ -21,9 +22,19 @@ interface PropertyCardProps {
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress }) => {
   const [isFavorite, setIsFavorite] = useState<boolean>(property.isFavorite ?? false);
+  const { isDark, colors } = useTheme();
 
   return (
-    <View style={styles.cardContainer}>
+    <View
+      style={[
+        styles.cardContainer,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowOpacity: isDark ? 0.35 : 0.06,
+        },
+      ]}
+    >
       {/* 1. Image principale plein format */}
       <Image
         source={{ uri: property.imageUrl }}
@@ -32,16 +43,30 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
       />
 
       {/* 2. Badge supérieur gauche : Statut (Point vert lumineux + À Vendre) */}
-      <View style={styles.statusPill}>
+      <View
+        style={[
+          styles.statusPill,
+          {
+            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.75)' : 'rgba(255, 255, 255, 0.90)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+          },
+        ]}
+      >
         <View style={styles.statusDot} />
-        <Text style={styles.statusText}>
+        <Text style={[styles.statusText, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
           {property.estLocation ? 'À Louer' : 'À Vendre'}
         </Text>
       </View>
 
       {/* 3. Bouton supérieur droit : Bouton de favori verre dépoli */}
       <TouchableOpacity
-        style={styles.favoriteButton}
+        style={[
+          styles.favoriteButton,
+          {
+            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.90)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.08)',
+          },
+        ]}
         onPress={() => setIsFavorite(!isFavorite)}
         activeOpacity={0.8}
         accessibilityRole="button"
@@ -53,55 +78,112 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
       </TouchableOpacity>
 
       {/* 4. Dock inférieur verre dépoli translucide (Glassmorphism) */}
-      <View style={styles.glassDock}>
+      <View
+        style={[
+          styles.glassDock,
+          {
+            backgroundColor: isDark ? 'rgba(19, 20, 28, 0.88)' : 'rgba(255, 255, 255, 0.95)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+          },
+        ]}
+      >
         {/* Ligne 1 : Prix + Bouton d'action "Voir détails" */}
         <View style={styles.dockHeader}>
           <View style={styles.priceContainer}>
-            <Text style={styles.priceText}>
+            <Text style={[styles.priceText, { color: colors.textPrimary }]}>
               {property.estLocation
                 ? `${formatPrice(property.prix)}/mo`
                 : formatPrice(property.prix)}
             </Text>
-            <Text style={styles.propertyTitle} numberOfLines={1}>
+            <Text style={[styles.propertyTitle, { color: colors.textSecondary }]} numberOfLines={1}>
               {property.titre}
             </Text>
           </View>
 
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor: isDark ? '#FFFFFF' : AppColors.accentBlue,
+              },
+            ]}
             onPress={() => onPress(property)}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Voir détails"
           >
-            <Text style={styles.actionButtonText}>Voir détails</Text>
-            <Text style={styles.actionArrow}>→</Text>
+            <Text
+              style={[
+                styles.actionButtonText,
+                { color: isDark ? '#0F1015' : '#FFFFFF' },
+              ]}
+            >
+              Voir détails
+            </Text>
+            <Text
+              style={[
+                styles.actionArrow,
+                { color: isDark ? '#0F1015' : '#FFFFFF' },
+              ]}
+            >
+              →
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Ligne 2 : Localisation */}
         <View style={styles.locationRow}>
           <Text style={styles.locationPin}>📍</Text>
-          <Text style={styles.locationText} numberOfLines={1}>
+          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
             {property.localisation}
           </Text>
         </View>
 
         {/* Ligne 3 : Pilules de caractéristiques (Chambres, Salles de bain, Surface) */}
         <View style={styles.specsRow}>
-          <View style={styles.specPill}>
+          <View
+            style={[
+              styles.specPill,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+              },
+            ]}
+          >
             <Text style={styles.specIcon}>🛏️</Text>
-            <Text style={styles.specText}>{property.nombreChambres} Bd</Text>
+            <Text style={[styles.specText, { color: colors.textSecondary }]}>
+              {property.nombreChambres} Bd
+            </Text>
           </View>
 
-          <View style={styles.specPill}>
+          <View
+            style={[
+              styles.specPill,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+              },
+            ]}
+          >
             <Text style={styles.specIcon}>🚿</Text>
-            <Text style={styles.specText}>{property.nombreSallesDeBain} Ba</Text>
+            <Text style={[styles.specText, { color: colors.textSecondary }]}>
+              {property.nombreSallesDeBain} Ba
+            </Text>
           </View>
 
-          <View style={styles.specPill}>
+          <View
+            style={[
+              styles.specPill,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+              },
+            ]}
+          >
             <Text style={styles.specIcon}>📐</Text>
-            <Text style={styles.specText}>{property.surfaceM2 ?? 120} m²</Text>
+            <Text style={[styles.specText, { color: colors.textSecondary }]}>
+              {property.surfaceM2 ?? 120} m²
+            </Text>
           </View>
         </View>
       </View>
@@ -115,20 +197,17 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     marginBottom: 20,
-    backgroundColor: AppColors.darkSurface,
     borderWidth: 1,
-    borderColor: AppColors.darkBorder,
     position: 'relative',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 14,
+    elevation: 4,
   },
   heroImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: AppColors.placeholder,
+    backgroundColor: '#E5E7EB',
   },
   statusPill: {
     position: 'absolute',
@@ -136,12 +215,10 @@ const styles = StyleSheet.create({
     left: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 16, 21, 0.75)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   statusDot: {
     width: 8,
@@ -151,7 +228,6 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
-    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -162,11 +238,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(15, 16, 21, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   favoriteIcon: {
     fontSize: 16,
@@ -179,12 +253,10 @@ const styles = StyleSheet.create({
     bottom: 12,
     left: 12,
     right: 12,
-    backgroundColor: 'rgba(19, 20, 28, 0.88)',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
   },
   dockHeader: {
     flexDirection: 'row',
@@ -196,13 +268,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   priceText: {
-    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.4,
   },
   propertyTitle: {
-    color: '#E0E0E6',
     fontSize: 13,
     fontWeight: '600',
     marginTop: 2,
@@ -210,19 +280,16 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 16,
   },
   actionButtonText: {
-    color: '#0F1015',
     fontWeight: '700',
     fontSize: 13,
     marginRight: 4,
   },
   actionArrow: {
-    color: '#0F1015',
     fontSize: 14,
     fontWeight: '800',
   },
@@ -236,7 +303,6 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   locationText: {
-    color: AppColors.darkTextSecondary,
     fontSize: 13,
     fontWeight: '500',
     flex: 1,
@@ -249,19 +315,16 @@ const styles = StyleSheet.create({
   specPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 0.8,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   specIcon: {
     fontSize: 12,
     marginRight: 4,
   },
   specText: {
-    color: '#CAC4D0',
     fontSize: 12,
     fontWeight: '600',
   },
