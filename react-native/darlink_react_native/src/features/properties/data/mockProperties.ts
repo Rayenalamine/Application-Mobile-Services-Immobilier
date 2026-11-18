@@ -25,6 +25,16 @@ export const mockProperties: readonly Property[] = [
       'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=600&q=80',
       'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&q=80',
     ],
+    commodites: [
+      'Terrasse panoramique',
+      'Cuisine équipée',
+      'Place de parking sous-sol',
+      'Climatisation centrale',
+      'Double vitrage phonique',
+    ],
+    agentNom: 'Sonia Ben Salem',
+    agentTel: '+216 71 888 999',
+    prixParM2: 2206,
     isFavorite: false,
     description:
       "Bel appartement lumineux situé dans le quartier résidentiel des Berges du Lac. " +
@@ -50,6 +60,16 @@ export const mockProperties: readonly Property[] = [
       'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=600&q=80',
       'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&q=80',
     ],
+    commodites: [
+      'Piscine à débordement',
+      'Jardin paysagé 400m²',
+      'Garage double sécurisé',
+      'Suite parentale avec dressing',
+      'Système domotique intégré',
+    ],
+    agentNom: 'Sonia Ben Salem',
+    agentTel: '+216 71 888 999',
+    prixParM2: 2236,
     isFavorite: true,
     description:
       'Magnifique villa avec piscine privée dans un quartier calme et sécurisé de Sahloul. ' +
@@ -75,6 +95,16 @@ export const mockProperties: readonly Property[] = [
       'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&q=80',
       'https://images.unsplash.com/photo-1540518614846-7ede433c457b?w=600&q=80',
     ],
+    commodites: [
+      'Patio central djerbien',
+      'Carrelage artisanal faïence',
+      'Toit terrasse vue mer',
+      'Puits traditionnel & citerne',
+      'Cuisine voûtée authentique',
+    ],
+    agentNom: 'Sonia Ben Salem',
+    agentTel: '+216 71 888 999',
+    prixParM2: 1875,
     isFavorite: false,
     description:
       'Charmante maison traditionnelle au cœur de Houmt Souk, à quelques minutes ' +
@@ -98,12 +128,22 @@ export const mockProperties: readonly Property[] = [
     imagesGalerie: [
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80',
       'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&q=80',
-      'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=600&q=80',
+      'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=600&q=80',
     ],
+    commodites: [
+      'Vue imprenable sur le golfe',
+      'Accès plage à 150m',
+      'Ascenseur sécurisé avec badge',
+      'Balcon filant orienté sud',
+      'Chauffage individuel au gaz',
+    ],
+    agentNom: 'Sonia Ben Salem',
+    agentTel: '+216 71 888 999',
+    prixParM2: 2894,
     isFavorite: false,
     description:
-      'Appartement cosy avec vue imprenable sur la mer Méditerranée. ' +
-      "Situé à deux pas de la médina d'Hammamet et des restaurants. " +
-      'Parfait comme résidence principale ou comme pied-à-terre pour les vacances.',
+      'Superbe appartement avec vue imprenable sur la mer Méditerranée. ' +
+      'Situé dans un immeuble récent et sécurisé, à deux pas des commerces ' +
+      'et de la plage de Hammamet. Finitions soignées et balcon agréable.',
   },
 ] as const;

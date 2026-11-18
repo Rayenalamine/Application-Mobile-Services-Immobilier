@@ -14,6 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
+import { useTheme } from '../../../../core/theme/ThemeContext';
 
 const SEGMENTS = ['Acheter', 'Louer', 'Vendu'] as const;
 const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison'] as const;
@@ -26,14 +27,7 @@ export const SearchScreen: React.FC = () => {
   const [priceMode, setPriceMode] = useState<'total' | 'monthly'>('total');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('Tous');
   const [selectedCity, setSelectedCity] = useState<string>('');
-
-  const handleReset = () => {
-    setSelectedSegment('Acheter');
-    setSelectedType('Tous');
-    setPriceMode('total');
-    setSelectedBedrooms('Tous');
-    setSelectedCity('');
-  };
+  const { isDark, colors } = useTheme();
 
   const handleApply = () => {
     Alert.alert(
@@ -43,7 +37,7 @@ export const SearchScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -51,24 +45,52 @@ export const SearchScreen: React.FC = () => {
       >
         {/* 1. BARRE SUPÉRIEURE FLOTTANTE (Screen 3) */}
         <View style={styles.headerBar}>
-          <TouchableOpacity style={styles.glassCircleBtn} activeOpacity={0.8}>
-            <Text style={styles.circleIcon}>←</Text>
+          <TouchableOpacity
+            style={[
+              styles.glassCircleBtn,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.circleIcon, { color: colors.textPrimary }]}>←</Text>
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Recherche de biens</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+            Recherche de biens
+          </Text>
 
           <View style={styles.headerRightActions}>
-            <TouchableOpacity style={styles.glassCircleBtn} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={[
+                styles.glassCircleBtn,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+              activeOpacity={0.8}
+            >
               <Text style={styles.circleIcon}>🗺️</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.glassCircleBtn} activeOpacity={0.8}>
-              <Text style={styles.circleIcon}>•••</Text>
+            <TouchableOpacity
+              style={[
+                styles.glassCircleBtn,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.circleIcon, { color: colors.textPrimary }]}>•••</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* 2. CONTRÔLEUR SEGMENTÉ : ACHETER / LOUER / VENDU (Screen 3) */}
-        <View style={styles.segmentedControl}>
+        <View
+          style={[
+            styles.segmentedControl,
+            {
+              backgroundColor: isDark ? '#181920' : '#E9EBF0',
+              borderColor: colors.border,
+            },
+          ]}
+        >
           {SEGMENTS.map((seg) => {
             const isSelected = selectedSegment === seg;
             return (
@@ -76,7 +98,14 @@ export const SearchScreen: React.FC = () => {
                 key={seg}
                 style={[
                   styles.segmentButton,
-                  isSelected && styles.segmentButtonActive,
+                  isSelected && {
+                    backgroundColor: '#FFFFFF',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0.3 : 0.08,
+                    shadowRadius: 6,
+                    elevation: 3,
+                  },
                 ]}
                 onPress={() => setSelectedSegment(seg)}
                 activeOpacity={0.85}
@@ -84,7 +113,10 @@ export const SearchScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.segmentText,
-                    isSelected && styles.segmentTextActive,
+                    {
+                      color: isSelected ? '#0F1015' : colors.textSecondary,
+                      fontWeight: isSelected ? '800' : '600',
+                    },
                   ]}
                 >
                   {seg}
@@ -96,19 +128,37 @@ export const SearchScreen: React.FC = () => {
 
         {/* 3. SÉLECTION TYPE DE BIEN */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionLabel}>Type de bien</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+            Type de bien
+          </Text>
           <View style={styles.pillsRow}>
             {PROPERTY_TYPES.map((type) => {
               const isSelected = selectedType === type;
               return (
                 <TouchableOpacity
                   key={type}
-                  style={[styles.pill, isSelected && styles.pillSelected]}
+                  style={[
+                    styles.pill,
+                    {
+                      backgroundColor: isSelected
+                        ? (isDark ? '#FFFFFF' : '#0F1015')
+                        : colors.surface,
+                      borderColor: isSelected ? 'transparent' : colors.border,
+                    },
+                  ]}
                   onPress={() => setSelectedType(type)}
                   activeOpacity={0.8}
                 >
                   <Text
-                    style={[styles.pillText, isSelected && styles.pillTextSelected]}
+                    style={[
+                      styles.pillText,
+                      {
+                        color: isSelected
+                          ? (isDark ? '#0F1015' : '#FFFFFF')
+                          : colors.textSecondary,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
+                    ]}
                   >
                     {type}
                   </Text>
@@ -120,12 +170,19 @@ export const SearchScreen: React.FC = () => {
 
         {/* 4. MODE DE PRIX (PRIX TOTAL VS PAIEMENT MENSUEL) */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionLabel}>Mode de tarification</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+            Mode de tarification
+          </Text>
           <View style={styles.priceModeContainer}>
             <TouchableOpacity
               style={[
                 styles.priceModeBtn,
-                priceMode === 'total' && styles.priceModeBtnActive,
+                {
+                  backgroundColor: priceMode === 'total'
+                    ? (isDark ? 'rgba(37, 99, 235, 0.2)' : 'rgba(37, 99, 235, 0.1)')
+                    : colors.surface,
+                  borderColor: priceMode === 'total' ? AppColors.accentBlue : colors.border,
+                },
               ]}
               onPress={() => setPriceMode('total')}
               activeOpacity={0.85}
@@ -133,7 +190,10 @@ export const SearchScreen: React.FC = () => {
               <Text
                 style={[
                   styles.priceModeText,
-                  priceMode === 'total' && styles.priceModeTextActive,
+                  {
+                    color: priceMode === 'total' ? AppColors.accentBlue : colors.textSecondary,
+                    fontWeight: priceMode === 'total' ? '700' : '500',
+                  },
                 ]}
               >
                 Prix total (DT)
@@ -143,7 +203,12 @@ export const SearchScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.priceModeBtn,
-                priceMode === 'monthly' && styles.priceModeBtnActive,
+                {
+                  backgroundColor: priceMode === 'monthly'
+                    ? (isDark ? 'rgba(37, 99, 235, 0.2)' : 'rgba(37, 99, 235, 0.1)')
+                    : colors.surface,
+                  borderColor: priceMode === 'monthly' ? AppColors.accentBlue : colors.border,
+                },
               ]}
               onPress={() => setPriceMode('monthly')}
               activeOpacity={0.85}
@@ -151,7 +216,10 @@ export const SearchScreen: React.FC = () => {
               <Text
                 style={[
                   styles.priceModeText,
-                  priceMode === 'monthly' && styles.priceModeTextActive,
+                  {
+                    color: priceMode === 'monthly' ? AppColors.accentBlue : colors.textSecondary,
+                    fontWeight: priceMode === 'monthly' ? '700' : '500',
+                  },
                 ]}
               >
                 Paiement mensuel
@@ -161,35 +229,70 @@ export const SearchScreen: React.FC = () => {
         </View>
 
         {/* 5. ÉCHELLE DE BUDGET */}
-        <View style={styles.budgetCard}>
+        <View
+          style={[
+            styles.budgetCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              shadowOpacity: isDark ? 0.25 : 0.04,
+            },
+          ]}
+        >
           <View style={styles.budgetRangeRow}>
             <View style={styles.budgetCol}>
-              <Text style={styles.budgetLabel}>Budget Minimum</Text>
-              <Text style={styles.budgetValue}>100 000 DT</Text>
+              <Text style={[styles.budgetLabel, { color: colors.textSecondary }]}>
+                Budget Minimum
+              </Text>
+              <Text style={[styles.budgetValue, { color: colors.textPrimary }]}>
+                100 000 DT
+              </Text>
             </View>
-            <Text style={styles.budgetSeparator}>à</Text>
-            <View style={styles.budgetCol}>
-              <Text style={styles.budgetLabel}>Budget Maximum</Text>
-              <Text style={styles.budgetValue}>1 500 000 DT</Text>
+            <View style={[styles.budgetDivider, { backgroundColor: colors.border }]} />
+            <View style={[styles.budgetCol, { alignItems: 'flex-end' }]}>
+              <Text style={[styles.budgetLabel, { color: colors.textSecondary }]}>
+                Budget Maximum
+              </Text>
+              <Text style={[styles.budgetValue, { color: colors.textPrimary }]}>
+                1 500 000 DT
+              </Text>
             </View>
           </View>
         </View>
 
         {/* 6. SÉLECTION DU NOMBRE DE CHAMBRES (Screen 3) */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionLabel}>Nombre de chambres</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+            Nombre de chambres
+          </Text>
           <View style={styles.pillsRow}>
             {BEDROOMS.map((bed) => {
               const isSelected = selectedBedrooms === bed;
               return (
                 <TouchableOpacity
                   key={bed}
-                  style={[styles.pill, isSelected && styles.pillSelected]}
+                  style={[
+                    styles.pill,
+                    {
+                      backgroundColor: isSelected
+                        ? (isDark ? '#FFFFFF' : '#0F1015')
+                        : colors.surface,
+                      borderColor: isSelected ? 'transparent' : colors.border,
+                    },
+                  ]}
                   onPress={() => setSelectedBedrooms(bed)}
                   activeOpacity={0.8}
                 >
                   <Text
-                    style={[styles.pillText, isSelected && styles.pillTextSelected]}
+                    style={[
+                      styles.pillText,
+                      {
+                        color: isSelected
+                          ? (isDark ? '#0F1015' : '#FFFFFF')
+                          : colors.textSecondary,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
+                    ]}
                   >
                     {bed}
                   </Text>
@@ -201,24 +304,38 @@ export const SearchScreen: React.FC = () => {
 
         {/* 7. VILLES POPULAIRES EN TUNISIE */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionLabel}>Villes populaires en Tunisie</Text>
-          <View style={styles.pillsRow}>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+            Villes populaires en Tunisie
+          </Text>
+          <View style={styles.citiesWrap}>
             {CITIES.map((city) => {
               const isSelected = selectedCity === city;
               return (
                 <TouchableOpacity
                   key={city}
-                  style={[styles.cityPill, isSelected && styles.cityPillSelected]}
+                  style={[
+                    styles.cityChip,
+                    {
+                      backgroundColor: isSelected
+                        ? 'rgba(37, 99, 235, 0.15)'
+                        : colors.surface,
+                      borderColor: isSelected ? AppColors.accentBlue : colors.border,
+                    },
+                  ]}
                   onPress={() => setSelectedCity(isSelected ? '' : city)}
                   activeOpacity={0.8}
                 >
+                  <Text style={styles.cityPin}>📍</Text>
                   <Text
                     style={[
-                      styles.cityPillText,
-                      isSelected && styles.cityPillTextSelected,
+                      styles.cityName,
+                      {
+                        color: isSelected ? AppColors.accentBlue : colors.textSecondary,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
                     ]}
                   >
-                    📍 {city}
+                    {city}
                   </Text>
                 </TouchableOpacity>
               );
@@ -226,38 +343,66 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* 8. CARTE D'INFORMATION ARCHITECTURALE V5 */}
-        <View style={styles.noticeCard}>
-          <Text style={styles.noticeIcon}>ℹ️</Text>
-          <View style={styles.noticeBody}>
-            <Text style={styles.noticeTitle}>
-              Recherche dynamique en préparation
-            </Text>
-            <Text style={styles.noticeText}>
-              Les filtres seront connectés à l'API Spring Boot en V5-T02.
+        {/* 8. NOTE ROADMAP DYNAMIQUE */}
+        <View
+          style={[
+            styles.roadmapBox,
+            {
+              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.08)',
+              borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : 'rgba(37, 99, 235, 0.2)',
+            },
+          ]}
+        >
+          <Text style={styles.roadmapIcon}>💡</Text>
+          <View style={styles.roadmapTextCol}>
+            <Text style={styles.roadmapTitle}>Recherche dynamique en préparation</Text>
+            <Text style={[styles.roadmapDesc, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
+              Les filtres seront connectés à l'API Spring Boot en phase V5-T02.
             </Text>
           </View>
         </View>
+
+        {/* 9. BOUTONS D'ACTION FLOTTANTS EN BAS DE SCREEN 3 */}
+        <View style={styles.bottomDock}>
+          <TouchableOpacity
+            style={[
+              styles.contactAgentBtn,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+            onPress={() =>
+              Alert.alert('Agent dédié', 'Contact avec Sonia Ben Salem (+216 71 888 999).')
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.contactAgentText, { color: colors.textPrimary }]}>
+              Contacter l'agent
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.applyFilterBtn,
+              {
+                backgroundColor: isDark ? '#FFFFFF' : '#0F1015',
+              },
+            ]}
+            onPress={handleApply}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.applyFilterText,
+                { color: isDark ? '#0F1015' : '#FFFFFF' },
+              ]}
+            >
+              Appliquer les filtres
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-
-      {/* 9. DOCK D'ACTIONS INFÉRIEUR */}
-      <View style={styles.bottomDock}>
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={handleReset}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.resetButtonText}>Réinitialiser</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={handleApply}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.applyButtonText}>Appliquer les filtres</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -265,7 +410,6 @@ export const SearchScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AppColors.darkBackground,
   },
   scrollView: {
     flex: 1,
@@ -277,66 +421,52 @@ const styles = StyleSheet.create({
   },
   headerBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  glassCircleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  circleIcon: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   headerTitle: {
-    color: '#FFFFFF',
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   headerRightActions: {
     flexDirection: 'row',
     gap: 8,
   },
-  glassCircleBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: AppColors.darkSurface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: AppColors.darkBorder,
-  },
-  circleIcon: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: AppColors.darkSurface,
     borderRadius: 24,
     padding: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     marginBottom: 22,
   },
   segmentButton: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 20,
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  segmentButtonActive: {
-    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
   },
   segmentText: {
-    color: AppColors.darkTextSecondary,
     fontSize: 13,
-    fontWeight: '600',
-  },
-  segmentTextActive: {
-    color: '#0F1015',
-    fontWeight: '800',
   },
   sectionContainer: {
     marginBottom: 20,
   },
   sectionLabel: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 10,
@@ -350,22 +480,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: AppColors.darkSurface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  pillSelected: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
   },
   pillText: {
-    color: AppColors.darkTextSecondary,
     fontSize: 13,
-    fontWeight: '600',
-  },
-  pillTextSelected: {
-    color: '#0F1015',
-    fontWeight: '700',
   },
   priceModeContainer: {
     flexDirection: 'row',
@@ -375,31 +493,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: AppColors.darkSurface,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  priceModeBtnActive: {
-    borderColor: AppColors.accentBlue,
-    backgroundColor: 'rgba(37, 99, 235, 0.15)',
+    justifyContent: 'center',
+    borderWidth: 1.5,
   },
   priceModeText: {
-    color: AppColors.darkTextSecondary,
     fontSize: 13,
-    fontWeight: '600',
-  },
-  priceModeTextActive: {
-    color: '#60A5FA',
-    fontWeight: '700',
   },
   budgetCard: {
-    backgroundColor: AppColors.darkSurface,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: AppColors.darkBorder,
     marginBottom: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
   },
   budgetRangeRow: {
     flexDirection: 'row',
@@ -407,109 +516,94 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   budgetCol: {
-    alignItems: 'center',
+    flex: 1,
+  },
+  budgetDivider: {
+    width: 1,
+    height: 30,
+    marginHorizontal: 12,
   },
   budgetLabel: {
-    color: AppColors.darkTextTertiary,
     fontSize: 11,
-    marginBottom: 4,
+    fontWeight: '500',
+    marginBottom: 3,
   },
   budgetValue: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
   },
-  budgetSeparator: {
-    color: AppColors.darkTextSecondary,
-    fontSize: 14,
-    fontWeight: '600',
+  citiesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  cityPill: {
-    paddingHorizontal: 14,
+  cityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 18,
-    backgroundColor: AppColors.darkSurface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
-  cityPillSelected: {
-    backgroundColor: 'rgba(37, 99, 235, 0.2)',
-    borderColor: AppColors.accentBlue,
-  },
-  cityPillText: {
-    color: AppColors.darkTextSecondary,
+  cityPin: {
     fontSize: 12,
-    fontWeight: '600',
+    marginRight: 4,
   },
-  cityPillTextSelected: {
-    color: '#60A5FA',
-    fontWeight: '700',
+  cityName: {
+    fontSize: 12.5,
   },
-  noticeCard: {
+  roadmapBox: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.25)',
-    marginTop: 8,
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  noticeIcon: {
+  roadmapIcon: {
     fontSize: 20,
     marginRight: 10,
   },
-  noticeBody: {
+  roadmapTextCol: {
     flex: 1,
   },
-  noticeTitle: {
-    color: '#60A5FA',
+  roadmapTitle: {
+    color: '#2563EB',
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 2,
   },
-  noticeText: {
-    color: AppColors.darkTextSecondary,
-    fontSize: 11,
+  roadmapDesc: {
+    fontSize: 12,
     lineHeight: 16,
   },
   bottomDock: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
-    backgroundColor: 'rgba(15, 16, 21, 0.94)',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    gap: 12,
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 20,
   },
-  resetButton: {
-    paddingHorizontal: 16,
+  contactAgentBtn: {
+    flex: 4,
     paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
+    borderRadius: 18,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
-  resetButtonText: {
-    color: '#FFFFFF',
+  contactAgentText: {
     fontSize: 13,
     fontWeight: '600',
   },
-  applyButton: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  applyFilterBtn: {
+    flex: 5,
     paddingVertical: 14,
-    justifyContent: 'center',
+    borderRadius: 18,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  applyButtonText: {
-    color: '#0F1015',
-    fontSize: 14,
-    fontWeight: '800',
+  applyFilterText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

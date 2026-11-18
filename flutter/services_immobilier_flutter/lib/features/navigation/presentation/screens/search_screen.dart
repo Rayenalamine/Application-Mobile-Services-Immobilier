@@ -1,12 +1,12 @@
 // ============================================================
 // DARLINK — ÉCRAN DE RECHERCHE & FILTRES LUXE (Screen 3)
-// Contrôles segmented, sélecteur de prix, chambres et villes
+// Contrôles segmented, sélecteur de prix, chambres et villes adaptatifs
 // ============================================================
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 
-/// Écran de recherche avancée inspiré de Screen 3 de la maquette.
+/// Écran de recherche avancée inspiré de Screen 3 de la maquette Darlink.
 class EcranRecherche extends StatefulWidget {
   const EcranRecherche({super.key});
 
@@ -15,341 +15,564 @@ class EcranRecherche extends StatefulWidget {
 }
 
 class _EcranRechercheState extends State<EcranRecherche> {
-  int _indexSegment = 0; // 0: Acheter, 1: Louer, 2: Vendu
+  String _segmentActif = 'Acheter';
   String _typeBienSelectionne = 'Tous';
-  String _modePrixSelectionne = 'Prix total';
+  bool _prixTotalMode = true;
   String _chambreSelectionnee = 'Tous';
-  String _villeSelectionnee = 'Tunis';
+  String _villeSelectionnee = '';
 
   final List<String> _segments = const ['Acheter', 'Louer', 'Vendu'];
-  final List<String> _types = const ['Tous', 'Villa', 'Appartement', 'Maison'];
+  final List<String> _typesBien = const ['Tous', 'Appartement', 'Villa', 'Maison'];
   final List<String> _chambres = const ['Tous', 'Studio', '1+', '2+', '3+', '4+'];
-  final List<String> _villes = const ['Tunis', 'Sousse', 'Djerba', 'Hammamet'];
+  final List<String> _villes = const [
+    'Tunis',
+    'Sousse',
+    'Hammamet',
+    'Djerba',
+    'Monastir',
+    'Sfax',
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = AppColors.backgroundOf(context);
+    final cardBg = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final textSec = AppColors.textSecondaryOf(context);
+    final segmentedBg = isDark ? const Color(0xFF181920) : const Color(0xFFE9EBF0);
+    final activeSegmentBg = isDark ? Colors.white : Colors.white;
+    final activeSegmentText = const Color(0xFF0F1015);
+    final bottomDockBg = isDark ? const Color(0xF00F1015) : const Color(0xF2FFFFFF);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1015),
+      backgroundColor: bgColor,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // ------------------------------------------------------------
-            // 1. BARRE SUPÉRIEURE FLOTTANTE
-            // ------------------------------------------------------------
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _GlassCircleBtn(
-                    icon: Icons.arrow_back,
-                    onTap: () {},
-                  ),
-                  const Text(
-                    'Recherche de biens',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Row(
+            Column(
+              children: [
+                // ------------------------------------------------------------
+                // 1. BARRE SUPÉRIEURE FLOTTANTE
+                // ------------------------------------------------------------
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _GlassCircleBtn(
-                        icon: Icons.map_outlined,
-                        onTap: () {},
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        isDark: isDark,
+                        onTap: () {
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          }
+                        },
                       ),
-                      const SizedBox(width: 8),
-                      _GlassCircleBtn(
-                        icon: Icons.more_horiz,
-                        onTap: () {},
+                      Text(
+                        'Recherche de biens',
+                        style: TextStyle(
+                          color: textPrim,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          _GlassCircleBtn(
+                            icon: Icons.map_outlined,
+                            isDark: isDark,
+                            onTap: () {},
+                          ),
+                          const SizedBox(width: 8),
+                          _GlassCircleBtn(
+                            icon: Icons.more_horiz,
+                            isDark: isDark,
+                            onTap: () {},
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            // ------------------------------------------------------------
-            // CORPS DU FORMULAIRE DE FILTRAGE
-            // ------------------------------------------------------------
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 2. CONTRÔLE SEGMENTÉ (Acheter, Louer, Vendu)
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF181920),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0x1FFFFFFF)),
-                      ),
-                      child: Row(
-                        children: List.generate(_segments.length, (index) {
-                          final isSelected = _indexSegment == index;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () => setState(() => _indexSegment = index),
+                // ------------------------------------------------------------
+                // CORPS DU FORMULAIRE DE FILTRAGE
+                // ------------------------------------------------------------
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 2. CONTRÔLEUR SEGMENTÉ : ACHETER / LOUER / VENDU
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: segmentedBg,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: borderColor),
+                          ),
+                          child: Row(
+                            children: _segments.map((segment) {
+                              final isSelected = _segmentActif == segment;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _segmentActif = segment;
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? activeSegmentBg : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        segment,
+                                        style: TextStyle(
+                                          color: isSelected ? activeSegmentText : textSec,
+                                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // 3. SÉLECTION DU TYPE DE BIEN
+                        Text(
+                          'Type de bien',
+                          style: TextStyle(
+                            color: textPrim,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _typesBien.map((type) {
+                            final isSelected = _typeBienSelectionne == type;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _typeBienSelectionne = type;
+                                });
+                              },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? Colors.white : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(26),
+                                  color: isSelected
+                                      ? (isDark ? Colors.white : const Color(0xFF111827))
+                                      : cardBg,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? Colors.transparent : borderColor,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : [],
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    _segments[index],
-                                    style: TextStyle(
-                                      color: isSelected ? const Color(0xFF0F1015) : const Color(0xFF9CA3AF),
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      fontSize: 13,
+                                child: Text(
+                                  type,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? (isDark ? const Color(0xFF0F1015) : Colors.white)
+                                        : textSec,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // 4. BASCULE MODE DE PRIX
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _prixTotalMode = true;
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: _prixTotalMode
+                                        ? (isDark ? const Color(0x332563EB) : const Color(0x182563EB))
+                                        : cardBg,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: _prixTotalMode ? AppColors.accentBlue : borderColor,
+                                      width: _prixTotalMode ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      'Prix total (DT)',
+                                      style: TextStyle(
+                                        color: _prixTotalMode ? AppColors.accentBlue : textSec,
+                                        fontWeight: _prixTotalMode ? FontWeight.w700 : FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          );
-                        }),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 3. TYPE DE BIEN
-                    const Text(
-                      'Type de bien',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _types.map((t) {
-                        final isSel = _typeBienSelectionne == t;
-                        return GestureDetector(
-                          onTap: () => setState(() => _typeBienSelectionne = t),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSel ? Colors.white : const Color(0xFF181920),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: isSel ? Colors.white : const Color(0x1FFFFFFF)),
-                            ),
-                            child: Text(
-                              t,
-                              style: TextStyle(
-                                color: isSel ? const Color(0xFF0F1015) : const Color(0xFFCAC4D0),
-                                fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 4. SÉLECTION DU MODE DE PRIX
-                    Row(
-                      children: ['Prix total', 'Paiement mensuel'].map((m) {
-                        final isSel = _modePrixSelectionne == m;
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _modePrixSelectionne = m),
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isSel ? const Color(0x2AFFFFFF) : const Color(0xFF181920),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isSel ? Colors.white : const Color(0x1FFFFFFF)),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  m,
-                                  style: TextStyle(
-                                    color: isSel ? Colors.white : const Color(0xFF9CA3AF),
-                                    fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                                    fontSize: 13,
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _prixTotalMode = false;
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: !_prixTotalMode
+                                        ? (isDark ? const Color(0x332563EB) : const Color(0x182563EB))
+                                        : cardBg,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: !_prixTotalMode ? AppColors.accentBlue : borderColor,
+                                      width: !_prixTotalMode ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      'Paiement mensuel',
+                                      style: TextStyle(
+                                        color: !_prixTotalMode ? AppColors.accentBlue : textSec,
+                                        fontWeight: !_prixTotalMode ? FontWeight.w700 : FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                          ],
+                        ),
 
-                    const SizedBox(height: 20),
+                        const SizedBox(height: 18),
 
-                    // 5. FOURCHETTE DE BUDGET (Min -> Max)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF181920),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0x1FFFFFFF)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text('Budget Min', style: TextStyle(color: Color(0xFF6B7280), fontSize: 11)),
-                              SizedBox(height: 4),
-                              Text('50 000 DT', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                          const Icon(Icons.arrow_forward, color: Color(0xFF6B7280), size: 18),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: const [
-                              Text('Budget Max', style: TextStyle(color: Color(0xFF6B7280), fontSize: 11)),
-                              SizedBox(height: 4),
-                              Text('1 000 000+ DT', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 6. NOMBRE DE CHAMBRES
-                    const Text(
-                      'Chambres',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 44,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _chambres.length,
-                        separatorBuilder: (context, _) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final c = _chambres[index];
-                          final isSel = _chambreSelectionnee == c;
-                          return GestureDetector(
-                            onTap: () => setState(() => _chambreSelectionnee = c),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 18),
-                              decoration: BoxDecoration(
-                                color: isSel ? Colors.white : const Color(0xFF181920),
-                                borderRadius: BorderRadius.circular(22),
-                                border: Border.all(color: isSel ? Colors.white : const Color(0x1FFFFFFF)),
+                        // 5. CARTE DE BUDGET ESTIMÉ
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: borderColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
                               ),
-                              child: Center(
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Budget minimum',
+                                    style: TextStyle(color: textSec, fontSize: 11, fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '100 000 DT',
+                                    style: TextStyle(color: textPrim, fontWeight: FontWeight.w800, fontSize: 15),
+                                  ),
+                                ],
+                              ),
+                              Container(width: 1, height: 30, color: borderColor),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Budget maximum',
+                                    style: TextStyle(color: textSec, fontSize: 11, fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '1 500 000 DT',
+                                    style: TextStyle(color: textPrim, fontWeight: FontWeight.w800, fontSize: 15),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // 6. NOMBRE DE CHAMBRES
+                        Text(
+                          'Chambres',
+                          style: TextStyle(
+                            color: textPrim,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _chambres.map((chambre) {
+                            final isSelected = _chambreSelectionnee == chambre;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _chambreSelectionnee = chambre;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? (isDark ? Colors.white : const Color(0xFF111827))
+                                      : cardBg,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? Colors.transparent : borderColor,
+                                  ),
+                                ),
                                 child: Text(
-                                  c,
+                                  chambre,
                                   style: TextStyle(
-                                    color: isSel ? const Color(0xFF0F1015) : const Color(0xFFCAC4D0),
-                                    fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                                    color: isSelected
+                                        ? (isDark ? const Color(0xFF0F1015) : Colors.white)
+                                        : textSec,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     fontSize: 13,
                                   ),
                                 ),
                               ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // 7. VILLES POPULAIRES EN TUNISIE
+                        Text(
+                          'Villes populaires en Tunisie',
+                          style: TextStyle(
+                            color: textPrim,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _villes.map((ville) {
+                            final isSelected = _villeSelectionnee == ville;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _villeSelectionnee = isSelected ? '' : ville;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0x282563EB)
+                                      : cardBg,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.accentBlue : borderColor,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.location_on_rounded,
+                                      size: 14,
+                                      color: isSelected ? AppColors.accentBlue : textSec,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      ville,
+                                      style: TextStyle(
+                                        color: isSelected ? AppColors.accentBlue : textSec,
+                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                        fontSize: 12.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 26),
+
+                        // 8. BANDEAU DE ROADMAP
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0x1A2563EB) : const Color(0x102563EB),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0x332563EB)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded, color: AppColors.accentBlue, size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Recherche dynamique en préparation',
+                                      style: TextStyle(
+                                        color: AppColors.accentBlue,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Les filtres seront connectés à l\'API Spring Boot en V5-T02.',
+                                      style: TextStyle(color: AppColors.accentBlue, fontSize: 12, height: 1.3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // ------------------------------------------------------------
+            // DOCK FLOTTANT EN BAS : CONTACTER UN AGENT / PLANIFIER VISITE
+            // ------------------------------------------------------------
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: bottomDockBg,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Agent immobilier contacté (Sonia Ben Salem).'),
+                              duration: Duration(seconds: 2),
                             ),
                           );
                         },
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 7. VILLES POPULAIRES EN TUNISIE
-                    const Text(
-                      'Villes populaires en Tunisie',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _villes.map((v) {
-                        final isSel = _villeSelectionnee == v;
-                        return GestureDetector(
-                          onTap: () => setState(() => _villeSelectionnee = v),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSel ? const Color(0x332563EB) : const Color(0xFF181920),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: isSel ? AppColors.accentBlue : const Color(0x1FFFFFFF)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.location_on, size: 14, color: isSel ? AppColors.accentBlue : const Color(0xFF6B7280)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  v,
-                                  style: TextStyle(
-                                    color: isSel ? Colors.white : const Color(0xFFCAC4D0),
-                                    fontSize: 12,
-                                    fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: textPrim,
+                          side: BorderSide(color: borderColor),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 8. BANDEAU DE ROADMAP
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0x1A2563EB),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0x332563EB)),
+                        ),
+                        child: const Text(
+                          'Contacter l\'agent',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
                       ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Color(0xFF60A5FA), size: 20),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Recherche dynamique en préparation',
-                                  style: TextStyle(
-                                    color: Color(0xFF93C5FD),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Les filtres seront connectés à l\'API Spring Boot en V5-T02.',
-                                  style: TextStyle(color: Color(0xFF93C5FD), fontSize: 12, height: 1.3),
-                                ),
-                              ],
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 5,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Filtres de recherche appliqués avec succès !'),
+                              duration: Duration(seconds: 2),
                             ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark ? Colors.white : const Color(0xFF0F1015),
+                          foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        ],
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Appliquer les filtres',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ),
                   ],
@@ -365,9 +588,14 @@ class _EcranRechercheState extends State<EcranRecherche> {
 
 class _GlassCircleBtn extends StatelessWidget {
   final IconData icon;
+  final bool isDark;
   final VoidCallback onTap;
 
-  const _GlassCircleBtn({required this.icon, required this.onTap});
+  const _GlassCircleBtn({
+    required this.icon,
+    required this.isDark,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -377,11 +605,26 @@ class _GlassCircleBtn extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF181920),
+          color: isDark ? const Color(0xFF181920) : Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0x1FFFFFFF)),
+          border: Border.all(
+            color: isDark ? const Color(0x28FFFFFF) : const Color(0x18000000),
+          ),
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
-        child: Icon(icon, color: Colors.white, size: 18),
+        child: Icon(
+          icon,
+          color: isDark ? Colors.white : const Color(0xFF111827),
+          size: 18,
+        ),
       ),
     );
   }

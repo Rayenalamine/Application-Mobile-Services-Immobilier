@@ -71,7 +71,7 @@ void main() {
     // ------------------------------------------------------------
     // TEST 4 : Basculement vers l'onglet Profil
     // ------------------------------------------------------------
-    testWidgets('4. Le clic sur l\'onglet Profil affiche les informations du projet',
+    testWidgets('4. Le clic sur l\'onglet Profil affiche les informations du profil client',
         (WidgetTester tester) async {
       await tester.pumpWidget(const ServicesImmobilierApp());
 
@@ -81,9 +81,10 @@ void main() {
 
       // Vérification des données de profil
       expect(find.text('Mon Profil'), findsOneWidget);
-      expect(find.text('Utilisateur Invité'), findsOneWidget);
-      expect(find.text('M. Wahid Hamdi'), findsOneWidget);
-      expect(find.text('Mini Projet Défi — Services Immobilier'), findsOneWidget);
+      expect(find.text('Rayen Lamine'), findsOneWidget);
+      expect(find.text('rayen.lamine@darlink.tn'), findsOneWidget);
+      expect(find.text('Compte Client Vérifié'), findsOneWidget);
+      expect(find.text('Mode sombre'), findsOneWidget);
     });
 
     // ------------------------------------------------------------

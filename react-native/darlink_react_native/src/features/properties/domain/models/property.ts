@@ -38,6 +38,14 @@ export interface Property {
   readonly estLocation?: boolean;
   /** Galerie de photos intérieures complémentaires */
   readonly imagesGalerie?: string[];
+  /** Atouts & commodités (ex: Piscine, Vue mer, Jardin, Climatisation) */
+  readonly commodites?: string[];
+  /** Nom de l'agent immobilier dédié */
+  readonly agentNom?: string;
+  /** Téléphone de contact de l'agent */
+  readonly agentTel?: string;
+  /** Prix au mètre carré */
+  readonly prixParM2?: number;
   /** État de favori */
   readonly isFavorite?: boolean;
 }

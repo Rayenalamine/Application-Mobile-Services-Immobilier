@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — ÉCRAN DES FAVORIS LUXE GLASSMORPHISM (React Native)
-// Parité complète avec EcranFavoris Flutter et le thème sombre de luxe
+// Adaptatif Clair / Sombre, parité complète avec EcranFavoris Flutter
 // ============================================================
 
 import React from 'react';
@@ -10,30 +10,50 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
-import { AppColors } from '../../../../core/constants/colors';
+import { useTheme } from '../../../../core/theme/ThemeContext';
 
 export const FavoritesScreen: React.FC = () => {
+  const { isDark, colors } = useTheme();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mes Favoris</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Mes Favoris</Text>
       </View>
 
       <View style={styles.container}>
-        {/* Cercle d'icône avec verre dépoli & lueur */}
-        <View style={styles.iconCircle}>
+        {/* Cercle d'icône avec lueur discrète */}
+        <View
+          style={[
+            styles.iconCircle,
+            {
+              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.08)',
+              borderColor: isDark ? 'rgba(37, 99, 235, 0.35)' : 'rgba(37, 99, 235, 0.2)',
+            },
+          ]}
+        >
           <Text style={styles.heartIcon}>❤️</Text>
         </View>
 
-        <Text style={styles.title}>Aucun favori enregistré</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
+          Aucun favori enregistré
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Retrouvez ici les annonces que vous aurez ajoutées à vos favoris en appuyant sur le cœur de la fiche détaillée.
         </Text>
 
-        {/* Carte Frosted Glass note roadmap */}
-        <View style={styles.noticeCard}>
+        {/* Carte note roadmap */}
+        <View
+          style={[
+            styles.noticeCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <Text style={styles.noticeIcon}>🔖</Text>
-          <Text style={styles.noticeText}>
+          <Text style={[styles.noticeText, { color: colors.textSecondary }]}>
             Persistance locale et backend prévue en phase V6-T02
           </Text>
         </View>
@@ -45,17 +65,16 @@ export const FavoritesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AppColors.darkBackground,
   },
   header: {
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
+    borderBottomWidth: 1,
   },
   headerTitle: {
-    color: '#FFFFFF',
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: -0.3,
   },
   container: {
@@ -69,12 +88,10 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(37, 99, 235, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
     borderWidth: 1.5,
-    borderColor: 'rgba(37, 99, 235, 0.35)',
   },
   heartIcon: {
     fontSize: 42,
@@ -82,14 +99,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 10,
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 14,
-    color: AppColors.darkTextSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
@@ -98,12 +113,10 @@ const styles = StyleSheet.create({
   noticeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AppColors.darkSurface,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: AppColors.darkBorder,
   },
   noticeIcon: {
     fontSize: 16,
@@ -111,7 +124,6 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     fontSize: 12,
-    color: AppColors.darkTextSecondary,
     fontWeight: '500',
   },
 });

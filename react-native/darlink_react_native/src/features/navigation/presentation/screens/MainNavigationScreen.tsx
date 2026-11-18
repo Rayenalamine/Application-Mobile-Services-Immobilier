@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — NAVIGATION FLOTTANTE PAR ONGLETS (React Native Screen 1 & 2)
-// Dock flottant translucide centré type Glassmorphism
+// Dock flottant translucide adaptatif Clair / Sombre type Glassmorphism
 // ============================================================
 
 import React, { useState } from 'react';
@@ -11,11 +11,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { AppColors } from '../../../../core/constants/colors';
 import { HomeScreen } from '../../../properties/presentation/screens/HomeScreen';
 import { SearchScreen } from './SearchScreen';
 import { FavoritesScreen } from './FavoritesScreen';
 import { ProfileScreen } from './ProfileScreen';
+import { ThemeProvider, useTheme } from '../../../../core/theme/ThemeContext';
 
 type TabKey = 'home' | 'search' | 'favorites' | 'profile';
 
@@ -32,8 +32,9 @@ const TABS: readonly TabItem[] = [
   { key: 'profile', label: 'Profil', icon: '👤' },
 ] as const;
 
-export const MainNavigationScreen: React.FC = () => {
+const MainNavigationContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
+  const { isDark, colors } = useTheme();
 
   const renderActiveScreen = () => {
     switch (activeTab) {
@@ -51,12 +52,21 @@ export const MainNavigationScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
-      {/* Dock de navigation flottant centré type Glassmorphism */}
+      {/* Dock de navigation flottant centré type Glassmorphism adaptatif */}
       <View style={styles.dockWrapper}>
-        <View style={styles.floatingDock}>
+        <View
+          style={[
+            styles.floatingDock,
+            {
+              backgroundColor: isDark ? 'rgba(22, 23, 32, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+              borderColor: colors.border,
+              shadowOpacity: isDark ? 0.45 : 0.08,
+            },
+          ]}
+        >
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
@@ -69,12 +79,37 @@ export const MainNavigationScreen: React.FC = () => {
                 accessibilityLabel={tab.label}
                 accessibilityState={{ selected: isActive }}
               >
-                <View style={[styles.iconPill, isActive && styles.iconPillActive]}>
-                  <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
+                <View
+                  style={[
+                    styles.iconPill,
+                    isActive && {
+                      backgroundColor: isDark ? '#FFFFFF' : '#0F1015',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.tabIcon,
+                      { color: colors.textSecondary },
+                      isActive && {
+                        color: isDark ? '#0F1015' : '#FFFFFF',
+                        fontWeight: '800',
+                      },
+                    ]}
+                  >
                     {isActive && tab.key === 'favorites' ? '❤️' : tab.icon}
                   </Text>
                 </View>
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    { color: colors.textTertiary },
+                    isActive && {
+                      color: colors.textPrimary,
+                      fontWeight: '700',
+                    },
+                  ]}
+                >
                   {tab.label}
                 </Text>
               </TouchableOpacity>
@@ -86,10 +121,17 @@ export const MainNavigationScreen: React.FC = () => {
   );
 };
 
+export const MainNavigationScreen: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <MainNavigationContent />
+    </ThemeProvider>
+  );
+};
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: AppColors.darkBackground,
   },
   screenContainer: {
     flex: 1,
@@ -103,15 +145,12 @@ const styles = StyleSheet.create({
   floatingDock: {
     height: 70,
     flexDirection: 'row',
-    backgroundColor: 'rgba(22, 23, 32, 0.92)',
     borderRadius: 36,
     borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 18,
+    elevation: 8,
     alignItems: 'center',
     paddingHorizontal: 8,
   },
@@ -128,25 +167,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  iconPillActive: {
-    backgroundColor: '#FFFFFF',
-  },
   tabIcon: {
     fontSize: 16,
-    color: '#9CA3AF',
-  },
-  tabIconActive: {
-    color: '#0F1015',
-    fontWeight: '800',
   },
   tabLabel: {
     fontSize: 10,
-    fontWeight: '500',
-    color: '#6B7280',
     marginTop: 2,
-  },
-  tabLabelActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
   },
 });

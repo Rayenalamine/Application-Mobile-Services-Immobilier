@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — ÉCRAN DES FAVORIS LUXE GLASSMORPHISM (V2-T04)
-// Interface préparatoire pour la gestion des favoris (V6-T02)
+// Interface préparatoire adaptative Blanc par défaut et Dark Mode
 // ============================================================
 
 import 'dart:ui' show ImageFilter;
@@ -8,8 +8,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 
-/// Écran des favoris affichant l'état par défaut avec design luxe glassmorphique.
-/// Prépare l'implémentation de la persistance des favoris prévue en V6-T02.
+/// Écran des favoris affichant l'état par défaut avec design luxe adaptatif.
 class EcranFavoris extends StatelessWidget {
   const EcranFavoris({super.key});
 
@@ -17,11 +16,11 @@ class EcranFavoris extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bgColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
-    final cardBg = isDark ? AppColors.darkCard : AppColors.lightSurface;
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final textPrim = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final textSec = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final bgColor = AppColors.backgroundOf(context);
+    final cardBg = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final textSec = AppColors.textSecondaryOf(context);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -55,7 +54,7 @@ class EcranFavoris extends StatelessWidget {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0x332563EB) : const Color(0x1F2563EB),
+                      color: isDark ? const Color(0x332563EB) : const Color(0x152563EB),
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isDark ? const Color(0x4460A5FA) : const Color(0x332563EB),
@@ -63,7 +62,7 @@ class EcranFavoris extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2563EB).withValues(alpha: isDark ? 0.25 : 0.15),
+                          color: const Color(0xFF2563EB).withValues(alpha: isDark ? 0.25 : 0.1),
                           blurRadius: 24,
                           spreadRadius: 2,
                         ),
@@ -118,6 +117,13 @@ class EcranFavoris extends StatelessWidget {
                       color: cardBg.withValues(alpha: isDark ? 0.65 : 0.85),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: borderColor, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
