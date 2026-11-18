@@ -9,6 +9,7 @@ import '../domain/models/property.dart';
 /// Enrichis avec des photos intérieures (salon, chambre, cuisine) pour la galerie.
 final List<Propriete> listeProprietes = [
   const Propriete(
+    id: '1',
     titre: 'Appartement moderne à Tunis',
     localisation: 'Les Berges du Lac, Tunis',
     prix: 320000,
@@ -33,6 +34,7 @@ final List<Propriete> listeProprietes = [
         'Finitions en marbre blanc de Thala et domotique intégrée.',
   ),
   const Propriete(
+    id: '2',
     titre: 'Villa avec piscine à Sousse',
     localisation: 'Sahloul, Sousse',
     prix: 850000,
@@ -56,6 +58,7 @@ final List<Propriete> listeProprietes = [
         'une suite parentale avec dressing, une cuisine îlot central et un garage pour deux voitures.',
   ),
   const Propriete(
+    id: '3',
     titre: 'Maison traditionnelle à Djerba',
     localisation: 'Houmt Souk, Djerba',
     prix: 450000,
@@ -79,6 +82,7 @@ final List<Propriete> listeProprietes = [
         'et toit-terrasse aménagé avec salon d\'été offrant une vue panoramique au coucher du soleil.',
   ),
   const Propriete(
+    id: '4',
     titre: 'Appartement vue mer à Hammamet',
     localisation: 'Centre-ville, Hammamet',
     prix: 275000,
@@ -102,3 +106,5 @@ final List<Propriete> listeProprietes = [
         'climatisation centrale réversible et accès privé direct à la plage.',
   ),
 ];
+
+final List<Propriete> mockProperties = listeProprietes;

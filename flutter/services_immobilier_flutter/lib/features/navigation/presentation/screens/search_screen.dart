@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../map/presentation/screens/map_screen.dart';
 
 /// Écran de recherche avancée inspiré de Screen 3 de la maquette Darlink.
 class EcranRecherche extends StatefulWidget {
@@ -84,7 +85,13 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           _GlassCircleBtn(
                             icon: Icons.map_outlined,
                             isDark: isDark,
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const EcranCarteInteractive(),
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(width: 8),
                           _GlassCircleBtn(

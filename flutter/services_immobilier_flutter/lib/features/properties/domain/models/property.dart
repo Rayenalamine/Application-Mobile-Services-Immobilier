@@ -6,6 +6,9 @@
 /// Représente un bien immobilier dans l'application DarLink.
 /// Cette classe est immuable et supporte les détails avancés (surface, commodités, agent).
 class Propriete {
+  /// Identifiant unique du bien
+  final String id;
+
   /// Titre de l'annonce immobilière
   final String titre;
 
@@ -59,6 +62,7 @@ class Propriete {
 
   /// Constructeur constant pour créer un objet Propriete immuable.
   const Propriete({
+    this.id = '1',
     required this.titre,
     required this.localisation,
     required this.prix,
@@ -111,6 +115,7 @@ class Propriete {
 
   /// Méthode de commodité copyWith
   Propriete copyWith({
+    String? id,
     String? titre,
     String? localisation,
     double? prix,
@@ -130,6 +135,7 @@ class Propriete {
     String? agentTel,
   }) {
     return Propriete(
+      id: id ?? this.id,
       titre: titre ?? this.titre,
       localisation: localisation ?? this.localisation,
       prix: prix ?? this.prix,

@@ -7,8 +7,11 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_properties.dart';
+import '../../data/property_api_service.dart';
 import '../../domain/models/property.dart';
+import '../../map/presentation/screens/map_screen.dart';
 import '../widgets/property_card.dart';
+import 'add_property_screen.dart';
 
 /// Écran principal reproduisant fidèlement le style moderne de la maquette (Screen 1).
 class EcranAccueil extends StatefulWidget {
@@ -139,16 +142,30 @@ class _EcranAccueilState extends State<EcranAccueil> {
                       ),
                       const SizedBox(width: 8),
 
-                      // Bouton Carte interactive
+                      // Bouton Déposer une annonce (V7)
+                      _HeaderCircleButton(
+                        icon: Icons.add_business_outlined,
+                        tooltip: 'Déposer une annonce',
+                        isDark: isDark,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const EcranDepotAnnonce(),
+                            ),
+                          ).then((_) => setState(() {}));
+                        },
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Bouton Carte interactive (V8)
                       _HeaderCircleButton(
                         icon: Icons.map_outlined,
                         tooltip: 'Afficher la carte',
                         isDark: isDark,
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Affichage carte prévu en phase V8'),
-                              duration: Duration(seconds: 1),
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const EcranCarteInteractive(),
                             ),
                           );
                         },
