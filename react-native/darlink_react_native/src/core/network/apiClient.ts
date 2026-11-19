@@ -61,6 +61,15 @@ export class ApiClient {
     });
   }
 
+  public async patch<T>(endpoint: string, body?: unknown): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+    return this.request<T>(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   public async delete<T>(endpoint: string): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     return this.request<T>(url, { method: 'DELETE' });

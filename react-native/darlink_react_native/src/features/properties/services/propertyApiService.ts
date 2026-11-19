@@ -140,7 +140,11 @@ class PropertyApiService {
 
   public async createProperty(payload: CreatePropertyPayload): Promise<Property> {
     try {
-      const dto = await api.post<SpringPropertyDto>('/properties', payload);
+      const fullPayload = {
+        ...payload,
+        imageUrl: payload.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+      };
+      const dto = await api.post<SpringPropertyDto>('/properties', fullPayload);
       const prop = this.mapDtoToProperty(dto);
       this.cachedProperties.unshift(prop);
       return prop;
@@ -171,7 +175,22 @@ class PropertyApiService {
 
   public async updateProperty(id: string, payload: Partial<CreatePropertyPayload>): Promise<Property | null> {
     try {
-      const dto = await api.put<SpringPropertyDto>(`/properties/${id}`, payload);
+      const existing = this.cachedProperties.find((p) => p.id === id);
+      const fullPayload = {
+        title: payload.title || existing?.titre || 'Titre mis à jour',
+        description: payload.description || existing?.description || 'Superbe bien haut standing.',
+        location: payload.location || existing?.localisation || 'Tunis, Tunisie',
+        city: payload.city || 'Tunis',
+        type: payload.type || existing?.type || 'Appartement',
+        price: payload.price ?? existing?.prix ?? 200000,
+        bedrooms: payload.bedrooms ?? existing?.nombreChambres ?? 2,
+        bathrooms: payload.bathrooms ?? existing?.nombreSallesDeBain ?? 1,
+        surfaceM2: payload.surfaceM2 ?? existing?.surfaceM2 ?? 100,
+        isRental: payload.isRental ?? existing?.estLocation ?? false,
+        imageUrl: payload.imageUrl || existing?.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+        amenities: payload.amenities ?? existing?.commodites ?? [],
+      };
+      const dto = await api.put<SpringPropertyDto>(`/properties/${id}`, fullPayload);
       const prop = this.mapDtoToProperty(dto);
       const index = this.cachedProperties.findIndex((p) => p.id === id);
       if (index !== -1) {

@@ -5,6 +5,7 @@ import com.darlink.dto.property.PageResponse;
 import com.darlink.dto.property.PropertyDto;
 import com.darlink.dto.property.UpdatePropertyRequest;
 import com.darlink.entity.PropertyImageEntity;
+import com.darlink.exception.ForbiddenException;
 import com.darlink.service.FileStorageService;
 import com.darlink.service.PropertyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +39,7 @@ public class PropertyController {
         if (auth != null && auth.getDetails() instanceof Long) {
             return (Long) auth.getDetails();
         }
-        return 1L; // Utilisateur par défaut
+        throw new ForbiddenException("Authentification requise pour cette opération.");
     }
 
     @GetMapping
@@ -61,18 +62,25 @@ public class PropertyController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Consulter le détail d'un bien par son ID")
-    public ResponseEntity<PropertyDto> getPropertyById(@PathVariable Long id) {
-        PropertyDto dto = propertyService.getPropertyById(id);
-        return ResponseEntity.ok(dto);
-    }
-
     @GetMapping("/map")
     @Operation(summary = "Obtenir les biens géolocalisés pour la carte interactive")
     public ResponseEntity<List<PropertyDto>> getMapProperties() {
         List<PropertyDto> mapList = propertyService.getMapProperties();
         return ResponseEntity.ok(mapList);
+    }
+
+    @GetMapping("/my-properties")
+    @Operation(summary = "Lister les annonces publiées par l'utilisateur connecté")
+    public ResponseEntity<List<PropertyDto>> getMyProperties(Authentication auth) {
+        Long userId = resolveUserId(auth);
+        return ResponseEntity.ok(propertyService.getUserProperties(userId));
+    }
+
+    @GetMapping("/{id:[0-9]+}")
+    @Operation(summary = "Consulter le détail d'un bien par son ID")
+    public ResponseEntity<PropertyDto> getPropertyById(@PathVariable Long id) {
+        PropertyDto dto = propertyService.getPropertyById(id);
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping

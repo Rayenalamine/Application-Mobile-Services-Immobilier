@@ -1,6 +1,7 @@
 package com.darlink.controller;
 
 import com.darlink.dto.property.PropertyDto;
+import com.darlink.exception.ForbiddenException;
 import com.darlink.service.FavoriteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +30,7 @@ public class FavoriteController {
         if (requestedUserId != null) {
             return requestedUserId;
         }
-        return 1L; // Utilisateur par défaut pour la démo
+        throw new ForbiddenException("Authentification requise pour gérer les favoris.");
     }
 
     @GetMapping

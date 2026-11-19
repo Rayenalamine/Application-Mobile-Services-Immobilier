@@ -3,6 +3,7 @@ package com.darlink.controller;
 import com.darlink.dto.contact.ContactRequestDto;
 import com.darlink.dto.contact.CreateContactRequest;
 import com.darlink.dto.contact.UpdateContactRequestStatus;
+import com.darlink.exception.ForbiddenException;
 import com.darlink.service.ContactRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,7 +49,7 @@ public class ContactRequestController {
     public ResponseEntity<List<ContactRequestDto>> getReceivedRequests(Authentication auth) {
         Long ownerId = resolveUserId(auth);
         if (ownerId == null) {
-            ownerId = 1L; // Utilisateur démo
+            throw new ForbiddenException("Authentification requise pour consulter les demandes reçues.");
         }
         List<ContactRequestDto> list = contactRequestService.getReceivedContactRequests(ownerId);
         return ResponseEntity.ok(list);
@@ -59,7 +60,7 @@ public class ContactRequestController {
     public ResponseEntity<List<ContactRequestDto>> getSentRequests(Authentication auth) {
         Long senderId = resolveUserId(auth);
         if (senderId == null) {
-            senderId = 1L;
+            throw new ForbiddenException("Authentification requise pour consulter les demandes envoyées.");
         }
         List<ContactRequestDto> list = contactRequestService.getSentContactRequests(senderId);
         return ResponseEntity.ok(list);
@@ -74,7 +75,7 @@ public class ContactRequestController {
     ) {
         Long ownerId = resolveUserId(auth);
         if (ownerId == null) {
-            ownerId = 1L;
+            throw new ForbiddenException("Authentification requise pour modifier le statut.");
         }
         ContactRequestDto updated = contactRequestService.updateStatus(id, request.getStatus(), ownerId);
         return ResponseEntity.ok(updated);

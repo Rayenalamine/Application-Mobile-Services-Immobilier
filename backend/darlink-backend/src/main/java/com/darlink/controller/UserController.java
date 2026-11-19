@@ -3,6 +3,7 @@ package com.darlink.controller;
 import com.darlink.dto.auth.UpdateProfileRequest;
 import com.darlink.dto.auth.UserResponse;
 import com.darlink.dto.property.PropertyDto;
+import com.darlink.exception.ForbiddenException;
 import com.darlink.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +30,7 @@ public class UserController {
         if (auth != null && auth.getDetails() instanceof Long) {
             return (Long) auth.getDetails();
         }
-        return 1L; // Par défaut pour la fluidité
+        throw new ForbiddenException("Authentification requise.");
     }
 
     @GetMapping("/me")

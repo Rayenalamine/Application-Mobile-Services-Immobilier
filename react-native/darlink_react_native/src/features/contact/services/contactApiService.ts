@@ -75,6 +75,15 @@ class ContactApiService {
       return [];
     }
   }
+
+  public async updateStatus(id: string | number, status: string): Promise<{ status: string }> {
+    try {
+      const res = await api.patch<{ status: string }>(`/contact-requests/${id}/status`, { status });
+      return res;
+    } catch {
+      return { status };
+    }
+  }
 }
 
 export const contactApiService = ContactApiService.getInstance();

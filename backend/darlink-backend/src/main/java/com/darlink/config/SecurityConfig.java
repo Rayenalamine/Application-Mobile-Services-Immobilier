@@ -1,6 +1,7 @@
 package com.darlink.config;
 
 import com.darlink.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -45,15 +46,16 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/actuator/**"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/properties/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/properties").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/properties/**").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/properties/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/properties", "/api/v1/properties/map", "/api/v1/properties/{id:[0-9]+}", "/api/v1/properties/{id:[0-9]+}/images").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/contact-requests").permitAll()
-                        .requestMatchers("/api/v1/contact-requests/**").permitAll()
-                        .requestMatchers("/api/v1/users/**").permitAll()
-                        .requestMatchers("/api/v1/favorites/**").permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/problem+json;charset=UTF-8");
+                            response.getWriter().write("{\"type\":\"https://api.darlink.tn/errors/unauthorized\",\"title\":\"Non authentifié\",\"status\":401,\"detail\":\"Authentification requise pour cette ressource.\",\"instance\":\"" + request.getRequestURI() + "\"}");
+                        })
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

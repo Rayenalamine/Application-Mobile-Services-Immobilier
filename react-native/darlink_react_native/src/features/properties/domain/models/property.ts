@@ -56,8 +56,8 @@ export interface Property {
 /**
  * Formate un montant en Dinars Tunisiens avec séparateur de milliers (ex: 320000 -> "320 000 DT").
  */
-export function formatPrice(price: number): string {
+export function formatPrice(price: number, isRental: boolean = false): string {
   const integerPart = Math.floor(price).toString();
   const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  return `${formatted} DT`;
+  return isRental ? `${formatted} DT/mois` : `${formatted} DT`;
 }
