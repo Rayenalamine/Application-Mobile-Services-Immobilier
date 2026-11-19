@@ -136,7 +136,7 @@ class EcranFavoris extends StatelessWidget {
                         const SizedBox(width: AppSpacing.sm),
                         Flexible(
                           child: Text(
-                            'Persistance locale et backend prévue en phase V6-T02',
+                            'Vos favoris sont sauvegardés et synchronisés',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,

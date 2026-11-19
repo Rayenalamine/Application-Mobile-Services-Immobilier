@@ -45,7 +45,7 @@ void main() {
       expect(find.text('Recherche de biens'), findsOneWidget);
       expect(find.text('Type de bien'), findsOneWidget);
       expect(find.text('Villes populaires en Tunisie'), findsOneWidget);
-      expect(find.text('Recherche dynamique en préparation'), findsOneWidget);
+      expect(find.text('Appliquer les filtres'), findsOneWidget);
     });
 
     // ------------------------------------------------------------
@@ -63,7 +63,7 @@ void main() {
       expect(find.text('Mes Favoris'), findsOneWidget);
       expect(find.text('Aucun favori enregistré'), findsOneWidget);
       expect(
-        find.text('Persistance locale et backend prévue en phase V6-T02'),
+        find.text('Vos favoris sont sauvegardés et synchronisés'),
         findsOneWidget,
       );
     });

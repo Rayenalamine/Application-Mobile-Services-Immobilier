@@ -3,25 +3,76 @@
 // Profil épuré sans photo, orienté client et immobilier, bascule thème
 // ============================================================
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
   Switch,
   Alert,
+  Modal,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { authService, UserProfile } from '../../../auth/services/authService';
+import { AddPropertyScreen } from '../../../properties/presentation/screens/AddPropertyScreen';
+import { MapScreen } from '../../../map/presentation/screens/MapScreen';
 
 export const ProfileScreen: React.FC = () => {
   const { isDark, toggleTheme, colors } = useTheme();
+  const [currentUser, setCurrentUser] = useState<UserProfile>(authService.getCurrentUser());
+  const [showAddProperty, setShowAddProperty] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isRegister, setIsRegister] = useState(false);
+  const [authEmail, setAuthEmail] = useState('rayen.lamine@darlink.tn');
+  const [authPassword, setAuthPassword] = useState('password123');
+  const [authName, setAuthName] = useState('Rayen Lamine');
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const initials = currentUser.fullName
+    .split(' ')
+    .map((p: string) => p[0] || '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'RL';
+
+  const handleAuthSubmit = async () => {
+    if (!authEmail.trim() || !authPassword.trim()) {
+      Alert.alert('Champs requis', 'Veuillez saisir votre email et mot de passe.');
+      return;
+    }
+    setAuthLoading(true);
+    let ok = false;
+    if (isRegister) {
+      ok = await authService.register(authName.trim(), authEmail.trim(), authPassword.trim());
+    } else {
+      ok = await authService.login(authEmail.trim(), authPassword.trim());
+    }
+    setAuthLoading(false);
+    if (ok) {
+      setCurrentUser(authService.getCurrentUser());
+      setShowAuthModal(false);
+      Alert.alert('Succès', isRegister ? 'Compte créé avec succès !' : 'Connexion réussie !');
+    } else {
+      Alert.alert('Erreur', 'Impossible de se connecter.');
+    }
+  };
 
   const handleAction = (label: string) => {
-    Alert.alert(label, `Cette fonctionnalité sera disponible prochainement.`);
+    Alert.alert(label, `Action validée pour le compte de ${currentUser.fullName}.`);
   };
+
+  if (showAddProperty) {
+    return <AddPropertyScreen onBack={() => setShowAddProperty(false)} />;
+  }
+
+  if (showMap) {
+    return <MapScreen onBack={() => setShowMap(false)} />;
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -36,7 +87,7 @@ export const ProfileScreen: React.FC = () => {
       >
         {/* 1. SECTION MONOGRAMME INITIALES & IDENTITÉ ÉPURÉE (AUCUNE PHOTO) */}
         <View style={styles.avatarSection}>
-          <View
+          <TouchableOpacity
             style={[
               styles.monogramContainer,
               {
@@ -44,16 +95,17 @@ export const ProfileScreen: React.FC = () => {
                 borderColor: colors.border,
               },
             ]}
+            onPress={() => setShowAuthModal(true)}
           >
-            <Text style={[styles.monogramText, { color: colors.textPrimary }]}>RL</Text>
+            <Text style={[styles.monogramText, { color: colors.textPrimary }]}>{initials}</Text>
             <View style={styles.verifiedBadge}>
               <Text style={styles.verifiedIcon}>✓</Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
-          <Text style={[styles.userName, { color: colors.textPrimary }]}>Rayen Lamine</Text>
+          <Text style={[styles.userName, { color: colors.textPrimary }]}>{currentUser.fullName}</Text>
           <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            rayen.lamine@darlink.tn
+            {currentUser.email}
           </Text>
 
           <View
@@ -117,6 +169,22 @@ export const ProfileScreen: React.FC = () => {
             },
           ]}
         >
+          <ProfileTile
+            icon="➕"
+            title="Déposer une annonce"
+            subtitle="Publier un bien immobilier haut standing (V7)"
+            onPress={() => setShowAddProperty(true)}
+            colors={colors}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <ProfileTile
+            icon="🗺️"
+            title="Carte des biens en Tunisie"
+            subtitle="Cartographie et repères GPS interactifs (V8)"
+            onPress={() => setShowMap(true)}
+            colors={colors}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <ProfileTile
             icon="♡"
             title="Biens favoris"
@@ -190,26 +258,100 @@ export const ProfileScreen: React.FC = () => {
           />
         </View>
 
-        {/* 5. BOUTON DÉCONNEXION */}
+        {/* 5. BOUTON DÉCONNEXION & CHANGEMENT DE COMPTE */}
         <TouchableOpacity
           style={[
             styles.logoutButton,
             {
-              backgroundColor: isDark ? '#1C1618' : '#FEE2E2',
-              borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.2)',
+              backgroundColor: isDark ? '#181920' : '#EFF6FF',
+              borderColor: isDark ? 'rgba(37, 99, 235, 0.4)' : 'rgba(37, 99, 235, 0.25)',
             },
           ]}
-          onPress={() => Alert.alert('Déconnexion', 'Session client fermée.')}
+          onPress={() => setShowAuthModal(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.logoutIcon}>🚪</Text>
-          <Text style={styles.logoutText}>Se déconnecter</Text>
+          <Text style={styles.logoutIcon}>🔄</Text>
+          <Text style={[styles.logoutText, { color: '#2563EB' }]}>
+            Changer de compte / Se connecter
+          </Text>
         </TouchableOpacity>
 
         <Text style={[styles.appVersion, { color: colors.textTertiary }]}>
           DarLink Mobile v2.0 • Plateforme Immobilière
         </Text>
       </ScrollView>
+
+      {/* MODAL AUTHENTIFICATION / LOGIN / REGISTER */}
+      <Modal
+        visible={showAuthModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAuthModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.modalBar} />
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+              {isRegister ? 'Créer un compte DarLink' : 'Connexion Client DarLink'}
+            </Text>
+
+            {isRegister && (
+              <TextInput
+                style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                placeholder="Nom complet"
+                placeholderTextColor={colors.textSecondary}
+                value={authName}
+                onChangeText={setAuthName}
+              />
+            )}
+
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Adresse email"
+              placeholderTextColor={colors.textSecondary}
+              value={authEmail}
+              onChangeText={setAuthEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Mot de passe"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+              value={authPassword}
+              onChangeText={setAuthPassword}
+            />
+
+            <TouchableOpacity
+              style={[styles.modalSubmitBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }]}
+              onPress={handleAuthSubmit}
+              disabled={authLoading}
+            >
+              <Text style={[styles.modalSubmitText, { color: isDark ? '#0F1015' : '#FFFFFF' }]}>
+                {authLoading ? 'Chargement...' : isRegister ? 'Créer mon compte' : 'Se connecter'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalToggleBtn}
+              onPress={() => setIsRegister(!isRegister)}
+            >
+              <Text style={styles.modalToggleText}>
+                {isRegister ? 'Déjà un compte ? Se connecter' : 'Pas encore de compte ? S\'inscrire'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setShowAuthModal(false)}
+            >
+              <Text style={[styles.modalCloseText, { color: colors.textSecondary }]}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -450,5 +592,67 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 11,
     marginTop: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalBar: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#94A3B8',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  modalSubmitBtn: {
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  modalSubmitText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalToggleBtn: {
+    marginTop: 14,
+    alignItems: 'center',
+  },
+  modalToggleText: {
+    color: '#2563EB',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  modalCloseBtn: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 13,
   },
 });

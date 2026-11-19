@@ -15,6 +15,11 @@ import {
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { mockProperties } from '../../../properties/data/mockProperties';
+import { Property } from '../../../properties/domain/models/property';
+import { PropertyCard } from '../../../../core/components/PropertyCard';
+import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
+import { MapScreen } from '../../../map/presentation/screens/MapScreen';
 
 const SEGMENTS = ['Acheter', 'Louer', 'Vendu'] as const;
 const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison'] as const;
@@ -27,12 +32,50 @@ export const SearchScreen: React.FC = () => {
   const [priceMode, setPriceMode] = useState<'total' | 'monthly'>('total');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('Tous');
   const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [showMap, setShowMap] = useState<boolean>(false);
   const { isDark, colors } = useTheme();
+
+  const filteredProperties = mockProperties.filter((p) => {
+    if (selectedSegment === 'Louer' && !p.estLocation) return false;
+    if (selectedSegment === 'Acheter' && p.estLocation) return false;
+    if (selectedType !== 'Tous' && p.type.toLowerCase() !== selectedType.toLowerCase()) return false;
+    if (selectedCity && !p.localisation.toLowerCase().includes(selectedCity.toLowerCase())) return false;
+    if (selectedBedrooms !== 'Tous') {
+      let minBeds = 1;
+      if (selectedBedrooms === '2+') minBeds = 2;
+      if (selectedBedrooms === '3+') minBeds = 3;
+      if (selectedBedrooms === '4+') minBeds = 4;
+      if (p.nombreChambres < minBeds) return false;
+    }
+    return true;
+  });
+
+  if (showMap) {
+    return (
+      <MapScreen
+        onBack={() => setShowMap(false)}
+        onSelectProperty={(p) => {
+          setShowMap(false);
+          setSelectedProperty(p);
+        }}
+      />
+    );
+  }
+
+  if (selectedProperty) {
+    return (
+      <PropertyDetailsScreen
+        property={selectedProperty}
+        onBack={() => setSelectedProperty(null)}
+      />
+    );
+  }
 
   const handleApply = () => {
     Alert.alert(
       'Filtres appliqués',
-      `Recherche pour : ${selectedSegment} • ${selectedType} • ${selectedBedrooms} ch. ${selectedCity ? `• ${selectedCity}` : ''}`
+      `${filteredProperties.length} bien(s) trouvé(s) pour : ${selectedSegment} • ${selectedType} • ${selectedBedrooms} ch. ${selectedCity ? `• ${selectedCity}` : ''}`
     );
   };
 
@@ -65,6 +108,7 @@ export const SearchScreen: React.FC = () => {
                 styles.glassCircleBtn,
                 { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
+              onPress={() => setShowMap(true)}
               activeOpacity={0.8}
             >
               <Text style={styles.circleIcon}>🗺️</Text>
@@ -343,24 +387,46 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* 8. NOTE ROADMAP DYNAMIQUE */}
-        <View
-          style={[
-            styles.roadmapBox,
-            {
-              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.08)',
-              borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : 'rgba(37, 99, 235, 0.2)',
-            },
-          ]}
-        >
-          <Text style={styles.roadmapIcon}>💡</Text>
-          <View style={styles.roadmapTextCol}>
-            <Text style={styles.roadmapTitle}>Recherche dynamique en préparation</Text>
-            <Text style={[styles.roadmapDesc, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
-              Les filtres seront connectés à l'API Spring Boot en phase V5-T02.
+        {/* 8. RÉSULTATS DYNAMIQUES DE RECHERCHE (V5-V8) */}
+        <View style={styles.resultsHeader}>
+          <Text style={[styles.resultsTitle, { color: colors.textPrimary }]}>
+            Biens trouvés ({filteredProperties.length})
+          </Text>
+          {(selectedCity !== '' || selectedType !== 'Tous' || selectedBedrooms !== 'Tous' || selectedSegment !== 'Acheter') && (
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedCity('');
+                setSelectedType('Tous');
+                setSelectedBedrooms('Tous');
+                setSelectedSegment('Acheter');
+              }}
+            >
+              <Text style={styles.resetText}>Réinitialiser</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {filteredProperties.length === 0 ? (
+          <View style={[styles.emptyBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={{ fontSize: 32, marginBottom: 8 }}>🔍</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              Aucun bien ne correspond à ces critères
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              Essayez de modifier votre recherche ou de réinitialiser les filtres.
             </Text>
           </View>
-        </View>
+        ) : (
+          filteredProperties.map((p) => (
+            <PropertyCard
+              key={p.id || p.titre}
+              property={p}
+              onPress={() => setSelectedProperty(p)}
+            />
+          ))
+        )}
+
+        <View style={{ height: 100 }} />
 
         {/* 9. BOUTONS D'ACTION FLOTTANTS EN BAS DE SCREEN 3 */}
         <View style={styles.bottomDock}>
@@ -552,30 +618,37 @@ const styles = StyleSheet.create({
   cityName: {
     fontSize: 12.5,
   },
-  roadmapBox: {
+  resultsHeader: {
     flexDirection: 'row',
-    borderRadius: 16,
-    padding: 14,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  resultsTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  resetText: {
+    color: '#2563EB',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  emptyBox: {
+    padding: 24,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  roadmapIcon: {
-    fontSize: 20,
-    marginRight: 10,
-  },
-  roadmapTextCol: {
-    flex: 1,
-  },
-  roadmapTitle: {
-    color: '#2563EB',
-    fontSize: 13,
+  emptyTitle: {
+    fontSize: 15,
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  roadmapDesc: {
-    fontSize: 12,
-    lineHeight: 16,
+  emptySubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
   },
   bottomDock: {
     flexDirection: 'row',

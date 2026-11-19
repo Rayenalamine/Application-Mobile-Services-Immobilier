@@ -54,7 +54,7 @@ export const FavoritesScreen: React.FC = () => {
         >
           <Text style={styles.noticeIcon}>🔖</Text>
           <Text style={[styles.noticeText, { color: colors.textSecondary }]}>
-            Persistance locale et backend prévue en phase V6-T02
+            Vos favoris sont sauvegardés et synchronisés
           </Text>
         </View>
       </View>

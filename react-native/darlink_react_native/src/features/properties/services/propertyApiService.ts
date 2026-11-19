@@ -199,3 +199,4 @@ class PropertyApiService {
 }
 
 export const propertyApiService = PropertyApiService.getInstance();
+

@@ -57,3 +57,4 @@ class FavoritesApiService {
 }
 
 export const favoritesApiService = FavoritesApiService.getInstance();
+

@@ -6,10 +6,164 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/data/auth_service.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../../map/presentation/screens/map_screen.dart';
+import '../../../properties/presentation/screens/add_property_screen.dart';
 
 /// Écran de profil client haut de gamme avec gestion des préférences et du thème.
-class EcranProfil extends StatelessWidget {
+class EcranProfil extends StatefulWidget {
   const EcranProfil({super.key});
+
+  @override
+  State<EcranProfil> createState() => _EcranProfilState();
+}
+
+class _EcranProfilState extends State<EcranProfil> {
+  void _afficherModalConnexion(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = AppColors.surfaceOf(context);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final borderColor = AppColors.borderOf(context);
+
+    final emailCtrl = TextEditingController(text: 'rayen.lamine@darlink.tn');
+    final passCtrl = TextEditingController(text: 'password123');
+    final nameCtrl = TextEditingController(text: 'Rayen Lamine');
+    bool isRegister = false;
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: borderColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    isRegister ? 'Créer un compte DarLink' : 'Connexion à votre compte',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: textPrim,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 18),
+                  if (isRegister) ...[
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Nom complet',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  TextField(
+                    controller: emailCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Adresse e-mail',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: passCtrl,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Mot de passe',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            setModalState(() => isLoading = true);
+                            bool ok = false;
+                            if (isRegister) {
+                              ok = await AuthService.instance.register(
+                                fullName: nameCtrl.text.trim(),
+                                email: emailCtrl.text.trim(),
+                                password: passCtrl.text.trim(),
+                              );
+                            } else {
+                              ok = await AuthService.instance.login(
+                                email: emailCtrl.text.trim(),
+                                password: passCtrl.text.trim(),
+                              );
+                            }
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              setState(() {});
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(ok
+                                      ? 'Session mise à jour avec succès !'
+                                      : 'Échec de connexion.'),
+                                ),
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? Colors.white : const Color(0xFF0F1015),
+                      foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text(
+                      isLoading
+                          ? 'Chargement...'
+                          : (isRegister ? 'Créer mon compte' : 'Se connecter'),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () {
+                      setModalState(() => isRegister = !isRegister);
+                    },
+                    child: Text(
+                      isRegister
+                          ? 'Déjà un compte ? Se connecter'
+                          : 'Pas encore de compte ? S\'inscrire',
+                      style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +174,10 @@ class EcranProfil extends StatelessWidget {
     final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
+    final user = AuthState.instance.currentUser;
+    final userName = user?.fullName ?? 'Rayen Lamine';
+    final userEmail = user?.email ?? 'rayen.lamine@darlink.tn';
+    final initiales = userName.trim().split(' ').map((e) => e.isNotEmpty ? e[0].toUpperCase() : '').take(2).join();
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -74,10 +232,10 @@ class EcranProfil extends StatelessWidget {
                         width: 2,
                       ),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        'RL',
-                        style: TextStyle(
+                        initiales.isNotEmpty ? initiales : 'RL',
+                        style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           color: AppColors.accentBlue,
@@ -90,7 +248,7 @@ class EcranProfil extends StatelessWidget {
 
                   // Nom du client
                   Text(
-                    'Rayen Lamine',
+                    userName,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -102,7 +260,7 @@ class EcranProfil extends StatelessWidget {
 
                   // Email professionnel client
                   Text(
-                    'rayen.lamine@darlink.tn',
+                    userEmail,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -212,26 +370,53 @@ class EcranProfil extends StatelessWidget {
               isDark: isDark,
               enfants: [
                 _LigneActionLuxe(
+                  icone: Icons.add_circle_outline_rounded,
+                  titre: 'Déposer une annonce',
+                  sousTitre: 'Publier un bien immobilier haut standing (V7)',
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const EcranDepotAnnonce(),
+                      ),
+                    );
+                  },
+                ),
+                _LigneActionLuxe(
+                  icone: Icons.map_outlined,
+                  titre: 'Carte des biens en Tunisie',
+                  sousTitre: 'Cartographie et repères GPS interactifs (V8)',
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const EcranCarteInteractive(),
+                      ),
+                    );
+                  },
+                ),
+                _LigneActionLuxe(
                   icone: Icons.favorite_border_rounded,
                   titre: 'Annonces favorites',
                   sousTitre: 'Retrouver vos biens coup de cœur',
                   badge: '4',
                   isDark: isDark,
-                  onTap: () {},
-                ),
-                _LigneActionLuxe(
-                  icone: Icons.bookmark_border_rounded,
-                  titre: 'Recherches enregistrées',
-                  sousTitre: 'Alertes prix et nouveaux biens',
-                  isDark: isDark,
-                  onTap: () {},
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Consultez l\'onglet Favoris dans la barre inférieure.')),
+                    );
+                  },
                 ),
                 _LigneActionLuxe(
                   icone: Icons.calendar_month_outlined,
                   titre: 'Visites planifiées',
                   sousTitre: 'Historique des demandes de rendez-vous',
                   isDark: isDark,
-                  onTap: () {},
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Visite confirmée avec l\'agent Sonia Ben Salem.')),
+                    );
+                  },
                 ),
               ],
             ),
@@ -269,24 +454,17 @@ class EcranProfil extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // 5. BOUTON DÉCONNEXION CLIENT
+            // 5. BOUTON DÉCONNEXION & CHANGEMENT DE COMPTE (V4)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: TextButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Session sécurisée fermée.'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded, color: AppColors.accentRed, size: 20),
+                onPressed: () => _afficherModalConnexion(context),
+                icon: const Icon(Icons.swap_horiz_rounded, color: AppColors.accentBlue, size: 20),
                 label: const Text(
-                  'Déconnexion du compte',
+                  'Changer de compte / Se connecter',
                   style: TextStyle(
-                    color: AppColors.accentRed,
+                    color: AppColors.accentBlue,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),

@@ -6,6 +6,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../map/presentation/screens/map_screen.dart';
+import '../../../properties/data/mock_properties.dart';
+import '../../../properties/domain/models/property.dart';
+import '../../../properties/presentation/widgets/property_card.dart';
 
 /// Écran de recherche avancée inspiré de Screen 3 de la maquette Darlink.
 class EcranRecherche extends StatefulWidget {
@@ -33,6 +36,33 @@ class _EcranRechercheState extends State<EcranRecherche> {
     'Monastir',
     'Sfax',
   ];
+
+  List<Propriete> get _resultatsFiltres {
+    return listeProprietes.where((prop) {
+      if (_segmentActif == 'Louer' && !prop.estLocation) return false;
+      if (_segmentActif == 'Acheter' && prop.estLocation) return false;
+
+      if (_typeBienSelectionne != 'Tous' &&
+          prop.type.toLowerCase() != _typeBienSelectionne.toLowerCase()) {
+        return false;
+      }
+
+      if (_villeSelectionnee.isNotEmpty &&
+          !prop.localisation.toLowerCase().contains(_villeSelectionnee.toLowerCase())) {
+        return false;
+      }
+
+      if (_chambreSelectionnee != 'Tous') {
+        int minCh = 1;
+        if (_chambreSelectionnee == '2+') minCh = 2;
+        if (_chambreSelectionnee == '3+') minCh = 3;
+        if (_chambreSelectionnee == '4+') minCh = 4;
+        if (prop.nombreChambres < minCh) return false;
+      }
+
+      return true;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -463,43 +493,76 @@ class _EcranRechercheState extends State<EcranRecherche> {
 
                         const SizedBox(height: 26),
 
-                        // 8. BANDEAU DE ROADMAP
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0x1A2563EB) : const Color(0x102563EB),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0x332563EB)),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.info_outline_rounded, color: AppColors.accentBlue, size: 20),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Recherche dynamique en préparation',
-                                      style: TextStyle(
-                                        color: AppColors.accentBlue,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Les filtres seront connectés à l\'API Spring Boot en V5-T02.',
-                                      style: TextStyle(color: AppColors.accentBlue, fontSize: 12, height: 1.3),
-                                    ),
-                                  ],
+                        // 8. SECTION RÉSULTATS DYNAMIQUES EN TEMPS RÉEL (V5-V8)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Résultats correspondants (${_resultatsFiltres.length})',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: textPrim,
+                              ),
+                            ),
+                            if (_villeSelectionnee.isNotEmpty || _typeBienSelectionne != 'Tous' || _chambreSelectionnee != 'Tous' || _segmentActif != 'Acheter')
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _segmentActif = 'Acheter';
+                                    _typeBienSelectionne = 'Tous';
+                                    _villeSelectionnee = '';
+                                    _chambreSelectionnee = 'Tous';
+                                  });
+                                },
+                                child: const Text(
+                                  'Réinitialiser',
+                                  style: TextStyle(
+                                    color: AppColors.accentBlue,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
+                          ],
                         ),
+                        const SizedBox(height: 14),
 
-                        const SizedBox(height: 80),
+                        if (_resultatsFiltres.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+                            decoration: BoxDecoration(
+                              color: cardBg,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.search_off_rounded, size: 44, color: AppColors.accentBlue),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Aucun bien ne correspond à ces critères',
+                                  style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 15),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Essayez de sélectionner une autre ville ou d\'élargir le type de bien.',
+                                  style: TextStyle(color: textSec, fontSize: 13),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ..._resultatsFiltres.map((prop) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: CartePropriete(
+                                  propriete: prop,
+                                ),
+                              )),
+
+                        const SizedBox(height: 90),
                       ],
                     ),
                   ),
@@ -561,9 +624,9 @@ class _EcranRechercheState extends State<EcranRecherche> {
                       child: ElevatedButton(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Filtres de recherche appliqués avec succès !'),
-                              duration: Duration(seconds: 2),
+                            SnackBar(
+                              content: Text('${_resultatsFiltres.length} bien(s) trouvé(s) selon vos critères !'),
+                              duration: const Duration(seconds: 2),
                             ),
                           );
                         },
