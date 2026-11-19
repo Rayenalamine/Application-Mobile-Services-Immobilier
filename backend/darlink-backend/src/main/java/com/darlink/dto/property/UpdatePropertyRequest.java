@@ -102,3 +102,4 @@ public class UpdatePropertyRequest {
     public BigDecimal getLongitude() { return longitude; }
     public void setLongitude(BigDecimal longitude) { this.longitude = longitude; }
 }
+

@@ -80,3 +80,4 @@ public class ContactRequestController {
         return ResponseEntity.ok(updated);
     }
 }
+

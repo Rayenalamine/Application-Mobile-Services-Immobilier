@@ -38,3 +38,4 @@ CREATE TABLE IF NOT EXISTS contact_requests (
 CREATE INDEX IF NOT EXISTS idx_contact_requests_property ON contact_requests(property_id);
 CREATE INDEX IF NOT EXISTS idx_contact_requests_sender ON contact_requests(sender_id);
 CREATE INDEX IF NOT EXISTS idx_contact_requests_status ON contact_requests(status);
+

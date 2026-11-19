@@ -17,3 +17,4 @@ public interface ContactRequestRepository extends JpaRepository<ContactRequestEn
     @Query("SELECT cr FROM ContactRequestEntity cr, PropertyEntity p WHERE cr.propertyId = p.id AND p.ownerId = :ownerId ORDER BY cr.createdAt DESC")
     List<ContactRequestEntity> findReceivedRequestsByOwnerId(@Param("ownerId") Long ownerId);
 }
+

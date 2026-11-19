@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # DARLINK - VALIDATION END-TO-END AUTOMATISÉE (Workflows 1 à 6)
 # Tests complets sur l'environnement réel (Spring Boot + PostgreSQL)
 # ============================================================

@@ -23,3 +23,4 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations(uploadUri.endsWith("/") ? uploadUri : uploadUri + "/");
     }
 }
+

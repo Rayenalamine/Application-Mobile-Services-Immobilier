@@ -355,3 +355,4 @@ npx expo start --lan
 > **Réponse de l'équipe :**
 > Côté backend, nous avons créé des index PostgreSQL ciblés (`idx_properties_owner`, `idx_properties_city`, `idx_properties_price`, `idx_properties_type`) afin que les requêtes multi-critères s'exécutent en un temps constant même avec un volume important d'annonces. De plus, notre API implémente la pagination native avec Spring Data `Pageable` (`page`, `size`), évitant ainsi le surcoût de transférer de lourds volumes de données.
 > Côté mobile (Flutter et React Native), les listes exploitent le recyclage de cellules virtuelles (`ListView.builder` et `FlatList`/`ScrollView`), limitant drastiquement la consommation de mémoire vive de l'appareil.
+

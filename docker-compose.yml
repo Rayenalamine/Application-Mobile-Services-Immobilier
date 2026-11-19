@@ -22,3 +22,4 @@ services:
 volumes:
   darlink_pgdata:
     driver: local
+

@@ -67,3 +67,4 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserFavorites(userId));
     }
 }
+
