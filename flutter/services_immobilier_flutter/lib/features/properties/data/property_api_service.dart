@@ -29,8 +29,8 @@ class PropertyApiService {
       final queryParams = <String, dynamic>{
         if (city != null && city.isNotEmpty) 'city': city,
         if (type != null && type.isNotEmpty && type != 'Tous') 'type': type,
-        if (minPrice != null) 'minPrice': minPrice,
-        if (maxPrice != null) 'maxPrice': maxPrice,
+        if (minPrice != null) 'minPrice': minPrice.toString(),
+        if (maxPrice != null) 'maxPrice': maxPrice.toString(),
         if (search != null && search.isNotEmpty) 'search': search,
       };
 
@@ -133,7 +133,7 @@ class PropertyApiService {
       imageUrl: imageUrl,
       nombreChambres: bedrooms,
       nombreSallesDeBain: bathrooms,
-      surfaceM2: surfaceM2,
+      surfaceM2: surfaceM2.round(),
       commodites: amenities ?? ['Climatisation', 'Standing'],
       description: description,
     );
@@ -162,7 +162,7 @@ class PropertyApiService {
           'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
       nombreChambres: json['bedrooms'] as int? ?? 3,
       nombreSallesDeBain: json['bathrooms'] as int? ?? 2,
-      surfaceM2: (json['surfaceM2'] as num?)?.toDouble() ?? 120.0,
+      surfaceM2: (json['surfaceM2'] as num?)?.toInt() ?? 120,
       description: json['description'] as String? ?? '',
       standing: json['standing'] as String? ?? 'Haut Standing',
       anneeConstruction: json['yearBuilt'] as int? ?? 2022,

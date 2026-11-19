@@ -26,7 +26,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
   String _typeSelectionne = 'Appartement';
   String _villeSelectionnee = 'Tunis';
   int _nbChambres = 3;
-  int _nbSallesDeBain = 2;
+  final int _nbSallesDeBain = 2;
   bool _isLocation = false;
   bool _isSubmitting = false;
 

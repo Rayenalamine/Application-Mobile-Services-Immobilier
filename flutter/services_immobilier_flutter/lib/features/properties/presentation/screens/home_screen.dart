@@ -7,9 +7,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_properties.dart';
-import '../../data/property_api_service.dart';
 import '../../domain/models/property.dart';
-import '../../map/presentation/screens/map_screen.dart';
+import '../../../map/presentation/screens/map_screen.dart';
 import '../widgets/property_card.dart';
 import 'add_property_screen.dart';
 

@@ -4,26 +4,40 @@ Toutes les modifications notables apportées au projet DarLink sont consignées 
 
 ---
 
-## [Non publié] - 2026-11-18
+## [2.0.0 à 8.0.0] - 2026-11-19
 
-### Ajouté
-- **Tâche V2-T04 (Assignation Membre 1) :** Implémentation de la barre de navigation inférieure Material 3 (`NavigationBar`) dans l'application Flutter (`flutter/services_immobilier_flutter/lib/features/navigation/presentation/screens/main_navigation_screen.dart`).
-- **Tâche V2-T04 (Assignation Membre 1) :** Création de 3 nouveaux écrans modulaires : `search_screen.dart` (recherche multicritère avec puces et filtres), `favorites_screen.dart` (état vide stylisé des favoris), et `profile_screen.dart` (profil utilisateur invité et métadonnées académiques).
-- **Tâche V2-T04 (Assignation Membre 1) :** Création de la suite de tests de navigation `test/navigation_test.dart` (5 tests de widgets vérifiant la navigation et la persistance des états via `IndexedStack`, portant le total à 9 tests réussis).
-- **Tâche V2-T02 (Assignation Membre 1) :** Spécification officielle et mathématique des thèmes (clair et sombre) et de la typographie dans `docs/THEME_SPECIFICATION.md` avec vérification de 13 ratios de contraste WCAG 2.1 AA (> 4.5:1).
-- **Tâche V2-T01 (Assignation Membre 1) :** Refactorisation modulaire complète de l'application Flutter `flutter/services_immobilier_flutter/` (`core/constants/app_colors.dart`, `app_spacing.dart`, modèle `Propriete`, mock data, `property_card.dart`, `home_screen.dart`, `property_details_screen.dart`).
-- Suite de tests de widgets Flutter enrichie dans `test/widget_test.dart` (4 tests comportementaux passés à 100%).
-- Création du socle documentaire officiel unifié dans `docs/` (`PROJECT_CONTEXT.md`, `PROJECT_STATUS.md`, `WORK_PROTOCOL.md`, `AI_ONBOARDING.md`, `TEAM_ROLES.md`, `DEVELOPMENT_METHODOLOGY.md`, `VERSION_ROADMAP.md`, `TASK_REGISTER.md`).
-- Définition de la tâche obligatoire API-First `V5-T00` pour la validation préalable des contrats d'API.
-- Adoption de la norme RFC 9457 (`application/problem+json`) pour le format standardisé des erreurs.
-- Clarification des environnements de test (Web vs Expo Go vs Émulateur Android vs Build natif).
+### V8.0.0 - Cartographie Interactive & Géolocalisation GPS (V8)
+- **Backend Spring Boot :** Endpoint `GET /api/v1/properties/map` fournissant les coordonnées GPS complètes (latitude, longitude, ville, prix, image) pour l'ensemble des annonces en Tunisie.
+- **Flutter :** Écran `EcranCarteInteractive` (`lib/features/map/presentation/screens/map_screen.dart`) avec repères cartographiques (Golfe de Tunis, Sahel, Djerba), pins interactifs avec badges de prix, et carte aperçu flottante au clic menant vers la vue détaillée.
+- **React Native :** Écran `MapScreen.tsx` avec quadrillage stylisé, sélecteur de villes (Tunis, Sousse, Hammamet, Djerba, Monastir), pins animés et prévisualisation glassmorphique.
 
-### Corrigé
-- Ajustement du défilement dans les tests de widgets Flutter (`test/widget_test.dart`) pour garantir l'interaction avec le bouton "Voir détails" en présence de la barre de navigation Material 3 dans le viewport 800x600 px.
-- Révision de la tâche V3-T02 : suppression des modèles prématurés `audit.ts` et `audit.dart`, recentrage sur la configuration PostgreSQL, DataSource HikariCP, migration Flyway, test d'intégration Spring Boot et spécification réseau locale.
-- Clarification de la séparation entre Propriétaire du dépôt et numérotation des membres (Membres 1, 2, 3).
-- Qualification exacte des 4 annonces initiales en "4 biens fictifs utilisés comme données de démonstration et de test".
-- Détection et consignation de l'état réel des outils physiques (Flutter 3.47.5 opérationnel, Java 21 opérationnel, Maven 3.9.6 opérationnel, Node v22.20.0 opérationnel, PostgreSQL service Windows arrêté, Android SDK cmdline-tools manquants).
+### V7.0.0 - Dépôt d'Annonce Immobilière & Multi-Critères (V7)
+- **Backend Spring Boot :** Endpoint `POST /api/v1/properties` avec validation bean (`@Valid`), génération d'identifiant et persistance dans PostgreSQL `darlink_db`.
+- **Flutter :** Écran `EcranAjouterPropriete` (`add_property_screen.dart`) avec saisie de titre, loyer/prix, surface, compteurs de chambres/salles de bain, sélecteur de ville et tags de commodités (Piscine, Vue mer, Climatisation, etc.).
+- **React Native :** Écran `AddPropertyScreen.tsx` paritaire avec formulaire fluide, validation réactive et ajout immédiat dans le catalogue.
+
+### V6.0.0 - Persistance & Synchronisation des Favoris (V6)
+- **Backend Spring Boot :** Contrôleur `FavoriteController` (`POST /api/v1/favorites/{id}`, `DELETE /api/v1/favorites/{id}`, `GET /api/v1/favorites/ids`) avec entité `FavoriteEntity` liée aux utilisateurs et propriétés.
+- **Flutter & React Native :** `FavoritesApiService` assurant la persistance locale hors-ligne et la synchronisation avec le serveur REST.
+
+### V5.0.0 - API REST des Propriétés & Filtrage Dynamique (V5)
+- **Backend Spring Boot :** `PropertyController` avec spécification JPA dynamique (`JpaSpecificationExecutor`) permettant le filtrage combiné par ville, type de bien, prix minimum, prix maximum et recherche textuelle insensible à la casse.
+- **Base de données :** Migration Flyway `V2__seed_properties.sql` insérant des données réalistes de biens d'exception tunisiens avec images Unsplash HD.
+
+### V4.0.0 - Sécurité JWT & Profil Client Épuré (V4)
+- **Backend Spring Boot :** Authentification stateless JWT avec `JwtUtil`, `JwtAuthenticationFilter`, mot de passe haché par `BCryptPasswordEncoder`, et endpoints `/api/v1/auth/register` & `/api/v1/auth/login`.
+- **Mobile :** Nettoyage complet des vues de profil (suppression des mentions académiques/enseignants), adoption d'un profil client professionnel avec monogramme d'initiales (« RL ») et gestion de session.
+
+### V3.0.0 - Socle Backend Spring Boot 3 & PostgreSQL 18 (V3)
+- **Architecture :** Création du backend Java 21 / Spring Boot 3.3.5 dans `backend/darlink-backend/` sur le port non conflictuel `8085`.
+- **Base de données :** Initialisation du serveur PostgreSQL 18 avec la base `darlink_db`, pool de connexions HikariCP et migrations automatisées Flyway `V1__init_schema.sql`.
+- **Standardisation :** Implémentation du format d'erreur RFC 9457 (`ProblemDetailResponse`), contrôleur de santé `/api/v1/health` et documentation interactive Swagger UI `/swagger-ui/index.html`.
+- **Tests :** Suite de tests Maven JUnit 5 validée à 100% avec base H2 in-memory.
+
+### V2.0.0 - Refonte UI Haut Standing & Parité Complète (V2)
+- **Design :** Nouvelle identité visuelle ultra-moderne inspirée des références de luxe : design Clair (Blanc Luxe) par défaut, bascule réactive vers un Mode Sombre haute précision, composants glassmorphism transparents avec micro-bordures et ombres douces.
+- **Double Navigation :** Barre de navigation Material 3 sur Flutter et barre paritaire sur React Native (4 onglets : Accueil, Recherche, Favoris, Profil).
+- **Validation :** 13 tests de widgets Flutter passés avec succès (100%), 0 avertissement `flutter analyze`, 0 erreur TypeScript React Native.
 
 ---
 
@@ -33,6 +47,3 @@ Toutes les modifications notables apportées au projet DarLink sont consignées 
 - Prototype fonctionnel initial Version 1 en Flutter dans `flutter/services_immobilier_flutter/`.
 - Écran d'accueil affichant 4 biens immobiliers fictifs situés en Tunisie (Tunis, Sousse, Djerba).
 - Écran de détails d'une annonce avec bouton de retour.
-- Images distantes Unsplash avec widgets de chargement et fallback en cas d'erreur.
-- Test unitaire de widget vérifié dans `test/widget_test.dart` (1/1 passé).
-- Documentation C4 complète et 20 questions/réponses d'examen dans `flutter/services_immobilier_flutter/README.md`.

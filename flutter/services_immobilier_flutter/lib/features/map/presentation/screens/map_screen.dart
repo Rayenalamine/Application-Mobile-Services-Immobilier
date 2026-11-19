@@ -5,9 +5,9 @@
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../properties/domain/models/property.dart';
-import '../../properties/data/property_api_service.dart';
-import '../../properties/presentation/screens/property_details_screen.dart';
+import '../../../properties/domain/models/property.dart';
+import '../../../properties/data/property_api_service.dart';
+import '../../../properties/presentation/screens/property_details_screen.dart';
 
 class EcranCarteInteractive extends StatefulWidget {
   const EcranCarteInteractive({super.key});
@@ -144,6 +144,11 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                           ),
                         );
                       }),
+
+                      if (_isLoading)
+                        const Center(
+                          child: CircularProgressIndicator(color: AppColors.accentBlue),
+                        ),
                     ],
                   ),
                 );
@@ -211,7 +216,7 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: _villes.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final ville = _villes[index];
                   final isSelected = _villeFiltre == ville;
@@ -256,7 +261,7 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => EcranDetailsPropriete(propriete: _proprieteSelectionnee!),
+                        builder: (_) => EcranDetails(propriete: _proprieteSelectionnee!),
                       ),
                     );
                   },

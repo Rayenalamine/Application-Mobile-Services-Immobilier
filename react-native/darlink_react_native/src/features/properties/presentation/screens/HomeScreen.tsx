@@ -3,7 +3,7 @@
 // Design adaptatif Clair / Sombre, monogramme initiales épuré
 // ============================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,15 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  Alert,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { mockProperties } from '../../data/mockProperties';
 import { Property } from '../../domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { PropertyDetailsScreen } from './PropertyDetailsScreen';
+import { AddPropertyScreen } from './AddPropertyScreen';
+import { MapScreen } from '../../../map/presentation/screens/MapScreen';
+import { propertyApiService } from '../../services/propertyApiService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 
 const FILTER_PILLS = [
@@ -30,17 +32,55 @@ const FILTER_PILLS = [
 ] as const;
 
 export const HomeScreen: React.FC = () => {
+  const [currentView, setCurrentView] = useState<'home' | 'map' | 'add'>('home');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
+  const [properties, setProperties] = useState<Property[]>([...mockProperties]);
   const { isDark, toggleTheme, colors } = useTheme();
 
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const list = await propertyApiService.getProperties();
+      if (isMounted && list.length > 0) {
+        setProperties(list);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Filtrage selon le filtre actif
-  const filteredProperties = mockProperties.filter((p) => {
+  const filteredProperties = properties.filter((p) => {
     if (activeFilter === 'Tous' || activeFilter === 'Prix' || activeFilter === 'Chambres') {
       return true;
     }
     return p.type.toLowerCase() === activeFilter.toLowerCase();
   });
+
+  if (currentView === 'map') {
+    return (
+      <MapScreen
+        onBack={() => setCurrentView('home')}
+        onSelectProperty={(prop) => {
+          setSelectedProperty(prop);
+          setCurrentView('home');
+        }}
+      />
+    );
+  }
+
+  if (currentView === 'add') {
+    return (
+      <AddPropertyScreen
+        onBack={() => setCurrentView('home')}
+        onPropertyCreated={(created) => {
+          setProperties((prev) => [created, ...prev]);
+        }}
+      />
+    );
+  }
 
   // Si un bien est sélectionné, on affiche l'écran de détails luxe (Screen 2)
   if (selectedProperty) {
@@ -85,7 +125,7 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Boutons d'action : Bascule Thème Sombre/Clair + Carte */}
+          {/* Boutons d'action : Bascule Thème Sombre/Clair + Ajout + Carte */}
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={[
@@ -111,9 +151,23 @@ export const HomeScreen: React.FC = () => {
                   borderColor: colors.border,
                 },
               ]}
-              onPress={() =>
-                Alert.alert('Carte interactive', 'Affichage de la carte prévu en phase V8.')
-              }
+              onPress={() => setCurrentView('add')}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Déposer une annonce"
+            >
+              <Text style={styles.actionEmoji}>➕</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.headerActionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={() => setCurrentView('map')}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Ouvrir la carte"
