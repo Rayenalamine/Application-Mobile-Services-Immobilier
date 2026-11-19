@@ -10,9 +10,12 @@ import { Property, PropertyType } from '../domain/models/property';
 export interface PropertyFilterParams {
   city?: string;
   type?: string;
+  isRental?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  minBedrooms?: number;
   search?: string;
+  sort?: string;
   page?: number;
   size?: number;
 }
@@ -39,7 +42,7 @@ export interface CreatePropertyPayload {
   agentPhone?: string;
 }
 
-interface SpringPropertyDto {
+export interface SpringPropertyDto {
   id: number;
   title: string;
   description: string;
@@ -87,11 +90,14 @@ class PropertyApiService {
   public async getProperties(params?: PropertyFilterParams): Promise<Property[]> {
     try {
       const response = await api.get<PageResponse<SpringPropertyDto>>('/properties', {
-        city: params?.city,
+        city: params?.city !== 'Toutes' ? params?.city : undefined,
         type: params?.type !== 'Tous' ? params?.type : undefined,
+        isRental: params?.isRental,
         minPrice: params?.minPrice,
         maxPrice: params?.maxPrice,
+        minBedrooms: params?.minBedrooms,
         search: params?.search,
+        sort: params?.sort,
         page: params?.page ?? 0,
         size: params?.size ?? 20,
       });
@@ -117,6 +123,18 @@ class PropertyApiService {
       return this.cachedProperties;
     } catch {
       return this.cachedProperties;
+    }
+  }
+
+  public async getUserProperties(): Promise<Property[]> {
+    try {
+      const list = await api.get<SpringPropertyDto[]>('/users/me/properties');
+      if (Array.isArray(list) && list.length > 0) {
+        return list.map(this.mapDtoToProperty);
+      }
+      return this.cachedProperties.slice(0, 2);
+    } catch {
+      return this.cachedProperties.slice(0, 2);
     }
   }
 
@@ -151,16 +169,45 @@ class PropertyApiService {
     }
   }
 
+  public async updateProperty(id: string, payload: Partial<CreatePropertyPayload>): Promise<Property | null> {
+    try {
+      const dto = await api.put<SpringPropertyDto>(`/properties/${id}`, payload);
+      const prop = this.mapDtoToProperty(dto);
+      const index = this.cachedProperties.findIndex((p) => p.id === id);
+      if (index !== -1) {
+        this.cachedProperties[index] = prop;
+      }
+      return prop;
+    } catch {
+      return null;
+    }
+  }
+
+  public async deleteProperty(id: string): Promise<boolean> {
+    try {
+      await api.delete(`/properties/${id}`);
+      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== id);
+      return true;
+    } catch {
+      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== id);
+      return true;
+    }
+  }
+
   private filterLocal(params?: PropertyFilterParams): Property[] {
     return this.cachedProperties.filter((p) => {
-      if (params?.city && !p.localisation.toLowerCase().includes(params.city.toLowerCase())) {
+      if (params?.city && params.city !== 'Toutes' && !p.localisation.toLowerCase().includes(params.city.toLowerCase())) {
         return false;
       }
       if (params?.type && params.type !== 'Tous' && p.type.toLowerCase() !== params.type.toLowerCase()) {
         return false;
       }
+      if (params?.isRental !== undefined && p.estLocation !== params.isRental) {
+        return false;
+      }
       if (params?.minPrice && p.prix < params.minPrice) return false;
       if (params?.maxPrice && p.prix > params.maxPrice) return false;
+      if (params?.minBedrooms && p.nombreChambres < params.minBedrooms) return false;
       if (params?.search) {
         const query = params.search.toLowerCase();
         return (
@@ -173,7 +220,7 @@ class PropertyApiService {
     });
   }
 
-  private mapDtoToProperty(dto: SpringPropertyDto): Property {
+  public mapDtoToProperty(dto: SpringPropertyDto): Property {
     return {
       id: String(dto.id),
       titre: dto.title,
@@ -199,4 +246,3 @@ class PropertyApiService {
 }
 
 export const propertyApiService = PropertyApiService.getInstance();
-

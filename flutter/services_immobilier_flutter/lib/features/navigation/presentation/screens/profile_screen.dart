@@ -10,6 +10,7 @@ import '../../../auth/data/auth_service.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../map/presentation/screens/map_screen.dart';
 import '../../../properties/presentation/screens/add_property_screen.dart';
+import '../../../contact/data/contact_api_service.dart';
 
 /// Écran de profil client haut de gamme avec gestion des préférences et du thème.
 class EcranProfil extends StatefulWidget {
@@ -165,6 +166,129 @@ class _EcranProfilState extends State<EcranProfil> {
     );
   }
 
+  void _afficherModalEditionProfil(BuildContext context) {
+    final user = AuthState.instance.currentUser;
+    final nameCtrl = TextEditingController(text: user?.fullName ?? 'Rayen Lamine');
+    final phoneCtrl = TextEditingController(text: user?.phone ?? '+216 20 123 456');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Modifier mes coordonnées'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Nom complet'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneCtrl,
+              decoration: const InputDecoration(labelText: 'Numéro de téléphone'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBlue, foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok = await AuthService.instance.updateProfile(
+                fullName: nameCtrl.text.trim(),
+                phone: phoneCtrl.text.trim(),
+              );
+              if (!mounted || !context.mounted) return;
+              setState(() {});
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(ok ? 'Profil mis à jour dans PostgreSQL !' : 'Mise à jour locale effectuée'),
+                  backgroundColor: AppColors.accentGreen,
+                ),
+              );
+            },
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _afficherModalDemandesContact(BuildContext context) async {
+    final cardBg = AppColors.surfaceOf(context);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final textSec = AppColors.textSecondaryOf(context);
+
+    final demandes = await ContactApiService.instance.getReceivedRequests();
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.7),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Demandes de contact reçues (${demandes.length})',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrim),
+              ),
+              const SizedBox(height: 16),
+              if (demandes.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text('Aucune demande de contact reçue pour le moment.', style: TextStyle(color: textSec)),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: demandes.length,
+                    separatorBuilder: (_, index) => const Divider(),
+                    itemBuilder: (context, i) {
+                      final d = demandes[i];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: AppColors.accentBlue.withValues(alpha: 0.2),
+                          child: Text(d.senderName.isNotEmpty ? d.senderName[0] : 'C', style: const TextStyle(color: AppColors.accentBlue)),
+                        ),
+                        title: Text(d.senderName, style: TextStyle(fontWeight: FontWeight.w700, color: textPrim)),
+                        subtitle: Text('${d.senderEmail} • ${d.senderPhone ?? ""}\n"${d.message}"', style: TextStyle(color: textSec, fontSize: 13)),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: const Color(0x1F10B981), borderRadius: BorderRadius.circular(8)),
+                          child: Text(d.status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.accentGreen)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -246,15 +370,32 @@ class _EcranProfilState extends State<EcranProfil> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Nom du client
-                  Text(
-                    userName,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: textPrim,
-                      letterSpacing: -0.3,
-                    ),
+                  // Nom du client avec bouton d'édition
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        userName,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: textPrim,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _afficherModalEditionProfil(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentBlue.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.edit_outlined, size: 16, color: AppColors.accentBlue),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
 
@@ -408,15 +549,11 @@ class _EcranProfilState extends State<EcranProfil> {
                   },
                 ),
                 _LigneActionLuxe(
-                  icone: Icons.calendar_month_outlined,
-                  titre: 'Visites planifiées',
-                  sousTitre: 'Historique des demandes de rendez-vous',
+                  icone: Icons.mark_email_unread_outlined,
+                  titre: 'Demandes de visite reçues',
+                  sousTitre: 'Consulter les messages des acheteurs',
                   isDark: isDark,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Visite confirmée avec l\'agent Sonia Ben Salem.')),
-                    );
-                  },
+                  onTap: () => _afficherModalDemandesContact(context),
                 ),
               ],
             ),

@@ -3,7 +3,7 @@
 // Contrôles segmented, sélecteur de prix, chambres et villes (Maquette Screen 3)
 // ============================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { useTheme } from '../../../../core/theme/ThemeContext';
-import { mockProperties } from '../../../properties/data/mockProperties';
+import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
@@ -32,11 +32,32 @@ export const SearchScreen: React.FC = () => {
   const [priceMode, setPriceMode] = useState<'total' | 'monthly'>('total');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('Tous');
   const [selectedCity, setSelectedCity] = useState<string>('');
+  const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showMap, setShowMap] = useState<boolean>(false);
   const { isDark, colors } = useTheme();
 
-  const filteredProperties = mockProperties.filter((p) => {
+  useEffect(() => {
+    fetchFilteredProperties();
+  }, [selectedSegment, selectedType, selectedCity, selectedBedrooms]);
+
+  const fetchFilteredProperties = async () => {
+    let minBeds: number | undefined;
+    if (selectedBedrooms === '1+') minBeds = 1;
+    if (selectedBedrooms === '2+') minBeds = 2;
+    if (selectedBedrooms === '3+') minBeds = 3;
+    if (selectedBedrooms === '4+') minBeds = 4;
+
+    const list = await propertyApiService.getProperties({
+      city: selectedCity || undefined,
+      type: selectedType !== 'Tous' ? selectedType : undefined,
+      isRental: selectedSegment === 'Louer' ? true : selectedSegment === 'Acheter' ? false : undefined,
+      minBedrooms: minBeds,
+    });
+    setProperties(list);
+  };
+
+  const filteredProperties = properties.filter((p) => {
     if (selectedSegment === 'Louer' && !p.estLocation) return false;
     if (selectedSegment === 'Acheter' && p.estLocation) return false;
     if (selectedType !== 'Tous' && p.type.toLowerCase() !== selectedType.toLowerCase()) return false;

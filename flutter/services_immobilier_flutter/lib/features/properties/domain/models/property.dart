@@ -60,9 +60,13 @@ class Propriete {
   /// Téléphone de l'agent
   final String agentTel;
 
+  /// Identifiant du propriétaire du bien
+  final String proprietaireId;
+
   /// Constructeur constant pour créer un objet Propriete immuable.
   const Propriete({
     this.id = '1',
+    this.proprietaireId = '1',
     required this.titre,
     required this.localisation,
     required this.prix,
@@ -133,9 +137,11 @@ class Propriete {
     List<String>? commodites,
     String? agentNom,
     String? agentTel,
+    String? proprietaireId,
   }) {
     return Propriete(
       id: id ?? this.id,
+      proprietaireId: proprietaireId ?? this.proprietaireId,
       titre: titre ?? this.titre,
       localisation: localisation ?? this.localisation,
       prix: prix ?? this.prix,

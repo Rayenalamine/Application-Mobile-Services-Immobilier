@@ -6,7 +6,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../map/presentation/screens/map_screen.dart';
-import '../../../properties/data/mock_properties.dart';
+import '../../../properties/data/property_api_service.dart';
 import '../../../properties/domain/models/property.dart';
 import '../../../properties/presentation/widgets/property_card.dart';
 
@@ -37,8 +37,33 @@ class _EcranRechercheState extends State<EcranRecherche> {
     'Sfax',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _appliquerRechercheBackend();
+  }
+
+  Future<void> _appliquerRechercheBackend() async {
+    int? minCh;
+    if (_chambreSelectionnee == '1+') minCh = 1;
+    if (_chambreSelectionnee == '2+') minCh = 2;
+    if (_chambreSelectionnee == '3+') minCh = 3;
+    if (_chambreSelectionnee == '4+') minCh = 4;
+
+    await PropertyApiService.instance.getProperties(
+      city: _villeSelectionnee.isNotEmpty ? _villeSelectionnee : null,
+      type: _typeBienSelectionne != 'Tous' ? _typeBienSelectionne : null,
+      isRental: _segmentActif == 'Louer' ? true : (_segmentActif == 'Acheter' ? false : null),
+      minBedrooms: minCh,
+    );
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   List<Propriete> get _resultatsFiltres {
-    return listeProprietes.where((prop) {
+    final list = PropertyApiService.instance.currentProperties;
+    return list.where((prop) {
       if (_segmentActif == 'Louer' && !prop.estLocation) return false;
       if (_segmentActif == 'Acheter' && prop.estLocation) return false;
 
@@ -622,10 +647,12 @@ class _EcranRechercheState extends State<EcranRecherche> {
                     Expanded(
                       flex: 5,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
+                          await _appliquerRechercheBackend();
+                          if (!mounted || !context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('${_resultatsFiltres.length} bien(s) trouvé(s) selon vos critères !'),
+                              content: Text('${_resultatsFiltres.length} bien(s) trouvé(s) depuis la base de données !'),
                               duration: const Duration(seconds: 2),
                             ),
                           );

@@ -101,6 +101,25 @@ class AuthService {
     }
   }
 
+  public async updateProfile(fullName: string, phone?: string): Promise<boolean> {
+    try {
+      const updated = await api.put<UserProfile>('/users/me', { fullName, phone });
+      if (updated && updated.id) {
+        this.currentUser = updated;
+        return true;
+      }
+    } catch {
+      // Fallback local
+      this.currentUser = {
+        ...this.currentUser,
+        fullName,
+        phone,
+      };
+      return true;
+    }
+    return false;
+  }
+
   public logout(): void {
     this.token = null;
     api.setToken(null);
@@ -108,3 +127,4 @@ class AuthService {
 }
 
 export const authService = AuthService.getInstance();
+

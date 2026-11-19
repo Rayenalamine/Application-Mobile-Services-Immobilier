@@ -10,6 +10,7 @@ import java.util.List;
 
 public class PropertyDto {
     private Long id;
+    private Long ownerId;
     private String title;
     private String description;
     private String location;
@@ -36,6 +37,7 @@ public class PropertyDto {
     public static PropertyDto fromEntity(PropertyEntity entity) {
         PropertyDto dto = new PropertyDto();
         dto.setId(entity.getId());
+        dto.setOwnerId(entity.getOwnerId());
         dto.setTitle(entity.getTitle());
         dto.setDescription(entity.getDescription());
         dto.setLocation(entity.getLocation());
@@ -70,6 +72,9 @@ public class PropertyDto {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getOwnerId() { return ownerId; }
+    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

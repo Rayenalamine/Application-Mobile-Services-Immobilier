@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/health",
                                 "/api/v1/auth/**",
+                                "/uploads/**",
                                 "/api-docs/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -45,8 +46,13 @@ public class SecurityConfig {
                                 "/actuator/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/properties/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/properties").permitAll() // Autorise ajout pour la démo V7
-                        .requestMatchers("/api/v1/favorites/**").permitAll() // Autorise favoris avec ou sans session pour la fluidité V6
+                        .requestMatchers(HttpMethod.POST, "/api/v1/properties").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/properties/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/properties/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/contact-requests").permitAll()
+                        .requestMatchers("/api/v1/contact-requests/**").permitAll()
+                        .requestMatchers("/api/v1/users/**").permitAll()
+                        .requestMatchers("/api/v1/favorites/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -54,4 +60,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-

@@ -52,6 +52,15 @@ export class ApiClient {
     });
   }
 
+  public async put<T>(endpoint: string, body?: unknown): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+    return this.request<T>(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   public async delete<T>(endpoint: string): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     return this.request<T>(url, { method: 'DELETE' });

@@ -12,6 +12,27 @@ class AuthService {
 
   final ApiClient _api = ApiClient.instance;
 
+  AuthState get state => AuthState.instance;
+
+  Future<bool> updateProfile({
+    required String fullName,
+    String? phone,
+  }) async {
+    try {
+      final res = await _api.put('/users/me', {
+        'fullName': fullName,
+        'phone': phone,
+      });
+
+      if (res is Map<String, dynamic> && res.containsKey('id')) {
+        final user = ClientUser.fromJson(res);
+        AuthState.instance.setSession(user: user, token: _api.authToken ?? '');
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<bool> register({
     required String fullName,
     required String email,

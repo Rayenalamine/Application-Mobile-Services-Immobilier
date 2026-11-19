@@ -69,6 +69,9 @@ public class PropertyEntity {
     @Column(precision = 10, scale = 6)
     private BigDecimal longitude = new BigDecimal("10.181500");
 
+    @Column(name = "owner_id")
+    private Long ownerId = 1L;
+
     @Column(name = "created_at")
     private Instant createdAt = Instant.now();
 
@@ -77,6 +80,9 @@ public class PropertyEntity {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getOwnerId() { return ownerId; }
+    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

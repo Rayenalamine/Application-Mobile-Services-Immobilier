@@ -12,4 +12,6 @@ import java.util.List;
 @Repository
 public interface PropertyRepository extends JpaRepository<PropertyEntity, Long>, JpaSpecificationExecutor<PropertyEntity> {
     List<PropertyEntity> findByCityIgnoreCase(String city);
+    List<PropertyEntity> findByOwnerId(Long ownerId);
+    List<PropertyEntity> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 }

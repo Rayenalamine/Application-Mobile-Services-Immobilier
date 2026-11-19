@@ -13,10 +13,16 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { Property, formatPrice } from '../../domain/models/property';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
+import { contactApiService } from '../../../contact/services/contactApiService';
+import { propertyApiService } from '../../services/propertyApiService';
+import { authService } from '../../../auth/services/authService';
 
 interface PropertyDetailsScreenProps {
   readonly property: Property;
@@ -29,8 +35,19 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 }) => {
   const [displayedImage, setDisplayedImage] = useState<string>(property.imageUrl);
   const [imageIndex, setImageIndex] = useState<number>(0);
-  const [isFavorite, setIsFavorite] = useState<boolean>(property.isFavorite ?? false);
+  const propId = property.id || '1';
+  const [isFavorite, setIsFavorite] = useState<boolean>(
+    property.isFavorite ?? favoritesApiService.isFavorite(propId)
+  );
   const { isDark, colors } = useTheme();
+
+  const [showContactModal, setShowContactModal] = useState<boolean>(false);
+  const [senderName, setSenderName] = useState<string>(authService.getCurrentUser().fullName);
+  const [senderEmail, setSenderEmail] = useState<string>(authService.getCurrentUser().email);
+  const [senderPhone, setSenderPhone] = useState<string>('+216 20 123 456');
+  const [contactMessage, setContactMessage] = useState<string>(
+    `Bonjour, je souhaite visiter ce bien (${property.titre}).`
+  );
 
   const allImages = [property.imageUrl, ...(property.imagesGalerie ?? [])];
 
@@ -39,12 +56,57 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
     setImageIndex(idx);
   };
 
-  const handleScheduleTour = () => {
+  const handleToggleFavorite = async () => {
+    await favoritesApiService.toggleFavorite(propId);
+    setIsFavorite(!isFavorite);
     Alert.alert(
-      'Visite planifiée',
-      'Votre demande de visite a bien été enregistrée pour ce bien avec Sonia Ben Salem.',
-      [{ text: 'OK' }]
+      isFavorite ? 'Favori retiré' : 'Favori ajouté',
+      isFavorite
+        ? 'Le bien a été retiré de vos favoris.'
+        : 'Le bien a été ajouté à vos favoris et synchronisé avec PostgreSQL.'
     );
+  };
+
+  const handleDeleteProperty = () => {
+    Alert.alert(
+      'Supprimer ce bien',
+      `Voulez-vous supprimer définitivement "${property.titre}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            await propertyApiService.deleteProperty(propId);
+            Alert.alert('Supprimé', 'Le bien a été supprimé de la base de données.');
+            onBack();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSendContact = async () => {
+    if (!senderName.trim() || !senderEmail.trim()) {
+      Alert.alert('Erreur', 'Veuillez saisir votre nom et adresse e-mail.');
+      return;
+    }
+    setShowContactModal(false);
+    await contactApiService.sendContactRequest({
+      propertyId: propId,
+      senderName: senderName.trim(),
+      senderEmail: senderEmail.trim(),
+      senderPhone: senderPhone.trim(),
+      message: contactMessage.trim(),
+    });
+    Alert.alert(
+      'Demande transmise !',
+      'Votre demande de contact a été enregistrée dans la base PostgreSQL et transmise au propriétaire.'
+    );
+  };
+
+  const handleScheduleTour = () => {
+    setShowContactModal(true);
   };
 
   return (
@@ -104,10 +166,26 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}
-              onPress={() => setIsFavorite(!isFavorite)}
+              onPress={handleToggleFavorite}
               activeOpacity={0.8}
             >
               <Text style={styles.circleBtnIcon}>{isFavorite ? '❤️' : '🤍'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.glassCircleBtn,
+                {
+                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+              onPress={handleDeleteProperty}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.circleBtnIcon, { color: '#EF4444' }]}>
+                🗑️
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -427,6 +505,75 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* MODAL DE PRISE DE CONTACT AVEC LE PROPRIÉTAIRE */}
+      <Modal visible={showContactModal} transparent animationType="slide">
+        <View style={modalStyles.overlay}>
+          <View style={[modalStyles.content, { backgroundColor: colors.surface }]}>
+            <View style={modalStyles.handleBar} />
+            <Text style={[modalStyles.title, { color: colors.textPrimary }]}>
+              Planifier une visite / Contact
+            </Text>
+            <Text style={[modalStyles.subTitle, { color: colors.textSecondary }]}>
+              Transmettez votre message directement pour {property.titre}.
+            </Text>
+
+            <TextInput
+              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Votre nom complet"
+              placeholderTextColor={colors.textSecondary}
+              value={senderName}
+              onChangeText={setSenderName}
+            />
+
+            <TextInput
+              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Votre adresse e-mail"
+              placeholderTextColor={colors.textSecondary}
+              value={senderEmail}
+              onChangeText={setSenderEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            <TextInput
+              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Votre numéro de téléphone"
+              placeholderTextColor={colors.textSecondary}
+              value={senderPhone}
+              onChangeText={setSenderPhone}
+              keyboardType="phone-pad"
+            />
+
+            <TextInput
+              style={[
+                modalStyles.input,
+                modalStyles.textArea,
+                { color: colors.textPrimary, borderColor: colors.border },
+              ]}
+              placeholder="Votre message"
+              placeholderTextColor={colors.textSecondary}
+              value={contactMessage}
+              onChangeText={setContactMessage}
+              multiline
+              numberOfLines={3}
+            />
+
+            <View style={modalStyles.actions}>
+              <TouchableOpacity
+                style={[modalStyles.cancelBtn, { borderColor: colors.border }]}
+                onPress={() => setShowContactModal(false)}
+              >
+                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>Annuler</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={modalStyles.submitBtn} onPress={handleSendContact}>
+                <Text style={modalStyles.submitBtnText}>Envoyer la demande</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -773,5 +920,75 @@ const styles = StyleSheet.create({
   scheduleButtonText: {
     fontSize: 14,
     fontWeight: '800',
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  content: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  handleBar: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#CCCCCC',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  subTitle: {
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  input: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    fontSize: 14,
+  },
+  textArea: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: 'top',
+  },
+  actions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitBtn: {
+    flex: 2,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

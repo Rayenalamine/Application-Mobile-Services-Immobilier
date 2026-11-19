@@ -7,6 +7,11 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/models/property.dart';
+import '../../data/property_api_service.dart';
+import '../../presentation/screens/add_property_screen.dart';
+import '../../../favorites/data/favorites_api_service.dart';
+import '../../../contact/data/contact_api_service.dart';
+import '../../../auth/data/auth_service.dart';
 
 /// Écran affichant la fiche détaillée d'un bien immobilier (Screen 2).
 class EcranDetails extends StatefulWidget {
@@ -27,7 +32,164 @@ class _EcranDetailsState extends State<EcranDetails> {
   void initState() {
     super.initState();
     _imageAffichee = widget.propriete.imageUrl;
-    _isFavorite = widget.propriete.isFavorite;
+    _isFavorite = FavoritesApiService.instance.isFavorite(widget.propriete.id);
+  }
+
+  void _basculerFavori() {
+    FavoritesApiService.instance.toggleFavorite(widget.propriete.id);
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isFavorite ? 'Ajouté à vos favoris' : 'Retiré de vos favoris'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: _isFavorite ? AppColors.accentBlue : AppColors.accentRed,
+      ),
+    );
+  }
+
+  void _ouvrirModalContact(BuildContext context) {
+    final nomCtrl = TextEditingController(text: AuthService.instance.state.currentUser?.fullName ?? 'Rayen Lamine');
+    final emailCtrl = TextEditingController(text: AuthService.instance.state.currentUser?.email ?? 'rayen@darlink.tn');
+    final telCtrl = TextEditingController(text: '+216 ');
+    final msgCtrl = TextEditingController(text: 'Bonjour, je souhaite visiter ce bien (${widget.propriete.titre}).');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF13141C) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Contacter l\'agent / Propriétaire',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Votre message sera transmis pour ${widget.propriete.titre}.',
+                style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nomCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Votre nom complet',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: emailCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Votre adresse e-mail',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: telCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Numéro de téléphone',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: msgCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Votre message',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (nomCtrl.text.isEmpty || emailCtrl.text.isEmpty) return;
+                    Navigator.pop(ctx);
+                    await ContactApiService.instance.sendContactRequest(
+                      propertyId: widget.propriete.id,
+                      senderName: nomCtrl.text.trim(),
+                      senderEmail: emailCtrl.text.trim(),
+                      senderPhone: telCtrl.text.trim(),
+                      message: msgCtrl.text.trim(),
+                    );
+                    if (!mounted || !context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Demande de visite transmise et enregistrée dans PostgreSQL !'),
+                        backgroundColor: AppColors.accentGreen,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accentBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Envoyer la demande', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmerSuppression(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer ce bien ?'),
+        content: Text('Êtes-vous certain de vouloir supprimer "${widget.propriete.titre}" ? Cette action est irréversible.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentRed, foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await PropertyApiService.instance.deleteProperty(widget.propriete.id);
+              if (!mounted || !context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Bien immobilier supprimé de la base de données.'),
+                  backgroundColor: AppColors.accentRed,
+                ),
+              );
+              Navigator.pop(context);
+            },
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
   }
 
   List<String> get _toutesLesImages {
@@ -87,11 +249,32 @@ class _EcranDetailsState extends State<EcranDetails> {
                   icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
                   iconColor: _isFavorite ? AppColors.accentRed : null,
                   isDark: isDark,
-                  onTap: () {
-                    setState(() {
-                      _isFavorite = !_isFavorite;
-                    });
+                  onTap: _basculerFavori,
+                ),
+                const SizedBox(width: 8),
+                _GlassCircleButton(
+                  icon: Icons.edit_note_rounded,
+                  iconColor: AppColors.accentBlue,
+                  isDark: isDark,
+                  onTap: () async {
+                    final res = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EcranDepotAnnonce(proprieteAEditer: widget.propriete),
+                      ),
+                    );
+                    if (!mounted || !context.mounted) return;
+                    if (res == true) {
+                      Navigator.pop(context);
+                    }
                   },
+                ),
+                const SizedBox(width: 8),
+                _GlassCircleButton(
+                  icon: Icons.delete_outline_rounded,
+                  iconColor: AppColors.accentRed,
+                  isDark: isDark,
+                  onTap: () => _confirmerSuppression(context),
                 ),
                 const SizedBox(width: 8),
                 _GlassCircleButton(
@@ -687,17 +870,10 @@ class _EcranDetailsState extends State<EcranDetails> {
                       ),
                       const SizedBox(width: 12),
 
-                      // Bouton d'action principal blanc éclatant (Schedule Tour)
+                      // Bouton d'action principal blanc éclatant (Contacter le propriétaire / Visite)
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Réservation de visite enregistrée !'),
-                                backgroundColor: AppColors.accentGreen,
-                              ),
-                            );
-                          },
+                          onPressed: () => _ouvrirModalContact(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isDark ? Colors.white : AppColors.accentBlue,
                             foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,

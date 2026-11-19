@@ -4,6 +4,8 @@
 // ============================================================
 
 import { api } from '../../../core/network/apiClient';
+import { Property } from '../../properties/domain/models/property';
+import { propertyApiService, SpringPropertyDto } from '../../properties/services/propertyApiService';
 
 class FavoritesApiService {
   private static instance: FavoritesApiService;
@@ -16,6 +18,20 @@ class FavoritesApiService {
       FavoritesApiService.instance = new FavoritesApiService();
     }
     return FavoritesApiService.instance;
+  }
+
+  public async getFavorites(userId: number = 1): Promise<Property[]> {
+    try {
+      const list = await api.get<SpringPropertyDto[]>(`/favorites?userId=${userId}`);
+      if (Array.isArray(list)) {
+        const mapped = list.map((dto) => propertyApiService.mapDtoToProperty(dto));
+        this.favoriteIds = new Set(mapped.map((p) => p.id || '1'));
+        return mapped;
+      }
+    } catch {
+      // Garder les données locales
+    }
+    return [];
   }
 
   public async getFavoriteIds(userId: number = 1): Promise<string[]> {

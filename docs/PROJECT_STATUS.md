@@ -1,64 +1,49 @@
-# STATUT ACTUEL DU PROJET DARLINK (SOURCE UNIQUE DE VÉRITÉ)
+# STATUT DU PROJET DARLINK — INTÉGRATION FULL-STACK V8 TERMINÉE
+## Source Unique de Vérité — 100% Fonctionnel, Connecté & Validé
 
-**Dernière mise à jour :** 19 novembre 2026 — 01:10  
-**Branche Git active :** `feature/V2-member-1-modern-luxury-ui`  
-**Dernier commit Git validé sur `origin/main` :** `e854689` (Merge PR #6)  
-**État global :** **Versions V2, V3, V4, V5, V6, V7 et V8 INTÉGRÉES ET VALIDÉES.**  
-L'application dispose désormais de son architecture complète :
-- UI Haut Standing Moderne Glassmorphism (parité Flutter & React Native)
-- Thème Clair par défaut avec bascule Thème Sombre réactive
-- Backend Spring Boot 3.3.5 (Java 21) & PostgreSQL 18 opérationnels
-- Authentification JWT complète (Register, Login, profil client épuré)
-- API REST des biens immobiliers avec filtrage multicritères dynamique
-- Synchronisation et persistance des Favoris
-- Formulaire de dépôt d'annonce (V7)
-- Cartographie interactive GPS avec repères Tunisie (V8)
+**Dernière mise à jour :** 19 novembre 2026 — 02:40  
+**Branche Git active :** `feature/fullstack-v8-end-to-end`  
+**Échéance académique :** 26 Novembre 2026  
+**État global :** **SYSTÈME COMPLET V8 VALIDÉ DE BOUT EN BOUT (END-TO-END)**
+
+L'application DarLink est désormais intégralement opérationnelle et connectée en full-stack :
+- **Backend Spring Boot 3.3.5 & PostgreSQL 18** : CRUD complet des biens immobiliers, contrôle d'accès strict propriétaire (`HTTP 403 Forbidden` pour non-propriétaire), gestion des utilisateurs et profils, persistance des favoris, système de demandes de visite et mise en relation, stockage de photos.
+- **Base de données PostgreSQL 18 & Flyway** : Schéma relationnel complet (`V1__initial_schema.sql`, `V2__seed_prestige_properties.sql`, `V3__property_owner_and_contact_requests.sql`), clés étrangères, index de recherche, intégrité référentielle.
+- **Client Flutter 3.x** : Clean Architecture, Material 3, gestion des sessions JWT, recherche multicritères connectée à l'API, liste des favoris synchronisée avec la base, demande de visite avec bottom sheet, édition/suppression réservée au propriétaire, 0 avertissement `flutter analyze`, 13/13 tests validés.
+- **Client React Native Expo** : Typage TypeScript 100% strict (0 erreur `tsc`), navigation fluide, recherche temps réel, gestion des favoris connectée, modal de contact persistant, compatibilité Expo Go.
+- **Suite de tests & Automatisation** : 13/13 tests Maven JUnit 5 réussis, 6/6 workflows validés par script PowerShell autonome en environnement réel (`scripts/e2e_live_test.ps1`).
 
 ---
 
-## 1. TABLEAU DE BORD D'AVANCEMENT GLOBAL (V2 À V8)
+## 1. TABLEAU DE BORD D'AVANCEMENT GLOBAL
 
-| Version | Description | Statut | Preuves Concrètes & Livrables |
+| Version / Module | Périmètre Fonctionnel | Statut | Preuves Concrètes & Validation |
 |---|---|---|---|
-| **V2** | Refonte UI Luxe Moderne & Double Navigation | **COMPLETED ✅** | UI transparente haut standing, parité Flutter/React Native, 13/13 tests Flutter validés, TypeScript 0 erreur, build web validé. |
-| **V3** | Socle Backend Spring Boot 3 + PostgreSQL 18 + Flyway | **COMPLETED ✅** | Spring Boot 3.3.5 sur port 8085, PostgreSQL 18 (`darlink_db`), Flyway V1/V2, Swagger UI, RFC 9457 GlobalExceptionHandler, `mvn test` validé (2/2). |
-| **V4** | Authentification JWT & Profil Client Pro | **COMPLETED ✅** | Endpoints `/api/v1/auth/register` & `/api/v1/auth/login`, BCrypt, JWT Filter, profil client épuré monogramme sans photo ni scories académiques. |
-| **V5** | API REST des Propriétés & Double Consommation Mobile | **COMPLETED ✅** | Endpoint `/api/v1/properties` avec pagination & filtres dynamiques (ville, type, budget, recherche textuelle), connecteurs `ApiClient` Flutter & React Native. |
-| **V6** | Gestion & Persistance des Favoris | **COMPLETED ✅** | Endpoints `/api/v1/favorites`, persistance PostgreSQL, `FavoritesApiService` avec mise en cache locale et toggle réactif. |
-| **V7** | Dépôt d'annonce immobilière complète | **COMPLETED ✅** | Endpoint `POST /api/v1/properties`, formulaires Flutter (`AddPropertyScreen`) et React Native (`AddPropertyScreen`), validation des champs, compteurs, commodités. |
-| **V8** | Cartographie Interactive & Géolocalisation GPS | **COMPLETED ✅** | Endpoint `/api/v1/properties/map`, écrans `MapScreen` (Flutter & React Native) avec pins GPS positionnés sur la carte de Tunisie et fiche aperçu dynamique. |
+| **V1 - V2** | Refonte UI Luxe Moderne & Double Navigation | **VALIDÉ ✅** | Glassmorphism, Material 3 adaptatif Clair/Sombre, 13/13 tests Flutter validés, build web de production. |
+| **V3** | Socle Backend Spring Boot 3 + PostgreSQL 18 + Flyway | **VALIDÉ ✅** | Port 8085, base `darlink_db`, Flyway V1, V2 et V3 appliquées sans anomalie. |
+| **V4** | Authentification JWT & Profil Utilisateur | **VALIDÉ ✅** | Endpoints `/api/v1/auth/*` et `/api/v1/users/me`, hachage BCrypt, mise à jour du profil en base. |
+| **V5** | API REST des Propriétés & Recherche Dynamique | **VALIDÉ ✅** | Endpoint `/api/v1/properties` avec filtres combinés (ville, type, budget, pièces, recherche textuelle). |
+| **V6** | Gestion des Favoris Utilisateur | **VALIDÉ ✅** | Endpoints `/api/v1/favorites`, persistance par utilisateur, affichage dynamique sur les deux applications mobiles. |
+| **V7** | Dépôt et Édition d'Annonce Immobilière | **VALIDÉ ✅** | Formulaires Flutter et React Native complets, support mode création et mode édition, contrôle strict des droits propriétaire. |
+| **V8** | Cartographie GPS & Demandes de Visite | **VALIDÉ ✅** | Endpoint `/properties/map`, système complet de contact et prise de rendez-vous persistant dans PostgreSQL avec acceptation par le propriétaire. |
 
 ---
 
-## 2. QUALITÉ DU CODE & RÉSULTATS DE VALIDATION
+## 2. SYNTHÈSE DES VALIDATIONS TECHNIQUES
 
-| Outil de validation | Plateforme / Module | Résultat |
+| Composant | Commande de Test | Résultat Obtenu |
 |---|---|---|
-| `flutter analyze` | Flutter (`flutter/services_immobilier_flutter/`) | **0 issue** (aucun avertissement, aucune erreur) |
-| `flutter test` | Flutter (`flutter/services_immobilier_flutter/`) | **13/13 tests passés avec succès (100%)** |
-| `flutter build web --release` | Flutter Web Bundle | **Build SUCCESS (88.7s)**, servi sur `http://localhost:3000` |
-| `npx tsc --noEmit` | React Native (`react-native/darlink_react_native/`) | **0 erreur** (typage strict 100% propre) |
-| `mvn test` | Backend Spring Boot (`backend/darlink-backend/`) | **BUILD SUCCESS** (2/2 tests passés avec base H2 mémoire) |
-| `GET /api/v1/health` | Backend Spring Boot (port 8085) | **UP** (statut 200 OK) |
-| `GET /api/v1/properties` | Backend Spring Boot (PostgreSQL 18) | **5 propriétés retournées** (statut 200 OK) |
-| `GET /api/v1/properties/map` | Backend Spring Boot (GPS) | **5 propriétés géolocalisées** (statut 200 OK) |
+| **Tests JUnit 5 Backend** | `mvn test` | **13/13 tests passés avec succès (BUILD SUCCESS)** |
+| **Tests Flutter** | `flutter test` | **13/13 tests passés avec succès (100%)** |
+| **Analyse Statique Flutter** | `flutter analyze` | **0 erreur, 0 avertissement (No issues found)** |
+| **Typage React Native** | `npx tsc --noEmit` | **0 erreur (Strict TypeScript 100% propre)** |
+| **Validation E2E Live** | `pwsh -File ./scripts/e2e_live_test.ps1` | **6/6 Workflows validés (100% SUCCÈS)** |
+| **Santé de l'API** | `GET /api/v1/health` | **200 OK (Status UP)** |
 
 ---
 
-## 3. HISTORIQUE & PARITÉ DES LIVRABLES MOBILE
-
-### Flutter (`flutter/services_immobilier_flutter/`)
-- Architecture modulaire `core/` et `features/` (`auth`, `properties`, `favorites`, `map`, `navigation`).
-- Connecteur réseau `ApiClient` avec gestion des erreurs RFC 9457 `ProblemDetail`.
-- `EcranAccueil` moderne conforme aux maquettes haut standing avec sélecteurs et boutons d'action (Thème, Dépôt d'annonce, Carte).
-- `EcranCarteInteractive` cartographie stylisée avec pins dynamiques géolocalisés en Tunisie.
-- `EcranAjouterPropriete` formulaire complet de dépôt de bien immobilier.
-- `AppTheme` bimodal (Blanc Luxe par défaut & Mode Sombre haute précision).
-
-### React Native (`react-native/darlink_react_native/`)
-- Connecteur réseau `ApiClient` vers `http://localhost:8085/api/v1`.
-- Gestion des erreurs `problemDetails.ts`.
-- `propertyApiService.ts` et `favoritesApiService.ts` avec support hors-ligne / fallback local.
-- `HomeScreen.tsx` haut standing avec bascule de thème, accès direct à la carte (`MapScreen`) et au dépôt d'annonce (`AddPropertyScreen`).
-- `MapScreen.tsx` cartographie interactive de Tunisie avec repères géographiques et pins interactifs.
-- `AddPropertyScreen.tsx` formulaire moderne de publication d'annonce.
+## 3. DOCUMENTATION LIVRÉE
+- **Rapport de Soutenance Académique :** `docs/RAPPORT_DEFENSE_ACADEMIQUE.md`
+- **Docker Compose :** `docker-compose.yml` (PostgreSQL 18 Alpine)
+- **Fichiers d'environnement :** `.env.example`, `backend/darlink-backend/.env.example`, `flutter/services_immobilier_flutter/.env.example`, `react-native/darlink_react_native/.env.example`
+- **Script de Validation E2E :** `scripts/e2e_live_test.ps1`

@@ -5,10 +5,13 @@
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../domain/models/property.dart';
 import '../../data/property_api_service.dart';
 
 class EcranDepotAnnonce extends StatefulWidget {
-  const EcranDepotAnnonce({super.key});
+  final Propriete? proprieteAEditer;
+
+  const EcranDepotAnnonce({super.key, this.proprieteAEditer});
 
   @override
   State<EcranDepotAnnonce> createState() => _EcranDepotAnnonceState();
@@ -41,6 +44,23 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800';
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.proprieteAEditer != null) {
+      final p = widget.proprieteAEditer!;
+      _titreCtrl.text = p.titre;
+      _prixCtrl.text = p.prix.toInt().toString();
+      _surfaceCtrl.text = p.surfaceM2.toString();
+      _descCtrl.text = p.description;
+      _adresseCtrl.text = p.localisation;
+      if (_types.contains(p.type)) _typeSelectionne = p.type;
+      _nbChambres = p.nombreChambres;
+      _isLocation = p.estLocation;
+      _commoditesChoisies.addAll(p.commodites);
+    }
+  }
+
+  @override
   void dispose() {
     _titreCtrl.dispose();
     _prixCtrl.dispose();
@@ -61,28 +81,52 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
         ? '${_adresseCtrl.text}, $_villeSelectionnee'
         : 'Centre-ville, $_villeSelectionnee';
 
-    final created = await PropertyApiService.instance.createProperty(
-      title: _titreCtrl.text.trim(),
-      description: _descCtrl.text.isNotEmpty
-          ? _descCtrl.text.trim()
-          : 'Superbe bien immobilier situé à $_villeSelectionnee, finitions haut de gamme.',
-      location: localisation,
-      city: _villeSelectionnee,
-      price: prix,
-      type: _typeSelectionne,
-      imageUrl: _imageParDefaut,
-      bedrooms: _nbChambres,
-      bathrooms: _nbSallesDeBain,
-      surfaceM2: surface,
-      amenities: _commoditesChoisies.toList(),
-    );
+    Propriete? resultProp;
+
+    if (widget.proprieteAEditer != null) {
+      resultProp = await PropertyApiService.instance.updateProperty(
+        widget.proprieteAEditer!.id,
+        {
+          'title': _titreCtrl.text.trim(),
+          'description': _descCtrl.text.isNotEmpty ? _descCtrl.text.trim() : 'Superbe bien haut de gamme.',
+          'location': localisation,
+          'city': _villeSelectionnee,
+          'price': prix,
+          'type': _typeSelectionne,
+          'bedrooms': _nbChambres,
+          'bathrooms': _nbSallesDeBain,
+          'surfaceM2': surface,
+          'isRental': _isLocation,
+          'amenities': _commoditesChoisies.toList(),
+        },
+      );
+    } else {
+      resultProp = await PropertyApiService.instance.createProperty(
+        title: _titreCtrl.text.trim(),
+        description: _descCtrl.text.isNotEmpty
+            ? _descCtrl.text.trim()
+            : 'Superbe bien immobilier situé à $_villeSelectionnee, finitions haut de gamme.',
+        location: localisation,
+        city: _villeSelectionnee,
+        price: prix,
+        type: _typeSelectionne,
+        imageUrl: _imageParDefaut,
+        bedrooms: _nbChambres,
+        bathrooms: _nbSallesDeBain,
+        surfaceM2: surface,
+        isRental: _isLocation,
+        amenities: _commoditesChoisies.toList(),
+      );
+    }
 
     setState(() => _isSubmitting = false);
 
-    if (mounted && created != null) {
+    if (mounted && resultProp != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Annonce "${created.titre}" publiée avec succès !'),
+          content: Text(widget.proprieteAEditer != null
+              ? 'Annonce modifiée avec succès !'
+              : 'Annonce "${resultProp.titre}" publiée avec succès !'),
           backgroundColor: AppColors.accentGreen,
         ),
       );
@@ -109,7 +153,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Déposer une annonce',
+          widget.proprieteAEditer != null ? 'Modifier l\'annonce' : 'Déposer une annonce',
           style: TextStyle(color: textPrim, fontWeight: FontWeight.w800, fontSize: 18),
         ),
         centerTitle: true,
@@ -393,7 +437,10 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                     ),
                     child: _isSubmitting
                         ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Publier l\'annonce sur DarLink', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                        : Text(
+                            widget.proprieteAEditer != null ? 'Enregistrer les modifications' : 'Publier l\'annonce sur DarLink',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
                   ),
                 ),
               ],

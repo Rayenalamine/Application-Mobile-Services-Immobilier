@@ -20,6 +20,7 @@ import { useTheme } from '../../../../core/theme/ThemeContext';
 import { authService, UserProfile } from '../../../auth/services/authService';
 import { AddPropertyScreen } from '../../../properties/presentation/screens/AddPropertyScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
+import { contactApiService, ContactRequest } from '../../../contact/services/contactApiService';
 
 export const ProfileScreen: React.FC = () => {
   const { isDark, toggleTheme, colors } = useTheme();
@@ -32,6 +33,30 @@ export const ProfileScreen: React.FC = () => {
   const [authPassword, setAuthPassword] = useState('password123');
   const [authName, setAuthName] = useState('Rayen Lamine');
   const [authLoading, setAuthLoading] = useState(false);
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState(currentUser.fullName);
+  const [editPhone, setEditPhone] = useState(currentUser.phone ?? '+216 20 123 456');
+
+  const [showInquiriesModal, setShowInquiriesModal] = useState(false);
+  const [inquiries, setInquiries] = useState<ContactRequest[]>([]);
+
+  const handleOpenInquiries = async () => {
+    const list = await contactApiService.getReceivedRequests();
+    setInquiries(list);
+    setShowInquiriesModal(true);
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!editName.trim()) {
+      Alert.alert('Erreur', 'Veuillez saisir votre nom complet.');
+      return;
+    }
+    await authService.updateProfile(editName.trim(), editPhone.trim());
+    setCurrentUser(authService.getCurrentUser());
+    setShowEditModal(false);
+    Alert.alert('Succès', 'Profil mis à jour dans PostgreSQL !');
+  };
 
   const initials = currentUser.fullName
     .split(' ')
@@ -103,7 +128,12 @@ export const ProfileScreen: React.FC = () => {
             </View>
           </TouchableOpacity>
 
-          <Text style={[styles.userName, { color: colors.textPrimary }]}>{currentUser.fullName}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={[styles.userName, { color: colors.textPrimary }]}>{currentUser.fullName}</Text>
+            <TouchableOpacity onPress={() => setShowEditModal(true)} activeOpacity={0.7}>
+              <Text style={{ fontSize: 16 }}>✏️</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
             {currentUser.email}
           </Text>
@@ -195,11 +225,11 @@ export const ProfileScreen: React.FC = () => {
           />
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <ProfileTile
-            icon="📅"
-            title="Visites planifiées"
-            subtitle="Vos rendez-vous avec les agents"
-            badge="2"
-            onPress={() => handleAction('Visites planifiées')}
+            icon="📬"
+            title="Demandes de visite reçues"
+            subtitle="Consulter les messages des acheteurs"
+            badge={inquiries.length > 0 ? String(inquiries.length) : undefined}
+            onPress={handleOpenInquiries}
             colors={colors}
           />
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -347,6 +377,72 @@ export const ProfileScreen: React.FC = () => {
               style={styles.modalCloseBtn}
               onPress={() => setShowAuthModal(false)}
             >
+              <Text style={[styles.modalCloseText, { color: colors.textSecondary }]}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL MODIFIER PROFIL */}
+      <Modal visible={showEditModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+            <View style={styles.modalBar} />
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Modifier mes coordonnées</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Nom complet"
+              placeholderTextColor={colors.textSecondary}
+              value={editName}
+              onChangeText={setEditName}
+            />
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Numéro de téléphone"
+              placeholderTextColor={colors.textSecondary}
+              value={editPhone}
+              onChangeText={setEditPhone}
+              keyboardType="phone-pad"
+            />
+            <TouchableOpacity
+              style={[styles.modalSubmitBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }]}
+              onPress={handleUpdateProfile}
+            >
+              <Text style={[styles.modalSubmitText, { color: isDark ? '#0F1015' : '#FFFFFF' }]}>Enregistrer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowEditModal(false)}>
+              <Text style={[styles.modalCloseText, { color: colors.textSecondary }]}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL DEMANDES DE CONTACT REÇUES */}
+      <Modal visible={showInquiriesModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface, maxHeight: '80%' }]}>
+            <View style={styles.modalBar} />
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+              Demandes de visite reçues ({inquiries.length})
+            </Text>
+            {inquiries.length === 0 ? (
+              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginVertical: 24 }}>
+                Aucune demande reçue pour le moment.
+              </Text>
+            ) : (
+              <ScrollView style={{ maxHeight: 300, marginVertical: 12 }}>
+                {inquiries.map((inq) => (
+                  <View key={inq.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderColor: colors.border }}>
+                    <Text style={{ fontWeight: '700', color: colors.textPrimary }}>{inq.senderName}</Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>{inq.senderEmail} • {inq.senderPhone}</Text>
+                    <Text style={{ fontSize: 13, color: colors.textPrimary, fontStyle: 'italic', marginTop: 4 }}>
+                      "{inq.message}"
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowInquiriesModal(false)}>
               <Text style={[styles.modalCloseText, { color: colors.textSecondary }]}>Fermer</Text>
             </TouchableOpacity>
           </View>

@@ -13,7 +13,7 @@ class FavoritesApiService extends ChangeNotifier {
   FavoritesApiService._internal();
 
   final ApiClient _api = ApiClient.instance;
-  final Set<String> _favoriteIds = {'2'}; // ID 2 en favori initial par défaut
+  final Set<String> _favoriteIds = <String>{};
 
   Set<String> get favoriteIds => _favoriteIds;
 
@@ -22,6 +22,24 @@ class FavoritesApiService extends ChangeNotifier {
   List<Propriete> get favoriteProperties {
     final all = PropertyApiService.instance.currentProperties;
     return all.where((p) => _favoriteIds.contains(p.id)).toList();
+  }
+
+  Future<List<Propriete>> getFavorites() async {
+    try {
+      final res = await _api.get('/favorites');
+      if (res is List<dynamic>) {
+        final list = res
+            .map((item) => PropertyApiService.instance.mapJsonToPropriete(item as Map<String, dynamic>))
+            .toList();
+        _favoriteIds.clear();
+        for (var p in list) {
+          _favoriteIds.add(p.id);
+        }
+        notifyListeners();
+        return list;
+      }
+    } catch (_) {}
+    return favoriteProperties;
   }
 
   Future<void> syncFavorites() async {

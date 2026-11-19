@@ -93,6 +93,29 @@ class ApiClient {
     }
   }
 
+  /// Requête PUT générique
+  Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
+    final uri = Uri.parse('$baseUrl$endpoint');
+    try {
+      final res = await http
+          .put(uri, headers: _getHeaders(), body: jsonEncode(data))
+          .timeout(const Duration(seconds: 5));
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return jsonDecode(utf8.decode(res.bodyBytes));
+      } else {
+        throw ProblemDetailsException.fromResponse(res.statusCode, res.body);
+      }
+    } catch (e) {
+      if (e is ProblemDetailsException) rethrow;
+      throw ProblemDetailsException(
+        title: 'Erreur réseau',
+        status: 0,
+        detail: 'Impossible de mettre à jour les données sur le serveur ($baseUrl).',
+      );
+    }
+  }
+
   /// Requête DELETE générique
   Future<dynamic> delete(String endpoint) async {
     final uri = Uri.parse('$baseUrl$endpoint');
