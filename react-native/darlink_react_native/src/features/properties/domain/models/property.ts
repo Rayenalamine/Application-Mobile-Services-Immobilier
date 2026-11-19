@@ -46,6 +46,9 @@ export interface Property {
   readonly agentTel?: string;
   /** Prix au mètre carré */
   readonly prixParM2?: number;
+  /** Coordonnées GPS (V8 Cartographie) */
+  readonly latitude?: number;
+  readonly longitude?: number;
   /** État de favori */
   readonly isFavorite?: boolean;
 }
