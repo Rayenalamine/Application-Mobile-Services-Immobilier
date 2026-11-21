@@ -4,8 +4,10 @@ import com.darlink.dto.auth.UpdateProfileRequest;
 import com.darlink.dto.auth.UserResponse;
 import com.darlink.dto.property.PropertyDto;
 import com.darlink.entity.UserEntity;
+import com.darlink.exception.ForbiddenException;
 import com.darlink.exception.ResourceNotFoundException;
 import com.darlink.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +19,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final PropertyService propertyService;
     private final FavoriteService favoriteService;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PropertyService propertyService, FavoriteService favoriteService) {
+    public UserService(
+            UserRepository userRepository,
+            PropertyService propertyService,
+            FavoriteService favoriteService,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
         this.propertyService = propertyService;
         this.favoriteService = favoriteService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponse getProfile(Long userId) {
@@ -50,6 +59,19 @@ public class UserService {
         return new UserResponse(user.getId(), user.getFullName(), user.getEmail(), user.getPhone(), user.getRole());
     }
 
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé."));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new ForbiddenException("Le mot de passe actuel est incorrect.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
     public List<PropertyDto> getUserProperties(Long userId) {
         return propertyService.getUserProperties(userId);
     }
@@ -58,4 +80,3 @@ public class UserService {
         return favoriteService.getUserFavorites(userId);
     }
 }
-

@@ -47,10 +47,8 @@ class PropertyApiService {
             .map((item) => mapJsonToPropriete(item as Map<String, dynamic>))
             .toList();
 
-        if (list.isNotEmpty) {
-          _cachedProperties = list;
-          return list;
-        }
+        _cachedProperties = list;
+        return list;
       }
     } catch (_) {
       // En cas de non-disponibilité réseau, filtrage sur le mock local
@@ -102,6 +100,8 @@ class PropertyApiService {
     } catch (_) {}
     return _cachedProperties.take(2).toList();
   }
+
+  Future<List<Propriete>> getMyProperties() => getUserProperties();
 
   /// Déposer une nouvelle annonce immobilière (V7)
   Future<Propriete?> createProperty({
@@ -209,6 +209,9 @@ class PropertyApiService {
     return Propriete(
       id: json['id']?.toString() ?? '1',
       proprietaireId: json['ownerId']?.toString() ?? '1',
+      ville: json['city'] as String? ?? 'Tunis',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 36.8065,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 10.1815,
       titre: json['title'] as String? ?? 'Bien immobilier prestige',
       localisation: json['location'] as String? ?? 'Tunis, Tunisie',
       prix: (json['price'] as num?)?.toDouble() ?? 250000.0,

@@ -102,7 +102,7 @@ class PropertyApiService {
         size: params?.size ?? 20,
       });
 
-      if (response && Array.isArray(response.content) && response.content.length > 0) {
+      if (response && Array.isArray(response.content)) {
         const mapped = response.content.map(this.mapDtoToProperty);
         this.cachedProperties = mapped;
         return mapped;
@@ -135,6 +135,23 @@ class PropertyApiService {
       return this.cachedProperties.slice(0, 2);
     } catch {
       return this.cachedProperties.slice(0, 2);
+    }
+  }
+
+  public async getMyProperties(): Promise<Property[]> {
+    return this.getUserProperties();
+  }
+
+  public async deleteProperty(id: string | number): Promise<boolean> {
+    try {
+      const strId = String(id);
+      await api.delete(`/properties/${strId}`);
+      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== strId);
+      return true;
+    } catch {
+      const strId = String(id);
+      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== strId);
+      return true;
     }
   }
 
@@ -199,17 +216,6 @@ class PropertyApiService {
       return prop;
     } catch {
       return null;
-    }
-  }
-
-  public async deleteProperty(id: string): Promise<boolean> {
-    try {
-      await api.delete(`/properties/${id}`);
-      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== id);
-      return true;
-    } catch {
-      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== id);
-      return true;
     }
   }
 

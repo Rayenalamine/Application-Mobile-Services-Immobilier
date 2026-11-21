@@ -1,19 +1,19 @@
 // ============================================================
-// DARLINK — ÉCRAN DE RECHERCHE & FILTRES LUXE (React Native Screen 3)
-// Contrôles segmented, sélecteur de prix, chambres et villes (Maquette Screen 3)
+// DARLINK — ÉCRAN DE RECHERCHE & FILTRES MULTICRITÈRES (React Native V5-T02)
+// Recherche textuelle réelle, filtres dynamiques, budget & thèmes
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { AppColors } from '../../../../core/constants/colors';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property } from '../../../properties/domain/models/property';
@@ -21,27 +21,31 @@ import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
 
-const SEGMENTS = ['Acheter', 'Louer', 'Vendu'] as const;
-const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison'] as const;
+const SEGMENTS = ['Tous', 'Acheter', 'Louer'] as const;
+const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison', 'Penthouse'] as const;
 const BEDROOMS = ['Tous', 'Studio', '1+', '2+', '3+', '4+'] as const;
-const CITIES = ['Tunis', 'Sousse', 'Hammamet', 'Djerba', 'Monastir', 'Sfax'] as const;
+const CITIES = ['Tunis', 'La Marsa', 'Sousse', 'Hammamet', 'Djerba', 'Monastir', 'Sfax'] as const;
 
 export const SearchScreen: React.FC = () => {
-  const [selectedSegment, setSelectedSegment] = useState<string>('Acheter');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedSegment, setSelectedSegment] = useState<string>('Tous');
   const [selectedType, setSelectedType] = useState<string>('Tous');
-  const [priceMode, setPriceMode] = useState<'total' | 'monthly'>('total');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('Tous');
   const [selectedCity, setSelectedCity] = useState<string>('');
+  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showMap, setShowMap] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const { isDark, colors } = useTheme();
 
   useEffect(() => {
     fetchFilteredProperties();
-  }, [selectedSegment, selectedType, selectedCity, selectedBedrooms]);
+  }, [selectedSegment, selectedType, selectedCity, selectedBedrooms, minPrice, maxPrice]);
 
   const fetchFilteredProperties = async () => {
+    setLoading(true);
     let minBeds: number | undefined;
     if (selectedBedrooms === '1+') minBeds = 1;
     if (selectedBedrooms === '2+') minBeds = 2;
@@ -49,28 +53,27 @@ export const SearchScreen: React.FC = () => {
     if (selectedBedrooms === '4+') minBeds = 4;
 
     const list = await propertyApiService.getProperties({
-      city: selectedCity || undefined,
+      search: searchQuery.trim() || undefined,
+      city: selectedCity && selectedCity !== 'Toutes' ? selectedCity : undefined,
       type: selectedType !== 'Tous' ? selectedType : undefined,
       isRental: selectedSegment === 'Louer' ? true : selectedSegment === 'Acheter' ? false : undefined,
       minBedrooms: minBeds,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
     });
     setProperties(list);
+    setLoading(false);
   };
 
-  const filteredProperties = properties.filter((p) => {
-    if (selectedSegment === 'Louer' && !p.estLocation) return false;
-    if (selectedSegment === 'Acheter' && p.estLocation) return false;
-    if (selectedType !== 'Tous' && p.type.toLowerCase() !== selectedType.toLowerCase()) return false;
-    if (selectedCity && !p.localisation.toLowerCase().includes(selectedCity.toLowerCase())) return false;
-    if (selectedBedrooms !== 'Tous') {
-      let minBeds = 1;
-      if (selectedBedrooms === '2+') minBeds = 2;
-      if (selectedBedrooms === '3+') minBeds = 3;
-      if (selectedBedrooms === '4+') minBeds = 4;
-      if (p.nombreChambres < minBeds) return false;
-    }
-    return true;
-  });
+  const handleReset = () => {
+    setSearchQuery('');
+    setSelectedSegment('Tous');
+    setSelectedType('Tous');
+    setSelectedCity('');
+    setSelectedBedrooms('Tous');
+    setMinPrice(undefined);
+    setMaxPrice(undefined);
+  };
 
   if (showMap) {
     return (
@@ -94,9 +97,10 @@ export const SearchScreen: React.FC = () => {
   }
 
   const handleApply = () => {
+    fetchFilteredProperties();
     Alert.alert(
       'Filtres appliqués',
-      `${filteredProperties.length} bien(s) trouvé(s) pour : ${selectedSegment} • ${selectedType} • ${selectedBedrooms} ch. ${selectedCity ? `• ${selectedCity}` : ''}`
+      `${properties.length} bien(s) trouvé(s) dans la base de données.`
     );
   };
 
@@ -107,18 +111,8 @@ export const SearchScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. BARRE SUPÉRIEURE FLOTTANTE (Screen 3) */}
+        {/* 1. BARRE SUPÉRIEURE */}
         <View style={styles.headerBar}>
-          <TouchableOpacity
-            style={[
-              styles.glassCircleBtn,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.circleIcon, { color: colors.textPrimary }]}>←</Text>
-          </TouchableOpacity>
-
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
             Recherche de biens
           </Text>
@@ -139,14 +133,51 @@ export const SearchScreen: React.FC = () => {
                 styles.glassCircleBtn,
                 { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
+              onPress={handleReset}
               activeOpacity={0.8}
             >
-              <Text style={[styles.circleIcon, { color: colors.textPrimary }]}>•••</Text>
+              <Text style={styles.circleIcon}>🔄</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 2. CONTRÔLEUR SEGMENTÉ : ACHETER / LOUER / VENDU (Screen 3) */}
+        {/* 2. CHAMP DE RECHERCHE TEXTUELLE RÉEL (V5) */}
+        <View
+          style={[
+            styles.searchBox,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Text style={styles.searchBoxIcon}>🔍</Text>
+          <TextInput
+            testID="search_input"
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+            placeholder="Rechercher par titre, quartier, mot-clé..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+            }}
+            onSubmitEditing={fetchFilteredProperties}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery('');
+                fetchFilteredProperties();
+              }}
+              style={styles.clearBtn}
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* 3. CONTRÔLEUR SEGMENTÉ : TOUS / ACHETER / LOUER */}
         <View
           style={[
             styles.segmentedControl,
@@ -164,10 +195,10 @@ export const SearchScreen: React.FC = () => {
                 style={[
                   styles.segmentButton,
                   isSelected && {
-                    backgroundColor: '#FFFFFF',
-                    shadowColor: '#000',
+                    backgroundColor: colors.accentBlue,
+                    shadowColor: colors.accentBlue,
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: isDark ? 0.3 : 0.08,
+                    shadowOpacity: 0.3,
                     shadowRadius: 6,
                     elevation: 3,
                   },
@@ -179,7 +210,7 @@ export const SearchScreen: React.FC = () => {
                   style={[
                     styles.segmentText,
                     {
-                      color: isSelected ? '#0F1015' : colors.textSecondary,
+                      color: isSelected ? '#FFFFFF' : colors.textSecondary,
                       fontWeight: isSelected ? '800' : '600',
                     },
                   ]}
@@ -191,7 +222,7 @@ export const SearchScreen: React.FC = () => {
           })}
         </View>
 
-        {/* 3. SÉLECTION TYPE DE BIEN */}
+        {/* 4. SÉLECTION TYPE DE BIEN */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
             Type de bien
@@ -203,12 +234,10 @@ export const SearchScreen: React.FC = () => {
                 <TouchableOpacity
                   key={type}
                   style={[
-                    styles.pill,
+                    styles.pillButton,
                     {
-                      backgroundColor: isSelected
-                        ? (isDark ? '#FFFFFF' : '#0F1015')
-                        : colors.surface,
-                      borderColor: isSelected ? 'transparent' : colors.border,
+                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
+                      borderColor: isSelected ? colors.accentBlue : colors.border,
                     },
                   ]}
                   onPress={() => setSelectedType(type)}
@@ -218,9 +247,7 @@ export const SearchScreen: React.FC = () => {
                     style={[
                       styles.pillText,
                       {
-                        color: isSelected
-                          ? (isDark ? '#0F1015' : '#FFFFFF')
-                          : colors.textSecondary,
+                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
                         fontWeight: isSelected ? '700' : '500',
                       },
                     ]}
@@ -233,169 +260,34 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* 4. MODE DE PRIX (PRIX TOTAL VS PAIEMENT MENSUEL) */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Mode de tarification
-          </Text>
-          <View style={styles.priceModeContainer}>
-            <TouchableOpacity
-              style={[
-                styles.priceModeBtn,
-                {
-                  backgroundColor: priceMode === 'total'
-                    ? (isDark ? 'rgba(37, 99, 235, 0.2)' : 'rgba(37, 99, 235, 0.1)')
-                    : colors.surface,
-                  borderColor: priceMode === 'total' ? AppColors.accentBlue : colors.border,
-                },
-              ]}
-              onPress={() => setPriceMode('total')}
-              activeOpacity={0.85}
-            >
-              <Text
-                style={[
-                  styles.priceModeText,
-                  {
-                    color: priceMode === 'total' ? AppColors.accentBlue : colors.textSecondary,
-                    fontWeight: priceMode === 'total' ? '700' : '500',
-                  },
-                ]}
-              >
-                Prix total (DT)
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.priceModeBtn,
-                {
-                  backgroundColor: priceMode === 'monthly'
-                    ? (isDark ? 'rgba(37, 99, 235, 0.2)' : 'rgba(37, 99, 235, 0.1)')
-                    : colors.surface,
-                  borderColor: priceMode === 'monthly' ? AppColors.accentBlue : colors.border,
-                },
-              ]}
-              onPress={() => setPriceMode('monthly')}
-              activeOpacity={0.85}
-            >
-              <Text
-                style={[
-                  styles.priceModeText,
-                  {
-                    color: priceMode === 'monthly' ? AppColors.accentBlue : colors.textSecondary,
-                    fontWeight: priceMode === 'monthly' ? '700' : '500',
-                  },
-                ]}
-              >
-                Paiement mensuel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* 5. ÉCHELLE DE BUDGET */}
-        <View
-          style={[
-            styles.budgetCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              shadowOpacity: isDark ? 0.25 : 0.04,
-            },
-          ]}
-        >
-          <View style={styles.budgetRangeRow}>
-            <View style={styles.budgetCol}>
-              <Text style={[styles.budgetLabel, { color: colors.textSecondary }]}>
-                Budget Minimum
-              </Text>
-              <Text style={[styles.budgetValue, { color: colors.textPrimary }]}>
-                100 000 DT
-              </Text>
-            </View>
-            <View style={[styles.budgetDivider, { backgroundColor: colors.border }]} />
-            <View style={[styles.budgetCol, { alignItems: 'flex-end' }]}>
-              <Text style={[styles.budgetLabel, { color: colors.textSecondary }]}>
-                Budget Maximum
-              </Text>
-              <Text style={[styles.budgetValue, { color: colors.textPrimary }]}>
-                1 500 000 DT
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* 6. SÉLECTION DU NOMBRE DE CHAMBRES (Screen 3) */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Nombre de chambres
-          </Text>
-          <View style={styles.pillsRow}>
-            {BEDROOMS.map((bed) => {
-              const isSelected = selectedBedrooms === bed;
-              return (
-                <TouchableOpacity
-                  key={bed}
-                  style={[
-                    styles.pill,
-                    {
-                      backgroundColor: isSelected
-                        ? (isDark ? '#FFFFFF' : '#0F1015')
-                        : colors.surface,
-                      borderColor: isSelected ? 'transparent' : colors.border,
-                    },
-                  ]}
-                  onPress={() => setSelectedBedrooms(bed)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      {
-                        color: isSelected
-                          ? (isDark ? '#0F1015' : '#FFFFFF')
-                          : colors.textSecondary,
-                        fontWeight: isSelected ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {bed}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* 7. VILLES POPULAIRES EN TUNISIE */}
+        {/* 5. VILLES POPULAIRES EN TUNISIE */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
             Villes populaires en Tunisie
           </Text>
-          <View style={styles.citiesWrap}>
+          <View style={styles.pillsRow}>
             {CITIES.map((city) => {
               const isSelected = selectedCity === city;
               return (
                 <TouchableOpacity
                   key={city}
                   style={[
-                    styles.cityChip,
+                    styles.pillButton,
+                    styles.cityPill,
                     {
-                      backgroundColor: isSelected
-                        ? 'rgba(37, 99, 235, 0.15)'
-                        : colors.surface,
-                      borderColor: isSelected ? AppColors.accentBlue : colors.border,
+                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
+                      borderColor: isSelected ? colors.accentBlue : colors.border,
                     },
                   ]}
                   onPress={() => setSelectedCity(isSelected ? '' : city)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.cityPin}>📍</Text>
+                  <Text style={[styles.cityPin, isSelected && { color: '#FFFFFF' }]}>📍</Text>
                   <Text
                     style={[
-                      styles.cityName,
+                      styles.pillText,
                       {
-                        color: isSelected ? AppColors.accentBlue : colors.textSecondary,
+                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
                         fontWeight: isSelected ? '700' : '500',
                       },
                     ]}
@@ -408,88 +300,167 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* 8. RÉSULTATS DYNAMIQUES DE RECHERCHE (V5-V8) */}
-        <View style={styles.resultsHeader}>
-          <Text style={[styles.resultsTitle, { color: colors.textPrimary }]}>
-            Biens trouvés ({filteredProperties.length})
+        {/* 6. NOMBRE DE CHAMBRES */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+            Nombre de chambres
           </Text>
-          {(selectedCity !== '' || selectedType !== 'Tous' || selectedBedrooms !== 'Tous' || selectedSegment !== 'Acheter') && (
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedCity('');
-                setSelectedType('Tous');
-                setSelectedBedrooms('Tous');
-                setSelectedSegment('Acheter');
-              }}
-            >
-              <Text style={styles.resetText}>Réinitialiser</Text>
+          <View style={styles.pillsRow}>
+            {BEDROOMS.map((bed) => {
+              const isSelected = selectedBedrooms === bed;
+              return (
+                <TouchableOpacity
+                  key={bed}
+                  style={[
+                    styles.pillButton,
+                    {
+                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
+                      borderColor: isSelected ? colors.accentBlue : colors.border,
+                    },
+                  ]}
+                  onPress={() => setSelectedBedrooms(bed)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.pillText,
+                      {
+                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
+                    ]}
+                  >
+                    {bed}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* 7. FOURCHETTE DE PRIX */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
+            Budget (DT)
+          </Text>
+          <View style={styles.pillsRow}>
+            {[
+              { label: 'Tous prix', min: undefined, max: undefined },
+              { label: '< 300k DT', min: undefined, max: 300000 },
+              { label: '300k - 600k DT', min: 300000, max: 600000 },
+              { label: '> 600k DT', min: 600000, max: undefined },
+            ].map((budget, i) => {
+              const isSelected = minPrice === budget.min && maxPrice === budget.max;
+              return (
+                <TouchableOpacity
+                  key={i}
+                  style={[
+                    styles.pillButton,
+                    {
+                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
+                      borderColor: isSelected ? colors.accentBlue : colors.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    setMinPrice(budget.min);
+                    setMaxPrice(budget.max);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.pillText,
+                      {
+                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
+                    ]}
+                  >
+                    {budget.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* 8. RÉSULTATS DYNAMIQUES EN TEMPS RÉEL */}
+        <View style={styles.resultsHeaderRow}>
+          <Text style={[styles.resultsCountText, { color: colors.textPrimary }]}>
+            Résultats correspondants ({properties.length})
+          </Text>
+          {(selectedCity || selectedType !== 'Tous' || selectedBedrooms !== 'Tous' || selectedSegment !== 'Tous' || searchQuery || minPrice !== undefined) && (
+            <TouchableOpacity onPress={handleReset}>
+              <Text style={{ color: colors.accentBlue, fontWeight: '700', fontSize: 13 }}>
+                Réinitialiser
+              </Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {filteredProperties.length === 0 ? (
-          <View style={[styles.emptyBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>🔍</Text>
+        {properties.length === 0 ? (
+          <View
+            style={[
+              styles.emptyStateBox,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Text style={styles.emptyIcon}>🔍</Text>
             <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
               Aucun bien ne correspond à ces critères
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Essayez de modifier votre recherche ou de réinitialiser les filtres.
+              Essayez de réinitialiser la recherche ou de sélectionner une autre ville.
             </Text>
+            <TouchableOpacity
+              style={[styles.resetButton, { backgroundColor: colors.accentBlue }]}
+              onPress={handleReset}
+            >
+              <Text style={styles.resetButtonText}>Tout réinitialiser</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          filteredProperties.map((p) => (
-            <PropertyCard
-              key={p.id || p.titre}
-              property={p}
-              onPress={() => setSelectedProperty(p)}
-            />
+          properties.map((prop) => (
+            <View key={prop.id} style={styles.cardWrapper}>
+              <PropertyCard
+                property={prop}
+                onPress={() => setSelectedProperty(prop)}
+              />
+            </View>
           ))
         )}
 
         <View style={{ height: 100 }} />
-
-        {/* 9. BOUTONS D'ACTION FLOTTANTS EN BAS DE SCREEN 3 */}
-        <View style={styles.bottomDock}>
-          <TouchableOpacity
-            style={[
-              styles.contactAgentBtn,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              },
-            ]}
-            onPress={() =>
-              Alert.alert('Agent dédié', 'Contact avec Sonia Ben Salem (+216 71 888 999).')
-            }
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.contactAgentText, { color: colors.textPrimary }]}>
-              Contacter l'agent
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.applyFilterBtn,
-              {
-                backgroundColor: isDark ? '#FFFFFF' : '#0F1015',
-              },
-            ]}
-            onPress={handleApply}
-            activeOpacity={0.85}
-          >
-            <Text
-              style={[
-                styles.applyFilterText,
-                { color: isDark ? '#0F1015' : '#FFFFFF' },
-              ]}
-            >
-              Appliquer les filtres
-            </Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
+
+      {/* DOCK FLOTTANT EN BAS */}
+      <View
+        style={[
+          styles.bottomDock,
+          {
+            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={[styles.dockOutlinedBtn, { borderColor: colors.border }]}
+          onPress={handleReset}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.dockOutlinedText, { color: colors.textPrimary }]}>
+            Réinitialiser
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.dockFilledBtn, { backgroundColor: colors.accentBlue }]}
+          onPress={handleApply}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.dockFilledText}>Appliquer les filtres</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -503,29 +474,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 110,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  glassCircleBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  circleIcon: {
-    fontSize: 16,
-    fontWeight: '700',
+    marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
@@ -533,19 +492,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  glassCircleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circleIcon: {
+    fontSize: 16,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 50,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+  },
+  searchBoxIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  clearBtn: {
+    padding: 6,
+  },
   segmentedControl: {
     flexDirection: 'row',
     borderRadius: 24,
-    padding: 4,
     borderWidth: 1,
-    marginBottom: 22,
+    padding: 4,
+    marginBottom: 20,
   },
   segmentButton: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 20,
   },
   segmentText: {
     fontSize: 13,
@@ -563,140 +554,104 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  pill: {
+  pillButton: {
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 20,
     borderWidth: 1,
   },
-  pillText: {
-    fontSize: 13,
-  },
-  priceModeContainer: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  priceModeBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-  },
-  priceModeText: {
-    fontSize: 13,
-  },
-  budgetCard: {
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  budgetRangeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  budgetCol: {
-    flex: 1,
-  },
-  budgetDivider: {
-    width: 1,
-    height: 30,
-    marginHorizontal: 12,
-  },
-  budgetLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginBottom: 3,
-  },
-  budgetValue: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  citiesWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  cityChip: {
+  cityPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: 18,
-    borderWidth: 1,
+    gap: 4,
   },
   cityPin: {
     fontSize: 12,
-    marginRight: 4,
   },
-  cityName: {
-    fontSize: 12.5,
+  pillText: {
+    fontSize: 13,
   },
-  resultsHeader: {
+  resultsHeaderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 14,
-    paddingHorizontal: 4,
   },
-  resultsTitle: {
+  resultsCountText: {
     fontSize: 16,
     fontWeight: '800',
   },
-  resetText: {
-    color: '#2563EB',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  emptyBox: {
-    padding: 24,
+  emptyStateBox: {
+    padding: 30,
     borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
-    marginBottom: 20,
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 12,
   },
   emptyTitle: {
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 4,
+    textAlign: 'center',
+    marginBottom: 6,
   },
   emptySubtitle: {
     fontSize: 13,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  resetButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  resetButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  cardWrapper: {
+    marginBottom: 16,
   },
   bottomDock: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
     flexDirection: 'row',
+    padding: 12,
+    borderRadius: 24,
+    borderWidth: 1,
     gap: 10,
-    marginTop: 8,
-    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  contactAgentBtn: {
+  dockOutlinedBtn: {
     flex: 4,
     paddingVertical: 14,
-    borderRadius: 18,
+    borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
-  contactAgentText: {
+  dockOutlinedText: {
     fontSize: 13,
     fontWeight: '600',
   },
-  applyFilterBtn: {
+  dockFilledBtn: {
     flex: 5,
     paddingVertical: 14,
-    borderRadius: 18,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  applyFilterText: {
+  dockFilledText: {
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
   },

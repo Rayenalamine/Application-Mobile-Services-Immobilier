@@ -4,6 +4,42 @@ Toutes les modifications notables apportées au projet DarLink sont consignées 
 
 ---
 
+## [8.2.0] - 2026-11-21
+
+### Implémentation Complète V1–V13 End-to-End & Cartographie Réelle OpenStreetMap
+- **Base de données & Migration Flyway V4 (`V4__messages_and_notifications.sql`) :**
+  - Création de la table `messages` (`sender_id`, `receiver_id`, `property_id`, `content`, `created_at`, `is_read`) avec clés étrangères et index.
+  - Création de la table `notifications` (`user_id`, `title`, `body`, `type`, `reference_id`, `is_read`, `created_at`) avec index.
+  - Ajout des entités JPA `MessageEntity` et `NotificationEntity` avec chargement explicite EAGER et transactions sécurisées.
+- **Backend Spring Boot 3.3.5 (Java 21) :**
+  - Contrôleur de messagerie instantanée `MessageController` (`POST /api/v1/messages`, `GET /api/v1/messages/conversations`, `GET /api/v1/messages/conversation/{otherUserId}`, `PATCH /api/v1/messages/{id}/read`, `GET /api/v1/messages/unread-count`).
+  - Contrôleur de notifications `NotificationController` (`GET /api/v1/notifications`, `PATCH /api/v1/notifications/{id}/read`, `PATCH /api/v1/notifications/read-all`, `GET /api/v1/notifications/unread-count`).
+  - Contrôleur d'administration et de modération `AdminController` (`GET /api/v1/admin/stats`, `GET /api/v1/admin/users`, `PATCH /api/v1/admin/users/{id}/role`).
+  - Endpoint de changement de mot de passe sécurisé `POST /api/v1/users/me/change-password` avec validation de l'ancien mot de passe et hachage BCrypt.
+  - Extension de la suite de tests JUnit 5 `FullWorkflowBackendTest` à 17 étapes couvrant l'ensemble du cycle de vie : 17/17 tests réussis (`BUILD SUCCESS`).
+- **Cartographie Réelle OpenStreetMap (V8) sans Dépendance Native Défaillante :**
+  - **Moteur Slippy Map Standard Web Mercator :** Remplacement de tout faux canvas/CustomPainter par un véritable moteur de rendu de tuiles raster OpenStreetMap (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`).
+  - **Flutter (`map_screen.dart`) :** Formules mathématiques Web Mercator pures (`latToY`, `lngToX`, `sinh`), gestion du pan tactile par glissement, zoom avant/arrière (+/-), géolocalisation "Ma position" centrée sur Tunis, sélecteurs rapides par ville (Tunis, La Marsa, Sousse, Hammamet, Djerba, Sfax), épingles réelles issues de PostgreSQL avec pilule de prix et carte de sélection interactive. Attribution légale OpenStreetMap incluse.
+  - **React Native (`MapScreen.tsx`) :** Implémentation paritaire en TypeScript avec `PanResponder`, grille de tuiles dynamiques OpenStreetMap, marqueurs GPS connectés à `propertyApiService.getMapProperties()` et carte glassmorphique flottante.
+- **Gestion Réelle des Comptes et Authentification Strictement Sans Mock :**
+  - Suppression intégrale des sessions fictives en dur ("Rayen Lamine"). L'application démarre déconnectée par défaut.
+  - Flux complets d'inscription (`register`), de connexion (`login`), de déconnexion (`logout`), d'édition de profil et de changement de mot de passe reliés directement à l'API Spring Boot et à la base PostgreSQL 18.
+  - Écran de profil dynamique : carte d'authentification lorsque déconnecté ; avatar monogramme, statut de rôle, liste des annonces publiées avec suppression réelle, et paramètres lorsque connecté.
+- **Moteur de Recherche Dynamique et Filtres Multi-Critères (V5) :**
+  - Recherche textuelle dynamique avec debounce.
+  - Filtre de budget par RangeSlider interactif (0 à 1 500 000 DT).
+  - Filtres multi-critères : type de transaction (Vente/Location), type de bien (Villa, Appartement, etc.), gouvernorat/ville, et nombre de chambres.
+  - Absence totale de repli vers des données factices : affichage d'un état vide propre et informatif en cas d'absence de résultat.
+- **Validation Complète & Assurance Qualité (QA) :**
+  - **17/17** tests Maven JUnit 5 réussis.
+  - **0** avertissement ni erreur `flutter analyze`.
+  - **30/30** tests de widgets Flutter passés avec succès (`100% All tests passed`).
+  - **0** erreur de compilation TypeScript (`tsc --noEmit`).
+  - **22/22** tests unitaires et d'intégration React Native réussis (`100% SUCCESS`).
+  - **10/10** parcours de bout en bout validés en direct sur PostgreSQL (`scripts/e2e_journeys_1_to_10.ps1`).
+
+---
+
 ## [8.1.0] - 2026-11-19
 
 ### Finalisation Full-Stack End-to-End & Validation de Soutenance (V8)

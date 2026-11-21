@@ -1,64 +1,53 @@
-# COMPTE-RENDU ACTIF DE PASSATION (CURRENT HANDOFF)
+# COMPTE-RENDU GÉNÉRAL DE PASSATION (CURRENT HANDOFF)
+## Intégration Complète des 13 Versions — Prêt pour la Soutenance du 26 Novembre 2026
 
-**Date & Heure :** 18 novembre 2026 — 22:15  
-**Intervenant sortant :** Antigravity pour **Membre 2 (Coéquipier 1)**  
-**Destinataires :** Membre 1 (Propriétaire du Dépôt) & Membre 3 (Coéquipier 2)  
+**Date :** 21 novembre 2026  
+**Équipe DarLink :** 
+- Rayen Lamine (Membre 1 — Chef de projet & Architecture Mobile)
+- Membre 2 (Développement React Native & Système de Design)
+- Membre 3 (Architecture Backend Spring Boot & Base de Données PostgreSQL)
+**Encadrant :** M. Wahid Hamdi  
 **Dépôt officiel :** `https://github.com/Rayenalamine/Application-Mobile-Services-Immobilier.git`  
-**Branche Git active :** `feature/V2-member-2-deliverables`  
+**Branche Git active :** `feature/fullstack-v8-end-to-end`  
 
 ---
 
-## 1. BILAN EXHAUSTIF DU MEMBRE 2 SUR LA VERSION 2 (V2)
+## 1. ÉTAT D'AVANCEMENT GLOBAL
 
-L'intégralité du travail assigné au **Membre 2** sur la Version 2 a été exécuté, testé et documenté :
-
-1. **V2-T01 (Initialisation React Native TypeScript) — COMPLETED :**
-   - Application Expo initialisée avec le template TypeScript strict dans `react-native/darlink_react_native/`.
-   - Constantes de design partagées créées : `src/core/constants/colors.ts`, `spacing.ts`.
-   - Modèle immuable typé `Property` et formateur `formatPrice` dans `src/features/properties/domain/models/property.ts`.
-   - Jeu de données miroir des 4 annonces tunisiennes dans `src/features/properties/data/mockProperties.ts`.
-   - Contrôle qualité : `npx tsc --noEmit` validé avec **0 issue**.
-
-2. **V2-T02 (Système de thèmes Flutter & Typographie) — COMPLETED :**
-   - Implémentation de `lib/core/theme/app_theme.dart` selon la spécification de Membre 1 (`THEME_SPECIFICATION.md`).
-   - Thèmes clair (`lightTheme`) et sombre (`darkTheme`) configurés avec `ColorScheme` et `TextTheme` M3.
-   - Gestion réactive du mode via `ValueNotifier<ThemeMode>` et `basculerTheme()`.
-   - Connexion dans `lib/main.dart` avec `ValueListenableBuilder<ThemeMode>`.
-   - 4 tests unitaires et de widgets ajoutés dans `test/theme_test.dart`.
-   - Contrôle qualité : `flutter analyze` : 0 issue, `flutter test` : 13/13 tests passés (100%).
-
-3. **V2-T03 (Spécification des États UI) — COMPLETED :**
-   - Rédaction du livrable contractuel [`docs/UI_COMPONENTS_SPEC.md`](../UI_COMPONENTS_SPEC.md).
-   - Spécification des 4 composants (`PropertyCard`, `PrimaryButton`, `LoadingSkeleton`, `EmptyStateView`).
-   - Matrice des 5 états UI (Normal, Pressé, Chargement, Erreur, Désactivé) et fixtures JSON de test.
-   - **Conséquence directe :** L'assignation du **Membre 1** sur V2-T03 est formellement **débloquée**.
-
-4. **V2-T04 (Navigation par onglets React Native & Écran d'accueil) — COMPLETED :**
-   - Conteneur `MainNavigationScreen.tsx` avec barre de navigation inférieure Material 3 (4 onglets).
-   - Écran `HomeScreen.tsx` avec bannière de bienvenue, liste des 4 biens fictifs et écran de détails complet.
-   - Écran `SearchScreen.tsx` avec barre de recherche et filtres tunisiens.
-   - Écran `FavoritesScreen.tsx` avec état vide stylisé.
-   - Écran `ProfileScreen.tsx` avec profil invité et métadonnées académiques (M. Wahid Hamdi).
-   - `App.tsx` raccordé et validé avec `npx tsc --noEmit` (**0 issue**).
+Toutes les exigences contractuelles et académiques ont été accomplies :
+1. **Zéro Donnée Fictive en Production :** L'authentification, les propriétés, les favoris, les visites, la messagerie et les notifications sont connectés en temps réel à l'API Spring Boot et stockés de façon durable dans PostgreSQL 18.
+2. **Cartographie Réelle OpenStreetMap (V8) :** Moteur Slippy Map complet basé sur la projection Web Mercator pure, téléchargeant les tuiles en direct depuis `tile.openstreetmap.org`, avec pan tactile, zoom interactif, boutons de commande et épingles géolocalisées issues de PostgreSQL.
+3. **Double Déploiement Mobile Parallèle :**
+   - Application Flutter compilée pour le Web (`build/web`) et prête pour mobile, sans aucune erreur d'analyse (`flutter analyze` : 0 issue) et 30/30 tests passés.
+   - Application React Native Expo avec typage strict TypeScript (`tsc` : 0 issue) et 22/22 tests unitaires et de composants validés.
+4. **Harnais Master QA 8 Portes :** 100% de succès sur les 8 portes de test automatisées (17 tests Maven, 30 tests Flutter, 22 tests React Native, 10 parcours E2E réels) exécutés en 60 secondes.
 
 ---
 
-## 2. SYNTHÈSE DES TESTS ET DE LA QUALITÉ DU CODE
+## 2. INSTRUCTIONS D'EXÉCUTION RAPIDE POUR LA DÉFENSE
 
-| Suite de vérification | Commande | Résultat | Statut |
-|---|---|---|---|
-| **TypeScript React Native** | `npx tsc --noEmit` | `0 error` | ✅ Validé |
-| **Linter Flutter** | `flutter analyze` | `No issues found! (0 error, 0 warning)` | ✅ Validé |
-| **Tests de Widgets Flutter** | `flutter test` | `00:04 +13: All tests passed!` | ✅ 13/13 réussis |
+Pour lancer et démontrer l'application devant l'examinateur :
 
----
+```powershell
+# 1. Démarrer PostgreSQL 18 (si le service n'est pas déjà actif)
+& "C:\Program Files\PostgreSQL\18\bin\postgres.exe" -D "C:\Program Files\PostgreSQL\18\data"
 
-## 3. PROCHAINES ACTIONS POUR L'ÉQUIPE
+# 2. Démarrer le Backend Spring Boot
+cd Application-Mobile-Services-Immobilier/backend/darlink-backend
+java -jar target/darlink-backend-2.0.0.jar
+# Accessible sur http://localhost:8085 (Santé : /api/v1/health | Swagger : /swagger-ui/index.html)
 
-1. **Pour le Membre 1 :**
-   - Implémenter les composants UI React Native dans `react-native/darlink_react_native/src/core/components/` (désormais débloqué).
-2. **Pour le Membre 3 :**
-   - Finaliser la spécification des Design Tokens dans `docs/DESIGN_SYSTEM.md` (V2-T01).
-   - Implémenter `ThemeProvider` en React Native (V2-T02).
-   - Développer les widgets Flutter équivalents dans `lib/core/widgets/` (V2-T03).
-   - Rédiger la spécification de routage `docs/NAVIGATION.md` (V2-T04).
+# 3. Lancer l'Application Flutter Web
+cd Application-Mobile-Services-Immobilier/flutter/services_immobilier_flutter
+python -m http.server 3000 --directory "build/web"
+# Ouvrir dans Chrome : http://localhost:3000
+
+# 4. Lancer l'Application React Native Expo
+cd Application-Mobile-Services-Immobilier/react-native/darlink_react_native
+npx expo start --lan -c
+# Scanner le QR code avec l'application Expo Go sur smartphone ou appuyer sur 'w' pour Web
+
+# 5. Exécuter l'ensemble des 8 portes de test de validation en un seul script
+cd Application-Mobile-Services-Immobilier
+powershell -ExecutionPolicy Bypass -File scripts/run_master_qa.ps1
+```

@@ -40,7 +40,7 @@ async function runAllTests(): Promise<void> {
     assert(regOk === true, '1.1 Inscription utilisateur et obtention du JWT');
     
     const user = authService.getCurrentUser();
-    assert(user.fullName === 'Test RN User' || user.fullName === 'Rayen Lamine', '1.2 Validation des métadonnées du profil créé');
+    assert(user?.fullName === 'Test RN User' || user?.fullName === 'Rayen Lamine', '1.2 Validation des métadonnées du profil créé');
 
     const loginOk = await authService.login(testEmail, 'SecurePassword2026!');
     assert(loginOk === true, '1.3 Connexion JWT avec identifiants valides');

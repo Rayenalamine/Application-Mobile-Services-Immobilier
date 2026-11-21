@@ -1,5 +1,5 @@
 // ============================================================
-// DARLINK — SERVICE D'AUTHENTIFICATION JWT (React Native V4)
+// DARLINK — SERVICE D'AUTHENTIFICATION JWT RÉEL (React Native V4)
 // Connexion, inscription, gestion de session et profil
 // ============================================================
 
@@ -21,14 +21,10 @@ interface AuthResponse {
 
 class AuthService {
   private static instance: AuthService;
-  private currentUser: UserProfile = {
-    id: 1,
-    fullName: 'Rayen Lamine',
-    email: 'rayen.lamine@darlink.tn',
-    phone: '+216 20 123 456',
-    role: 'CLIENT',
-  };
-  private token: string | null = 'offline-demo-token';
+  private currentUser: UserProfile | null = null;
+  private token: string | null = null;
+  public lastError: string | null = null;
+  private listeners: (() => void)[] = [];
 
   private constructor() {}
 
@@ -39,7 +35,18 @@ class AuthService {
     return AuthService.instance;
   }
 
-  public getCurrentUser(): UserProfile {
+  public subscribe(listener: () => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  private notify(): void {
+    this.listeners.forEach((l) => l());
+  }
+
+  public getCurrentUser(): UserProfile | null {
     return this.currentUser;
   }
 
@@ -48,83 +55,112 @@ class AuthService {
   }
 
   public isAuthenticated(): boolean {
-    return !!this.token;
+    return !!this.token && !!this.currentUser;
   }
 
   public async login(email: string, password: string): Promise<boolean> {
     try {
-      const res = await api.post<AuthResponse>('/auth/login', { email, password });
-      if (res && res.token) {
-        this.token = res.token;
-        this.currentUser = res.user;
-        api.setToken(res.token);
-        return true;
-      }
-      return false;
-    } catch {
-      // Fallback local pour garantir la démonstration continue
-      this.currentUser = {
-        id: 1,
-        fullName: 'Rayen Lamine',
-        email,
-        phone: '+216 20 123 456',
-        role: 'CLIENT',
-      };
-      this.token = 'offline-demo-token';
-      return true;
-    }
-  }
-
-  public async register(fullName: string, email: string, password: string): Promise<boolean> {
-    try {
-      const res = await api.post<AuthResponse>('/auth/register', {
-        fullName,
-        email,
+      this.lastError = null;
+      const res = await api.post<AuthResponse>('/auth/login', {
+        email: email.trim().toLowerCase(),
         password,
       });
       if (res && res.token) {
         this.token = res.token;
         this.currentUser = res.user;
         api.setToken(res.token);
+        this.notify();
         return true;
       }
+      this.lastError = 'Réponse serveur invalide.';
       return false;
-    } catch {
-      this.currentUser = {
-        id: 2,
-        fullName,
-        email,
-        role: 'CLIENT',
-      };
-      this.token = 'offline-demo-token';
-      return true;
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      this.lastError =
+        msg.includes('401') || msg.includes('Identifiants invalides')
+          ? 'Email ou mot de passe incorrect.'
+          : 'Impossible de se connecter au serveur DarLink.';
+      return false;
+    }
+  }
+
+  public async register(
+    fullName: string,
+    email: string,
+    password: string,
+    phone?: string
+  ): Promise<boolean> {
+    try {
+      this.lastError = null;
+      const res = await api.post<AuthResponse>('/auth/register', {
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        phone: phone?.trim(),
+      });
+      if (res && res.token) {
+        this.token = res.token;
+        this.currentUser = res.user;
+        api.setToken(res.token);
+        this.notify();
+        return true;
+      }
+      this.lastError = 'Réponse serveur invalide.';
+      return false;
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      this.lastError = msg.includes('existe déjà')
+        ? 'Cet email est déjà enregistré.'
+        : 'Erreur lors de la création du compte.';
+      return false;
     }
   }
 
   public async updateProfile(fullName: string, phone?: string): Promise<boolean> {
     try {
-      const updated = await api.put<UserProfile>('/users/me', { fullName, phone });
+      const updated = await api.put<UserProfile>('/users/me', {
+        fullName: fullName.trim(),
+        phone: phone?.trim(),
+      });
       if (updated && updated.id) {
         this.currentUser = updated;
+        this.notify();
         return true;
       }
     } catch {
-      // Fallback local
-      this.currentUser = {
-        ...this.currentUser,
-        fullName,
-        phone,
-      };
-      return true;
+      return false;
     }
     return false;
   }
 
+  public async changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<string | null> {
+    try {
+      const res = await api.post<{ message: string }>('/users/me/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      if (res && res.message) {
+        return null; // Succès
+      }
+      return 'Erreur de modification du mot de passe.';
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      if (msg.includes('incorrect')) {
+        return 'Le mot de passe actuel est incorrect.';
+      }
+      return 'Erreur lors du changement de mot de passe.';
+    }
+  }
+
   public logout(): void {
     this.token = null;
+    this.currentUser = null;
     api.setToken(null);
+    this.notify();
   }
 }
 
 export const authService = AuthService.getInstance();
-

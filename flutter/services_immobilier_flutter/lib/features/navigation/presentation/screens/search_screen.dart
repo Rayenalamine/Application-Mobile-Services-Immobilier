@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DE RECHERCHE & FILTRES LUXE (Screen 3)
-// Contrôles segmented, sélecteur de prix, chambres et villes adaptatifs
+// DARLINK — ÉCRAN DE RECHERCHE & FILTRES MULTICRITÈRES (V5-T02)
+// Recherche textuelle réelle, filtres dynamiques, budget & thèmes
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -10,26 +10,31 @@ import '../../../properties/data/property_api_service.dart';
 import '../../../properties/domain/models/property.dart';
 import '../../../properties/presentation/widgets/property_card.dart';
 
-/// Écran de recherche avancée inspiré de Screen 3 de la maquette Darlink.
+/// Écran de recherche avancée interconnecté avec le backend PostgreSQL Spring Boot.
 class EcranRecherche extends StatefulWidget {
-  const EcranRecherche({super.key});
+  final String? initialSearch;
+  const EcranRecherche({super.key, this.initialSearch});
 
   @override
   State<EcranRecherche> createState() => _EcranRechercheState();
 }
 
 class _EcranRechercheState extends State<EcranRecherche> {
-  String _segmentActif = 'Acheter';
+  final TextEditingController _searchController = TextEditingController();
+  String _segmentActif = 'Tous';
   String _typeBienSelectionne = 'Tous';
-  bool _prixTotalMode = true;
   String _chambreSelectionnee = 'Tous';
   String _villeSelectionnee = '';
+  RangeValues _priceRange = const RangeValues(0, 1500000);
+  bool _isLoading = false;
+  List<Propriete> _proprietesTrouvees = [];
 
-  final List<String> _segments = const ['Acheter', 'Louer', 'Vendu'];
-  final List<String> _typesBien = const ['Tous', 'Appartement', 'Villa', 'Maison'];
+  final List<String> _segments = const ['Tous', 'Acheter', 'Louer'];
+  final List<String> _typesBien = const ['Tous', 'Appartement', 'Villa', 'Maison', 'Penthouse'];
   final List<String> _chambres = const ['Tous', 'Studio', '1+', '2+', '3+', '4+'];
   final List<String> _villes = const [
     'Tunis',
+    'La Marsa',
     'Sousse',
     'Hammamet',
     'Djerba',
@@ -40,53 +45,57 @@ class _EcranRechercheState extends State<EcranRecherche> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _searchController.text = widget.initialSearch!;
+    }
     _appliquerRechercheBackend();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _appliquerRechercheBackend() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+
     int? minCh;
     if (_chambreSelectionnee == '1+') minCh = 1;
     if (_chambreSelectionnee == '2+') minCh = 2;
     if (_chambreSelectionnee == '3+') minCh = 3;
     if (_chambreSelectionnee == '4+') minCh = 4;
 
-    await PropertyApiService.instance.getProperties(
+    final query = _searchController.text.trim();
+    final results = await PropertyApiService.instance.getProperties(
+      search: query.isNotEmpty ? query : null,
       city: _villeSelectionnee.isNotEmpty ? _villeSelectionnee : null,
       type: _typeBienSelectionne != 'Tous' ? _typeBienSelectionne : null,
       isRental: _segmentActif == 'Louer' ? true : (_segmentActif == 'Acheter' ? false : null),
       minBedrooms: minCh,
+      minPrice: _priceRange.start > 0 ? _priceRange.start : null,
+      maxPrice: _priceRange.end < 1500000 ? _priceRange.end : null,
     );
+
     if (mounted) {
-      setState(() {});
+      setState(() {
+        _proprietesTrouvees = results;
+        _isLoading = false;
+      });
     }
   }
 
-  List<Propriete> get _resultatsFiltres {
-    final list = PropertyApiService.instance.currentProperties;
-    return list.where((prop) {
-      if (_segmentActif == 'Louer' && !prop.estLocation) return false;
-      if (_segmentActif == 'Acheter' && prop.estLocation) return false;
-
-      if (_typeBienSelectionne != 'Tous' &&
-          prop.type.toLowerCase() != _typeBienSelectionne.toLowerCase()) {
-        return false;
-      }
-
-      if (_villeSelectionnee.isNotEmpty &&
-          !prop.localisation.toLowerCase().contains(_villeSelectionnee.toLowerCase())) {
-        return false;
-      }
-
-      if (_chambreSelectionnee != 'Tous') {
-        int minCh = 1;
-        if (_chambreSelectionnee == '2+') minCh = 2;
-        if (_chambreSelectionnee == '3+') minCh = 3;
-        if (_chambreSelectionnee == '4+') minCh = 4;
-        if (prop.nombreChambres < minCh) return false;
-      }
-
-      return true;
-    }).toList();
+  void _reinitialiserFiltres() {
+    _searchController.clear();
+    setState(() {
+      _segmentActif = 'Tous';
+      _typeBienSelectionne = 'Tous';
+      _villeSelectionnee = '';
+      _chambreSelectionnee = 'Tous';
+      _priceRange = const RangeValues(0, 1500000);
+    });
+    _appliquerRechercheBackend();
   }
 
   @override
@@ -99,8 +108,6 @@ class _EcranRechercheState extends State<EcranRecherche> {
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
     final segmentedBg = isDark ? const Color(0xFF181920) : const Color(0xFFE9EBF0);
-    final activeSegmentBg = isDark ? Colors.white : Colors.white;
-    final activeSegmentText = const Color(0xFF0F1015);
     final bottomDockBg = isDark ? const Color(0xF00F1015) : const Color(0xF2FFFFFF);
 
     return Scaffold(
@@ -110,9 +117,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
           children: [
             Column(
               children: [
-                // ------------------------------------------------------------
                 // 1. BARRE SUPÉRIEURE FLOTTANTE
-                // ------------------------------------------------------------
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
@@ -150,9 +155,9 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           ),
                           const SizedBox(width: 8),
                           _GlassCircleBtn(
-                            icon: Icons.more_horiz,
+                            icon: Icons.restart_alt_rounded,
                             isDark: isDark,
-                            onTap: () {},
+                            onTap: _reinitialiserFiltres,
                           ),
                         ],
                       ),
@@ -160,16 +165,57 @@ class _EcranRechercheState extends State<EcranRecherche> {
                   ),
                 ),
 
-                // ------------------------------------------------------------
-                // CORPS DU FORMULAIRE DE FILTRAGE
-                // ------------------------------------------------------------
+                // CORPS DE LA RECHERCHE & DES FILTRES
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 2. CONTRÔLEUR SEGMENTÉ : ACHETER / LOUER / VENDU
+                        // 2. CHAMP DE RECHERCHE TEXTUELLE RÉEL (V5)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: borderColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            key: const Key('search_text_input'),
+                            controller: _searchController,
+                            style: TextStyle(color: textPrim, fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: 'Rechercher par titre, quartier, mot-clé...',
+                              hintStyle: TextStyle(color: textSec, fontSize: 14),
+                              prefixIcon: const Icon(Icons.search, color: AppColors.accentBlue, size: 22),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: Icon(Icons.clear, size: 18, color: textSec),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _appliquerRechercheBackend();
+                                      },
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            ),
+                            onSubmitted: (_) => _appliquerRechercheBackend(),
+                            onChanged: (_) {
+                              setState(() {});
+                              _appliquerRechercheBackend();
+                            },
+                          ),
+                        ),
+
+                        // 3. CONTRÔLEUR SEGMENTÉ : TOUS / ACHETER / LOUER
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
@@ -186,17 +232,18 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                     setState(() {
                                       _segmentActif = segment;
                                     });
+                                    _appliquerRechercheBackend();
                                   },
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
                                     padding: const EdgeInsets.symmetric(vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? activeSegmentBg : Colors.transparent,
+                                      color: isSelected ? AppColors.accentBlue : Colors.transparent,
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: isSelected
                                           ? [
                                               BoxShadow(
-                                                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                                                color: AppColors.accentBlue.withValues(alpha: 0.3),
                                                 blurRadius: 8,
                                                 offset: const Offset(0, 2),
                                               ),
@@ -207,7 +254,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                       child: Text(
                                         segment,
                                         style: TextStyle(
-                                          color: isSelected ? activeSegmentText : textSec,
+                                          color: isSelected ? Colors.white : textSec,
                                           fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                                           fontSize: 13,
                                         ),
@@ -222,7 +269,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
 
                         const SizedBox(height: 22),
 
-                        // 3. SÉLECTION DU TYPE DE BIEN
+                        // 4. SÉLECTION DU TYPE DE BIEN
                         Text(
                           'Type de bien',
                           style: TextStyle(
@@ -242,22 +289,21 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                 setState(() {
                                   _typeBienSelectionne = type;
                                 });
+                                _appliquerRechercheBackend();
                               },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                                 decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? (isDark ? Colors.white : const Color(0xFF111827))
-                                      : cardBg,
+                                  color: isSelected ? AppColors.accentBlue : cardBg,
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: isSelected ? Colors.transparent : borderColor,
+                                    color: isSelected ? AppColors.accentBlue : borderColor,
                                   ),
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                                            color: AppColors.accentBlue.withValues(alpha: 0.3),
                                             blurRadius: 6,
                                             offset: const Offset(0, 2),
                                           ),
@@ -267,9 +313,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                 child: Text(
                                   type,
                                   style: TextStyle(
-                                    color: isSelected
-                                        ? (isDark ? const Color(0xFF0F1015) : Colors.white)
-                                        : textSec,
+                                    color: isSelected ? Colors.white : textSec,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     fontSize: 13,
                                   ),
@@ -281,133 +325,48 @@ class _EcranRechercheState extends State<EcranRecherche> {
 
                         const SizedBox(height: 22),
 
-                        // 4. BASCULE MODE DE PRIX
+                        // 5. BUDGET ESTIMÉ (INTERVALLE DE PRIX DT)
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _prixTotalMode = true;
-                                  });
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color: _prixTotalMode
-                                        ? (isDark ? const Color(0x332563EB) : const Color(0x182563EB))
-                                        : cardBg,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: _prixTotalMode ? AppColors.accentBlue : borderColor,
-                                      width: _prixTotalMode ? 1.5 : 1,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Prix total (DT)',
-                                      style: TextStyle(
-                                        color: _prixTotalMode ? AppColors.accentBlue : textSec,
-                                        fontWeight: _prixTotalMode ? FontWeight.w700 : FontWeight.w500,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                            Text(
+                              'Fourchette de prix (DT)',
+                              style: TextStyle(
+                                color: textPrim,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _prixTotalMode = false;
-                                  });
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  decoration: BoxDecoration(
-                                    color: !_prixTotalMode
-                                        ? (isDark ? const Color(0x332563EB) : const Color(0x182563EB))
-                                        : cardBg,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: !_prixTotalMode ? AppColors.accentBlue : borderColor,
-                                      width: !_prixTotalMode ? 1.5 : 1,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Paiement mensuel',
-                                      style: TextStyle(
-                                        color: !_prixTotalMode ? AppColors.accentBlue : textSec,
-                                        fontWeight: !_prixTotalMode ? FontWeight.w700 : FontWeight.w500,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                            Text(
+                              '${_priceRange.start.toInt()} - ${_priceRange.end.toInt()} DT',
+                              style: const TextStyle(
+                                color: AppColors.accentBlue,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 18),
-
-                        // 5. CARTE DE BUDGET ESTIMÉ
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: cardBg,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: borderColor),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
+                        RangeSlider(
+                          values: _priceRange,
+                          min: 0,
+                          max: 1500000,
+                          divisions: 30,
+                          activeColor: AppColors.accentBlue,
+                          inactiveColor: isDark ? const Color(0xFF2C2D35) : const Color(0xFFE2E8F0),
+                          labels: RangeLabels(
+                            '${_priceRange.start.toInt()} DT',
+                            '${_priceRange.end.toInt()} DT',
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Budget minimum',
-                                    style: TextStyle(color: textSec, fontSize: 11, fontWeight: FontWeight.w500),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '100 000 DT',
-                                    style: TextStyle(color: textPrim, fontWeight: FontWeight.w800, fontSize: 15),
-                                  ),
-                                ],
-                              ),
-                              Container(width: 1, height: 30, color: borderColor),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Budget maximum',
-                                    style: TextStyle(color: textSec, fontSize: 11, fontWeight: FontWeight.w500),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '1 500 000 DT',
-                                    style: TextStyle(color: textPrim, fontWeight: FontWeight.w800, fontSize: 15),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                          onChanged: (values) {
+                            setState(() {
+                              _priceRange = values;
+                            });
+                          },
+                          onChangeEnd: (_) => _appliquerRechercheBackend(),
                         ),
 
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 18),
 
                         // 6. NOMBRE DE CHAMBRES
                         Text(
@@ -429,25 +388,22 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                 setState(() {
                                   _chambreSelectionnee = chambre;
                                 });
+                                _appliquerRechercheBackend();
                               },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                                 decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? (isDark ? Colors.white : const Color(0xFF111827))
-                                      : cardBg,
+                                  color: isSelected ? AppColors.accentBlue : cardBg,
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: isSelected ? Colors.transparent : borderColor,
+                                    color: isSelected ? AppColors.accentBlue : borderColor,
                                   ),
                                 ),
                                 child: Text(
                                   chambre,
                                   style: TextStyle(
-                                    color: isSelected
-                                        ? (isDark ? const Color(0xFF0F1015) : Colors.white)
-                                        : textSec,
+                                    color: isSelected ? Colors.white : textSec,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     fontSize: 13,
                                   ),
@@ -479,13 +435,14 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                 setState(() {
                                   _villeSelectionnee = isSelected ? '' : ville;
                                 });
+                                _appliquerRechercheBackend();
                               },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0x282563EB)
+                                      ? AppColors.accentBlue
                                       : cardBg,
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
@@ -498,13 +455,13 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                     Icon(
                                       Icons.location_on_rounded,
                                       size: 14,
-                                      color: isSelected ? AppColors.accentBlue : textSec,
+                                      color: isSelected ? Colors.white : textSec,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       ville,
                                       style: TextStyle(
-                                        color: isSelected ? AppColors.accentBlue : textSec,
+                                        color: isSelected ? Colors.white : textSec,
                                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                         fontSize: 12.5,
                                       ),
@@ -523,23 +480,22 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Résultats correspondants (${_resultatsFiltres.length})',
+                              'Résultats correspondants (${_proprietesTrouvees.length})',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: textPrim,
                               ),
                             ),
-                            if (_villeSelectionnee.isNotEmpty || _typeBienSelectionne != 'Tous' || _chambreSelectionnee != 'Tous' || _segmentActif != 'Acheter')
+                            if (_villeSelectionnee.isNotEmpty ||
+                                _typeBienSelectionne != 'Tous' ||
+                                _chambreSelectionnee != 'Tous' ||
+                                _segmentActif != 'Tous' ||
+                                _searchController.text.isNotEmpty ||
+                                _priceRange.start > 0 ||
+                                _priceRange.end < 1500000)
                               GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _segmentActif = 'Acheter';
-                                    _typeBienSelectionne = 'Tous';
-                                    _villeSelectionnee = '';
-                                    _chambreSelectionnee = 'Tous';
-                                  });
-                                },
+                                onTap: _reinitialiserFiltres,
                                 child: const Text(
                                   'Réinitialiser',
                                   style: TextStyle(
@@ -553,7 +509,14 @@ class _EcranRechercheState extends State<EcranRecherche> {
                         ),
                         const SizedBox(height: 14),
 
-                        if (_resultatsFiltres.isEmpty)
+                        if (_isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 40),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (_proprietesTrouvees.isEmpty)
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
@@ -572,15 +535,26 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Essayez de sélectionner une autre ville ou d\'élargir le type de bien.',
+                                  'Essayez d\'élargir vos filtres ou de réinitialiser la recherche.',
                                   style: TextStyle(color: textSec, fontSize: 13),
                                   textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: _reinitialiserFiltres,
+                                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                                  label: const Text('Tout réinitialiser'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.accentBlue,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
                                 ),
                               ],
                             ),
                           )
                         else
-                          ..._resultatsFiltres.map((prop) => Padding(
+                          ..._proprietesTrouvees.map((prop) => Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: CartePropriete(
                                   propriete: prop,
@@ -595,9 +569,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
               ],
             ),
 
-            // ------------------------------------------------------------
-            // DOCK FLOTTANT EN BAS : CONTACTER UN AGENT / PLANIFIER VISITE
-            // ------------------------------------------------------------
+            // 9. DOCK FLOTTANT EN BAS
             Positioned(
               left: 16,
               right: 16,
@@ -621,14 +593,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                     Expanded(
                       flex: 4,
                       child: OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Agent immobilier contacté (Sonia Ben Salem).'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
+                        onPressed: _reinitialiserFiltres,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: textPrim,
                           side: BorderSide(color: borderColor),
@@ -638,7 +603,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           ),
                         ),
                         child: const Text(
-                          'Contacter l\'agent',
+                          'Réinitialiser',
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -652,14 +617,15 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           if (!mounted || !context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('${_resultatsFiltres.length} bien(s) trouvé(s) depuis la base de données !'),
+                              content: Text('${_proprietesTrouvees.length} bien(s) trouvé(s) depuis PostgreSQL !'),
                               duration: const Duration(seconds: 2),
+                              backgroundColor: AppColors.accentBlue,
                             ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isDark ? Colors.white : const Color(0xFF0F1015),
-                          foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
+                          backgroundColor: AppColors.accentBlue,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),

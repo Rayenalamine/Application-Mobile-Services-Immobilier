@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — TESTS AUTOMATISÉS : CARTE INTERACTIVE & GPS (QA)
-// Valide le rendu de la carte, sélecteur de villes, et repères géographiques
+// Valide le rendu de la carte OpenStreetMap, zoom et filtres
 // ============================================================
 
 import 'dart:io';
@@ -21,23 +21,30 @@ void main() {
   }
 
   group('Tests UI d\'interaction — Carte interactive & GPS (EcranCarteInteractive)', () {
-    testWidgets('1. Affichage du titre, bouton retour et filtres de villes', (tester) async {
+    testWidgets('1. Affichage du titre OpenStreetMap, contrôles zoom et filtres de villes', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Carte des biens en Tunisie'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+      expect(find.textContaining('Cartographie OpenStreetMap'), findsOneWidget);
+      expect(find.textContaining('OpenStreetMap contributors'), findsOneWidget);
+      expect(find.byIcon(Icons.add), findsOneWidget);
+      expect(find.byIcon(Icons.remove), findsOneWidget);
+      expect(find.byIcon(Icons.my_location), findsOneWidget);
       expect(find.text('Toutes'), findsOneWidget);
       expect(find.text('Tunis'), findsOneWidget);
       expect(find.text('Sousse'), findsOneWidget);
     });
 
-    testWidgets('2. Filtrage interactif par ville', (tester) async {
+    testWidgets('2. Filtrage interactif par ville et recentrage GPS', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
       final tunisChip = find.text('Tunis');
       await tester.tap(tunisChip);
+      await tester.pumpAndSettle();
+
+      final myLocBtn = find.byIcon(Icons.my_location);
+      await tester.tap(myLocBtn);
       await tester.pumpAndSettle();
 
       final allChip = find.text('Toutes');

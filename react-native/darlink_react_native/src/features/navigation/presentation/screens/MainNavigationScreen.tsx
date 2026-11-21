@@ -39,7 +39,7 @@ const MainNavigationContent: React.FC = () => {
   const renderActiveScreen = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeScreen />;
+        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
       case 'search':
         return <SearchScreen />;
       case 'favorites':
@@ -47,7 +47,7 @@ const MainNavigationContent: React.FC = () => {
       case 'profile':
         return <ProfileScreen />;
       default:
-        return <HomeScreen />;
+        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
     }
   };
 
@@ -83,7 +83,7 @@ const MainNavigationContent: React.FC = () => {
                   style={[
                     styles.iconPill,
                     isActive && {
-                      backgroundColor: isDark ? '#FFFFFF' : '#0F1015',
+                      backgroundColor: colors.accentBlue,
                     },
                   ]}
                 >
@@ -92,7 +92,7 @@ const MainNavigationContent: React.FC = () => {
                       styles.tabIcon,
                       { color: colors.textSecondary },
                       isActive && {
-                        color: isDark ? '#0F1015' : '#FFFFFF',
+                        color: '#FFFFFF',
                         fontWeight: '800',
                       },
                     ]}

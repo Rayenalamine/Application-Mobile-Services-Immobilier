@@ -63,10 +63,20 @@ class Propriete {
   /// Identifiant du propriétaire du bien
   final String proprietaireId;
 
+  /// Ville (ex: Tunis, Sousse, Djerba)
+  final String ville;
+
+  /// Coordonnées GPS (V8 Cartographie OpenStreetMap)
+  final double latitude;
+  final double longitude;
+
   /// Constructeur constant pour créer un objet Propriete immuable.
   const Propriete({
     this.id = '1',
     this.proprietaireId = '1',
+    this.ville = 'Tunis',
+    this.latitude = 36.8065,
+    this.longitude = 10.1815,
     required this.titre,
     required this.localisation,
     required this.prix,

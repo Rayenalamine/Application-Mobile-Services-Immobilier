@@ -1,754 +1,742 @@
 // ============================================================
-// DARLINK — ÉCRAN DE PROFIL CLIENT LUXE & PROFESSIONNEL (React Native)
-// Profil épuré sans photo, orienté client et immobilier, bascule thème
+// DARLINK — ÉCRAN DE PROFIL ET GESTION DE COMPTE (React Native V4)
+// Authentification JWT réelle, modification profil, mot de passe,
+// annonces publiées et paramètres visuels
 // ============================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
   TouchableOpacity,
-  Switch,
+  ScrollView,
+  StyleSheet,
   Alert,
-  Modal,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { authService, UserProfile } from '../../../auth/services/authService';
-import { AddPropertyScreen } from '../../../properties/presentation/screens/AddPropertyScreen';
-import { MapScreen } from '../../../map/presentation/screens/MapScreen';
-import { contactApiService, ContactRequest } from '../../../contact/services/contactApiService';
+import { propertyApiService } from '../../../properties/services/propertyApiService';
+import { Property, formatPrice } from '../../../properties/domain/models/property';
 
-export const ProfileScreen: React.FC = () => {
-  const { isDark, toggleTheme, colors } = useTheme();
-  const [currentUser, setCurrentUser] = useState<UserProfile>(authService.getCurrentUser());
-  const [showAddProperty, setShowAddProperty] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isRegister, setIsRegister] = useState(false);
-  const [authEmail, setAuthEmail] = useState('rayen.lamine@darlink.tn');
-  const [authPassword, setAuthPassword] = useState('password123');
-  const [authName, setAuthName] = useState('Rayen Lamine');
-  const [authLoading, setAuthLoading] = useState(false);
+interface ProfileScreenProps {
+  onBack?: () => void;
+  onNavigateToAddProperty?: () => void;
+}
 
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editName, setEditName] = useState(currentUser.fullName);
-  const [editPhone, setEditPhone] = useState(currentUser.phone ?? '+216 20 123 456');
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({
+  onBack,
+  onNavigateToAddProperty,
+}) => {
+  const { colors, isDark, toggleTheme } = useTheme();
 
-  const [showInquiriesModal, setShowInquiriesModal] = useState(false);
-  const [inquiries, setInquiries] = useState<ContactRequest[]>([]);
+  const [user, setUser] = useState<UserProfile | null>(authService.getCurrentUser());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(authService.isAuthenticated());
 
-  const handleOpenInquiries = async () => {
-    const list = await contactApiService.getReceivedRequests();
-    setInquiries(list);
-    setShowInquiriesModal(true);
+  // Formulaire d'authentification
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [email, setEmail] = useState('mohamed@darlink.tn');
+  const [password, setPassword] = useState('P@ssword2026!');
+  const [fullName, setFullName] = useState('Mohamed Ben Ali');
+  const [phone, setPhone] = useState('+216 98 111 222');
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Annonces publiées par l'utilisateur
+  const [myProperties, setMyProperties] = useState<Property[]>([]);
+  const [loadingProperties, setLoadingProperties] = useState(false);
+
+  // Modales d'édition
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  useEffect(() => {
+    const unsubscribe = authService.subscribe(() => {
+      setUser(authService.getCurrentUser());
+      setIsAuthenticated(authService.isAuthenticated());
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadMyProperties();
+    }
+  }, [isAuthenticated]);
+
+  const loadMyProperties = async () => {
+    setLoadingProperties(true);
+    const props = await propertyApiService.getMyProperties();
+    setMyProperties(props);
+    setLoadingProperties(false);
+  };
+
+  const handleAuthSubmit = async () => {
+    setLoading(true);
+    setAuthError(null);
+
+    let ok = false;
+    if (isRegisterMode) {
+      if (!fullName.trim() || !email.trim() || !password) {
+        setAuthError('Veuillez remplir tous les champs obligatoires.');
+        setLoading(false);
+        return;
+      }
+      ok = await authService.register(fullName, email, password, phone);
+    } else {
+      if (!email.trim() || !password) {
+        setAuthError('Veuillez renseigner votre email et mot de passe.');
+        setLoading(false);
+        return;
+      }
+      ok = await authService.login(email, password);
+    }
+
+    setLoading(false);
+    if (!ok) {
+      setAuthError(authService.lastError || 'Erreur d\'authentification.');
+    }
   };
 
   const handleUpdateProfile = async () => {
     if (!editName.trim()) {
-      Alert.alert('Erreur', 'Veuillez saisir votre nom complet.');
+      Alert.alert('Erreur', 'Le nom complet est obligatoire.');
       return;
     }
-    await authService.updateProfile(editName.trim(), editPhone.trim());
-    setCurrentUser(authService.getCurrentUser());
-    setShowEditModal(false);
-    Alert.alert('Succès', 'Profil mis à jour dans PostgreSQL !');
+    const success = await authService.updateProfile(editName, editPhone);
+    if (success) {
+      setIsEditingProfile(false);
+      Alert.alert('Succès', 'Profil mis à jour avec succès.');
+    } else {
+      Alert.alert('Erreur', 'Impossible de mettre à jour le profil.');
+    }
   };
 
-  const initials = currentUser.fullName
-    .split(' ')
-    .map((p: string) => p[0] || '')
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'RL';
-
-  const handleAuthSubmit = async () => {
-    if (!authEmail.trim() || !authPassword.trim()) {
-      Alert.alert('Champs requis', 'Veuillez saisir votre email et mot de passe.');
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      Alert.alert('Erreur', 'Veuillez renseigner les deux mots de passe.');
       return;
     }
-    setAuthLoading(true);
-    let ok = false;
-    if (isRegister) {
-      ok = await authService.register(authName.trim(), authEmail.trim(), authPassword.trim());
+    const err = await authService.changePassword(currentPassword, newPassword);
+    if (!err) {
+      setIsChangingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      Alert.alert('Succès', 'Mot de passe modifié avec succès.');
     } else {
-      ok = await authService.login(authEmail.trim(), authPassword.trim());
-    }
-    setAuthLoading(false);
-    if (ok) {
-      setCurrentUser(authService.getCurrentUser());
-      setShowAuthModal(false);
-      Alert.alert('Succès', isRegister ? 'Compte créé avec succès !' : 'Connexion réussie !');
-    } else {
-      Alert.alert('Erreur', 'Impossible de se connecter.');
+      Alert.alert('Erreur', err);
     }
   };
 
-  const handleAction = (label: string) => {
-    Alert.alert(label, `Action validée pour le compte de ${currentUser.fullName}.`);
+  const handleDeleteProperty = async (propId: string, title: string) => {
+    Alert.alert(
+      'Confirmer la suppression',
+      `Voulez-vous supprimer l'annonce "${title}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            await propertyApiService.deleteProperty(propId);
+            loadMyProperties();
+          },
+        },
+      ]
+    );
   };
-
-  if (showAddProperty) {
-    return <AddPropertyScreen onBack={() => setShowAddProperty(false)} />;
-  }
-
-  if (showMap) {
-    return <MapScreen onBack={() => setShowMap(false)} />;
-  }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Mon Profil</Text>
-      </View>
+    <ScrollView
+      style={[styles.container, { backgroundColor: isDark ? '#0F1015' : '#F8FAFC' }]}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {/* ======================================================== */}
+      {/* VUE 1 : NON AUTHENTIFIÉ (CONNEXION / INSCRIPTION RÉELLE) */}
+      {/* ======================================================== */}
+      {!isAuthenticated && (
+        <View style={styles.authContainer}>
+          <View style={[styles.authIconCircle, { backgroundColor: 'rgba(37,99,235,0.1)' }]}>
+            <Text style={{ fontSize: 32 }}>🔐</Text>
+          </View>
+          <Text style={[styles.authTitle, { color: colors.textPrimary }]}>
+            Bienvenue sur DarLink
+          </Text>
+          <Text style={[styles.authSubtitle, { color: colors.textSecondary }]}>
+            Connectez-vous pour gérer vos annonces, vos favoris et vos visites en Tunisie.
+          </Text>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 1. SECTION MONOGRAMME INITIALES & IDENTITÉ ÉPURÉE (AUCUNE PHOTO) */}
-        <View style={styles.avatarSection}>
-          <TouchableOpacity
+          {/* SÉLECTEUR D'ONGLETS */}
+          <View
             style={[
-              styles.monogramContainer,
+              styles.tabSelector,
+              { backgroundColor: isDark ? '#1E2028' : '#F1F5F9', borderColor: colors.border },
+            ]}
+          >
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                !isRegisterMode && { backgroundColor: colors.accentBlue },
+              ]}
+              onPress={() => setIsRegisterMode(false)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: !isRegisterMode ? '#FFFFFF' : colors.textSecondary },
+                ]}
+              >
+                Se connecter
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                isRegisterMode && { backgroundColor: colors.accentBlue },
+              ]}
+              onPress={() => setIsRegisterMode(true)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isRegisterMode ? '#FFFFFF' : colors.textSecondary },
+                ]}
+              >
+                Créer un compte
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* BANNIÈRE D'ERREUR */}
+          {authError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>⚠️ {authError}</Text>
+            </View>
+          )}
+
+          {/* FORMULAIRE */}
+          {isRegisterMode && (
+            <>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    color: colors.textPrimary,
+                    borderColor: colors.border,
+                  },
+                ]}
+                placeholder="Nom complet"
+                placeholderTextColor={colors.textSecondary}
+                value={fullName}
+                onChangeText={setFullName}
+              />
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    color: colors.textPrimary,
+                    borderColor: colors.border,
+                  },
+                ]}
+                placeholder="Téléphone (+216)"
+                placeholderTextColor={colors.textSecondary}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
+            </>
+          )}
+
+          <TextInput
+            style={[
+              styles.input,
               {
-                backgroundColor: isDark ? '#22242D' : '#E9EBF0',
+                backgroundColor: colors.surfaceElevated,
+                color: colors.textPrimary,
                 borderColor: colors.border,
               },
             ]}
-            onPress={() => setShowAuthModal(true)}
+            placeholder="Adresse email"
+            placeholderTextColor={colors.textSecondary}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.surfaceElevated,
+                color: colors.textPrimary,
+                borderColor: colors.border,
+              },
+            ]}
+            placeholder="Mot de passe"
+            placeholderTextColor={colors.textSecondary}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: colors.accentBlue }]}
+            onPress={handleAuthSubmit}
+            disabled={loading}
           >
-            <Text style={[styles.monogramText, { color: colors.textPrimary }]}>{initials}</Text>
-            <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedIcon}>✓</Text>
-            </View>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.submitButtonText}>
+                {isRegisterMode ? 'Créer mon compte' : 'Se connecter'}
+              </Text>
+            )}
           </TouchableOpacity>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.userName, { color: colors.textPrimary }]}>{currentUser.fullName}</Text>
-            <TouchableOpacity onPress={() => setShowEditModal(true)} activeOpacity={0.7}>
-              <Text style={{ fontSize: 16 }}>✏️</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            {currentUser.email}
-          </Text>
+          <TouchableOpacity
+            style={styles.demoFillBtn}
+            onPress={() => {
+              setIsRegisterMode(false);
+              setEmail('mohamed@darlink.tn');
+              setPassword('P@ssword2026!');
+            }}
+          >
+            <Text style={{ color: colors.accentBlue, fontSize: 13, textAlign: 'center' }}>
+              Remplir avec le compte test (Mohamed Ben Ali)
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
+      {/* ======================================================== */}
+      {/* VUE 2 : AUTHENTIFIÉ (PROFIL DYNAMIQUE POSTGRESQL) */}
+      {/* ======================================================== */}
+      {isAuthenticated && user && (
+        <View style={styles.profileSection}>
+          {/* CARTE D'EN-TÊTE PROFIL */}
           <View
             style={[
-              styles.clientBadge,
+              styles.userCard,
               {
-                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.10)',
-                borderColor: 'rgba(16, 185, 129, 0.3)',
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.border,
               },
             ]}
           >
-            <Text style={styles.badgeDot}>●</Text>
-            <Text style={styles.badgeText}>Compte Client Vérifié</Text>
+            <View style={[styles.avatarCircle, { backgroundColor: colors.accentBlue }]}>
+              <Text style={styles.avatarText}>
+                {user.fullName
+                  .split(' ')
+                  .map((e) => e[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.userInfo}>
+              <View style={styles.userNameRow}>
+                <Text style={[styles.userName, { color: colors.textPrimary }]}>{user.fullName}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: 'rgba(37,99,235,0.15)' }]}>
+                  <Text style={[styles.roleBadgeText, { color: colors.accentBlue }]}>
+                    {user.role}
+                  </Text>
+                </View>
+              </View>
+              <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{user.email}</Text>
+              {user.phone && (
+                <Text style={[styles.userPhone, { color: colors.textSecondary }]}>📞 {user.phone}</Text>
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* 2. BASCULE DU THÈME (MODE SOMBRE / CLAIR) */}
-        <View
-          style={[
-            styles.cardGroup,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <View style={styles.toggleRow}>
+          {/* ACTIONS PROFIL */}
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                { borderColor: colors.accentBlue, backgroundColor: 'transparent' },
+              ]}
+              onPress={() => {
+                setEditName(user.fullName);
+                setEditPhone(user.phone || '');
+                setIsEditingProfile(true);
+              }}
+            >
+              <Text style={[styles.actionBtnText, { color: colors.accentBlue }]}>
+                ✏️ Modifier profil
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                { borderColor: colors.border, backgroundColor: 'transparent' },
+              ]}
+              onPress={() => setIsChangingPassword(true)}
+            >
+              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>
+                🔒 Mot de passe
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* FORMULAIRE ÉDITION DU PROFIL */}
+          {isEditingProfile && (
             <View
               style={[
-                styles.iconBox,
-                { backgroundColor: isDark ? '#22242D' : '#F0F2F5' },
+                styles.editBox,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
               ]}
             >
-              <Text style={styles.iconEmoji}>{isDark ? '🌙' : '☀️'}</Text>
-            </View>
-            <View style={styles.toggleTextCol}>
-              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Mode sombre</Text>
-              <Text style={[styles.rowSubtitle, { color: colors.textSecondary }]}>
-                {isDark ? 'Palette sombre charcoal activée' : 'Palette blanche épurée activée'}
+              <Text style={[styles.editBoxTitle, { color: colors.textPrimary }]}>
+                Mettre à jour mes coordonnées
               </Text>
-            </View>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: '#D1D5DB', true: '#2563EB' }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-        </View>
-
-        {/* 3. SECTION MES ACTIVITÉS IMMOBILIÈRES */}
-        <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
-          MES ACTIVITÉS IMMOBILIÈRES
-        </Text>
-        <View
-          style={[
-            styles.cardGroup,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <ProfileTile
-            icon="➕"
-            title="Déposer une annonce"
-            subtitle="Publier un bien immobilier haut standing (V7)"
-            onPress={() => setShowAddProperty(true)}
-            colors={colors}
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <ProfileTile
-            icon="🗺️"
-            title="Carte des biens en Tunisie"
-            subtitle="Cartographie et repères GPS interactifs (V8)"
-            onPress={() => setShowMap(true)}
-            colors={colors}
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <ProfileTile
-            icon="♡"
-            title="Biens favoris"
-            subtitle="Consulter vos coups de cœur enregistrés"
-            badge="4"
-            onPress={() => handleAction('Biens favoris')}
-            colors={colors}
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <ProfileTile
-            icon="📬"
-            title="Demandes de visite reçues"
-            subtitle="Consulter les messages des acheteurs"
-            badge={inquiries.length > 0 ? String(inquiries.length) : undefined}
-            onPress={handleOpenInquiries}
-            colors={colors}
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <ProfileTile
-            icon="🔔"
-            title="Alertes de recherche"
-            subtitle="Notifications nouveaux biens sur vos critères"
-            onPress={() => handleAction('Alertes de recherche')}
-            colors={colors}
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <ProfileTile
-            icon="📁"
-            title="Documents & Dossiers"
-            subtitle="Promesses, contrats et pièces justificatives"
-            onPress={() => handleAction('Documents & Dossiers')}
-            colors={colors}
-          />
-        </View>
-
-        {/* 4. SECTION SERVICES & FINANCEMENT */}
-        <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
-          SERVICES & FINANCEMENT
-        </Text>
-        <View
-          style={[
-            styles.cardGroup,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <ProfileTile
-            icon="🏦"
-            title="Simulateur de crédit immobilier"
-            subtitle="Calcul des mensualités bancaires en Dinars (TMM)"
-            onPress={() => handleAction('Simulateur de crédit')}
-            colors={colors}
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <ProfileTile
-            icon="👩‍💼"
-            title="Contacter mon agent dédié"
-            subtitle="Sonia Ben Salem — Consultante prestige DarLink"
-            onPress={() => handleAction('Contacter mon agent')}
-            colors={colors}
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <ProfileTile
-            icon="🛡️"
-            title="Sécurité du compte & Données"
-            subtitle="Gestion mot de passe, sessions et confidentialité"
-            onPress={() => handleAction('Sécurité du compte')}
-            colors={colors}
-          />
-        </View>
-
-        {/* 5. BOUTON DÉCONNEXION & CHANGEMENT DE COMPTE */}
-        <TouchableOpacity
-          style={[
-            styles.logoutButton,
-            {
-              backgroundColor: isDark ? '#181920' : '#EFF6FF',
-              borderColor: isDark ? 'rgba(37, 99, 235, 0.4)' : 'rgba(37, 99, 235, 0.25)',
-            },
-          ]}
-          onPress={() => setShowAuthModal(true)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.logoutIcon}>🔄</Text>
-          <Text style={[styles.logoutText, { color: '#2563EB' }]}>
-            Changer de compte / Se connecter
-          </Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.appVersion, { color: colors.textTertiary }]}>
-          DarLink Mobile v2.0 • Plateforme Immobilière
-        </Text>
-      </ScrollView>
-
-      {/* MODAL AUTHENTIFICATION / LOGIN / REGISTER */}
-      <Modal
-        visible={showAuthModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowAuthModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.modalBar} />
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {isRegister ? 'Créer un compte DarLink' : 'Connexion Client DarLink'}
-            </Text>
-
-            {isRegister && (
               <TextInput
-                style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+                value={editName}
+                onChangeText={setEditName}
                 placeholder="Nom complet"
                 placeholderTextColor={colors.textSecondary}
-                value={authName}
-                onChangeText={setAuthName}
               />
-            )}
+              <TextInput
+                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+                value={editPhone}
+                onChangeText={setEditPhone}
+                placeholder="Téléphone"
+                placeholderTextColor={colors.textSecondary}
+              />
+              <View style={styles.editBoxActions}>
+                <TouchableOpacity
+                  style={[styles.cancelBtn, { borderColor: colors.border }]}
+                  onPress={() => setIsEditingProfile(false)}
+                >
+                  <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]}
+                  onPress={handleUpdateProfile}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Enregistrer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Adresse email"
-              placeholderTextColor={colors.textSecondary}
-              value={authEmail}
-              onChangeText={setAuthEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Mot de passe"
-              placeholderTextColor={colors.textSecondary}
-              secureTextEntry
-              value={authPassword}
-              onChangeText={setAuthPassword}
-            />
-
-            <TouchableOpacity
-              style={[styles.modalSubmitBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }]}
-              onPress={handleAuthSubmit}
-              disabled={authLoading}
+          {/* FORMULAIRE CHANGEMENT DE MOT DE PASSE */}
+          {isChangingPassword && (
+            <View
+              style={[
+                styles.editBox,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+              ]}
             >
-              <Text style={[styles.modalSubmitText, { color: isDark ? '#0F1015' : '#FFFFFF' }]}>
-                {authLoading ? 'Chargement...' : isRegister ? 'Créer mon compte' : 'Se connecter'}
+              <Text style={[styles.editBoxTitle, { color: colors.textPrimary }]}>
+                Changer mon mot de passe
               </Text>
-            </TouchableOpacity>
+              <TextInput
+                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                placeholder="Mot de passe actuel"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry
+              />
+              <TextInput
+                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Nouveau mot de passe (min 6 car.)"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry
+              />
+              <View style={styles.editBoxActions}>
+                <TouchableOpacity
+                  style={[styles.cancelBtn, { borderColor: colors.border }]}
+                  onPress={() => setIsChangingPassword(false)}
+                >
+                  <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]}
+                  onPress={handleChangePassword}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Valider</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
-            <TouchableOpacity
-              style={styles.modalToggleBtn}
-              onPress={() => setIsRegister(!isRegister)}
-            >
-              <Text style={styles.modalToggleText}>
-                {isRegister ? 'Déjà un compte ? Se connecter' : 'Pas encore de compte ? S\'inscrire'}
-              </Text>
-            </TouchableOpacity>
+          {/* BOUTON DÉPOSER UNE ANNONCE */}
+          <TouchableOpacity
+            style={[styles.addPropButton, { backgroundColor: colors.accentBlue }]}
+            onPress={() => onNavigateToAddProperty && onNavigateToAddProperty()}
+          >
+            <Text style={styles.addPropButtonText}>🏠 Publier une nouvelle annonce</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.modalCloseBtn}
-              onPress={() => setShowAuthModal(false)}
-            >
-              <Text style={[styles.modalCloseText, { color: colors.textSecondary }]}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* MODAL MODIFIER PROFIL */}
-      <Modal visible={showEditModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.modalBar} />
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Modifier mes coordonnées</Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Nom complet"
-              placeholderTextColor={colors.textSecondary}
-              value={editName}
-              onChangeText={setEditName}
-            />
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Numéro de téléphone"
-              placeholderTextColor={colors.textSecondary}
-              value={editPhone}
-              onChangeText={setEditPhone}
-              keyboardType="phone-pad"
-            />
-            <TouchableOpacity
-              style={[styles.modalSubmitBtn, { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }]}
-              onPress={handleUpdateProfile}
-            >
-              <Text style={[styles.modalSubmitText, { color: isDark ? '#0F1015' : '#FFFFFF' }]}>Enregistrer</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowEditModal(false)}>
-              <Text style={[styles.modalCloseText, { color: colors.textSecondary }]}>Annuler</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* MODAL DEMANDES DE CONTACT REÇUES */}
-      <Modal visible={showInquiriesModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.surface, maxHeight: '80%' }]}>
-            <View style={styles.modalBar} />
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              Demandes de visite reçues ({inquiries.length})
+          {/* MES ANNONCES PUBLIÉES */}
+          <View style={styles.myPropsHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Mes annonces publiées ({myProperties.length})
             </Text>
-            {inquiries.length === 0 ? (
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginVertical: 24 }}>
-                Aucune demande reçue pour le moment.
-              </Text>
-            ) : (
-              <ScrollView style={{ maxHeight: 300, marginVertical: 12 }}>
-                {inquiries.map((inq) => (
-                  <View key={inq.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderColor: colors.border }}>
-                    <Text style={{ fontWeight: '700', color: colors.textPrimary }}>{inq.senderName}</Text>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>{inq.senderEmail} • {inq.senderPhone}</Text>
-                    <Text style={{ fontSize: 13, color: colors.textPrimary, fontStyle: 'italic', marginTop: 4 }}>
-                      "{inq.message}"
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowInquiriesModal(false)}>
-              <Text style={[styles.modalCloseText, { color: colors.textSecondary }]}>Fermer</Text>
+            <TouchableOpacity onPress={loadMyProperties}>
+              <Text style={{ color: colors.accentBlue, fontSize: 13 }}>Actualiser 🔄</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
-  );
-};
 
-interface ProfileTileProps {
-  icon: string;
-  title: string;
-  subtitle: string;
-  badge?: string;
-  onPress: () => void;
-  colors: any;
-}
-
-const ProfileTile: React.FC<ProfileTileProps> = ({
-  icon,
-  title,
-  subtitle,
-  badge,
-  onPress,
-  colors,
-}) => {
-  return (
-    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.tileIconBox, { backgroundColor: colors.background }]}>
-        <Text style={styles.tileIconText}>{icon}</Text>
-      </View>
-      <View style={styles.tileContent}>
-        <Text style={[styles.tileTitle, { color: colors.textPrimary }]}>{title}</Text>
-        <Text style={[styles.tileSubtitle, { color: colors.textSecondary }]}>
-          {subtitle}
-        </Text>
-      </View>
-      {badge && (
-        <View style={styles.tileBadge}>
-          <Text style={styles.tileBadgeText}>{badge}</Text>
+          {loadingProperties ? (
+            <ActivityIndicator color={colors.accentBlue} style={{ marginVertical: 16 }} />
+          ) : myProperties.length === 0 ? (
+            <View
+              style={[
+                styles.emptyCard,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+              ]}
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
+                Vous n'avez publié aucune annonce pour le moment.
+              </Text>
+            </View>
+          ) : (
+            myProperties.map((prop) => (
+              <View
+                key={prop.id}
+                style={[
+                  styles.myPropCard,
+                  { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+                ]}
+              >
+                <Image source={{ uri: prop.imageUrl }} style={styles.myPropImage} />
+                <View style={styles.myPropContent}>
+                  <Text style={[styles.myPropTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {prop.titre}
+                  </Text>
+                  <Text style={[styles.myPropPrice, { color: colors.accentBlue }]}>
+                    {formatPrice(prop.prix)} • {prop.localisation}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleDeleteProperty(prop.id || '1', prop.titre)}
+                  style={styles.deleteBtn}
+                >
+                  <Text style={{ fontSize: 18 }}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
         </View>
       )}
-      <Text style={[styles.chevron, { color: colors.textTertiary }]}>›</Text>
-    </TouchableOpacity>
+
+      {/* ======================================================== */}
+      {/* PRÉFÉRENCES : THÈME ET LANGUES */}
+      {/* ======================================================== */}
+      <Text style={[styles.settingsTitle, { color: colors.textPrimary }]}>
+        Paramètres de l'application
+      </Text>
+
+      {/* MODE SOMBRE / CLAIR */}
+      <View
+        style={[
+          styles.settingRow,
+          { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>
+          {isDark ? '🌙 Mode sombre activé' : '☀️ Mode clair activé'}
+        </Text>
+        <TouchableOpacity
+          style={[
+            styles.themeSwitchBtn,
+            { backgroundColor: isDark ? colors.accentBlue : '#E2E8F0' },
+          ]}
+          onPress={toggleTheme}
+        >
+          <Text style={{ color: isDark ? '#FFFFFF' : '#0F1015', fontWeight: 'bold', fontSize: 12 }}>
+            Basculer
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* LANGUE DE L'APPLICATION */}
+      <View
+        style={[
+          styles.settingRow,
+          { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>
+          🌐 Langue (Français / العربية)
+        </Text>
+        <View style={[styles.langBadge, { backgroundColor: 'rgba(37,99,235,0.1)' }]}>
+          <Text style={{ color: colors.accentBlue, fontWeight: 'bold', fontSize: 12 }}>
+            FR / AR
+          </Text>
+        </View>
+      </View>
+
+      {/* BOUTON DÉCONNEXION */}
+      {isAuthenticated && (
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={() => authService.logout()}
+        >
+          <Text style={styles.logoutButtonText}>🚪 Se déconnecter</Text>
+        </TouchableOpacity>
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 18,
-    paddingTop: 20,
-    paddingBottom: 110,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  monogramContainer: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    marginBottom: 12,
-  },
-  monogramText: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  verifiedBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  verifiedIcon: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  userEmail: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 10,
-  },
-  clientBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 6,
-  },
-  badgeDot: {
-    color: '#10B981',
-    fontSize: 8,
-  },
-  badgeText: {
-    color: '#10B981',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  sectionHeader: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    marginTop: 18,
-    marginLeft: 4,
-  },
-  cardGroup: {
-    borderRadius: 20,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  iconEmoji: {
-    fontSize: 18,
-  },
-  toggleTextCol: {
-    flex: 1,
-  },
-  rowTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  rowSubtitle: {
-    fontSize: 11.5,
-  },
-  tile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-  },
-  tileIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  tileIconText: {
-    fontSize: 16,
-  },
-  tileContent: {
-    flex: 1,
-  },
-  tileTitle: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  tileSubtitle: {
-    fontSize: 11,
-  },
-  tileBadge: {
-    backgroundColor: '#2563EB',
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    marginRight: 6,
-  },
-  tileBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  chevron: {
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  divider: {
-    height: 1,
-    marginLeft: 58,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    marginTop: 24,
-    gap: 8,
-  },
-  logoutIcon: {
-    fontSize: 16,
-  },
-  logoutText: {
-    color: '#EF4444',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  appVersion: {
-    textAlign: 'center',
-    fontSize: 11,
-    marginTop: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  modalBar: {
-    width: 44,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#94A3B8',
+  container: { flex: 1 },
+  contentContainer: { padding: 20, paddingBottom: 60 },
+  authContainer: { alignItems: 'stretch', marginTop: 10 },
+  authIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 16,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  modalInput: {
-    borderWidth: 1,
+  authTitle: { fontSize: 22, fontWeight: 'bold', textAlign: 'center' },
+  authSubtitle: { fontSize: 13, textAlign: 'center', marginTop: 6, marginBottom: 20 },
+  tabSelector: {
+    flexDirection: 'row',
+    padding: 4,
     borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
-    marginBottom: 12,
+    borderWidth: 1,
+    marginBottom: 16,
   },
-  modalSubmitBtn: {
+  tabButton: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  tabText: { fontSize: 13, fontWeight: 'bold' },
+  errorBanner: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.3)',
+    marginBottom: 16,
+  },
+  errorText: { color: '#EF4444', fontSize: 12 },
+  input: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+    fontSize: 14,
+  },
+  submitButton: {
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 14,
     alignItems: 'center',
     marginTop: 8,
   },
-  modalSubmitText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  modalToggleBtn: {
-    marginTop: 14,
+  submitButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 15 },
+  demoFillBtn: { marginTop: 14, padding: 8 },
+  profileSection: { marginBottom: 20 },
+  userCard: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: 'center',
   },
-  modalToggleText: {
-    color: '#2563EB',
-    fontWeight: '600',
-    fontSize: 13,
+  avatarCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  modalCloseBtn: {
+  avatarText: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
+  userInfo: { flex: 1, marginLeft: 14 },
+  userNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  userName: { fontSize: 16, fontWeight: 'bold' },
+  roleBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  roleBadgeText: { fontSize: 10, fontWeight: 'bold' },
+  userEmail: { fontSize: 12, marginTop: 2 },
+  userPhone: { fontSize: 12, marginTop: 2 },
+  actionsRow: { flexDirection: 'row', marginTop: 12, gap: 10 },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  actionBtnText: { fontSize: 12, fontWeight: 'bold' },
+  editBox: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
     marginTop: 12,
+  },
+  editBoxTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 12 },
+  editBoxActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 4 },
+  cancelBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
+  saveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  addPropButton: {
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  addPropButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  myPropsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold' },
+  emptyCard: { padding: 20, borderRadius: 14, borderWidth: 1 },
+  myPropCard: {
+    flexDirection: 'row',
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  myPropImage: { width: 65, height: 55, borderRadius: 8 },
+  myPropContent: { flex: 1, marginLeft: 12 },
+  myPropTitle: { fontSize: 13, fontWeight: 'bold' },
+  myPropPrice: { fontSize: 12, marginTop: 2 },
+  deleteBtn: { padding: 8 },
+  settingsTitle: { fontSize: 16, fontWeight: 'bold', marginTop: 16, marginBottom: 10 },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  settingLabel: { fontSize: 13, fontWeight: '600' },
+  themeSwitchBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  langBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  logoutButton: {
+    marginTop: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EF4444',
     alignItems: 'center',
   },
-  modalCloseText: {
-    fontSize: 13,
-  },
+  logoutButtonText: { color: '#EF4444', fontWeight: 'bold', fontSize: 14 },
 });

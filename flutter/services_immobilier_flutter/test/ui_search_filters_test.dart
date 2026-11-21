@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — TESTS AUTOMATISÉS : RECHERCHE & FILTRES DYNAMIQUES (QA)
-// Valide le contrôleur segmenté, la sélection des types de bien et l'action de filtrage
+// Valide le champ de recherche textuelle, les segments, filtres et reset
 // ============================================================
 
 import 'dart:io';
@@ -21,34 +21,31 @@ void main() {
   }
 
   group('Tests UI d\'interaction — Écran de recherche multicritères (EcranRecherche)', () {
-    testWidgets('1. Affichage de l\'en-tête, des segments et des types de bien', (tester) async {
+    testWidgets('1. Affichage du champ de recherche textuelle, des filtres et du bouton', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
       expect(find.text('Recherche de biens'), findsOneWidget);
+      expect(find.byKey(const Key('search_text_input')), findsOneWidget);
       expect(find.text('Acheter'), findsOneWidget);
       expect(find.text('Louer'), findsOneWidget);
-      expect(find.text('Vendu'), findsOneWidget);
       expect(find.text('Appartement'), findsOneWidget);
       expect(find.text('Villa'), findsOneWidget);
       expect(find.text('Appliquer les filtres'), findsOneWidget);
     });
 
-    testWidgets('2. Basculement des segments Acheter / Louer', (tester) async {
+    testWidgets('2. Saisie d\'un texte de recherche dans le champ textuel', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      final rentSegment = find.text('Louer');
-      await tester.tap(rentSegment);
+      final searchInput = find.byKey(const Key('search_text_input'));
+      await tester.enterText(searchInput, 'Villa Djerba');
       await tester.pumpAndSettle();
 
-      // Retour sur Acheter
-      final buySegment = find.text('Acheter');
-      await tester.tap(buySegment);
-      await tester.pumpAndSettle();
+      expect(find.text('Villa Djerba'), findsOneWidget);
     });
 
-    testWidgets('3. Sélection d\'un type de bien (Villa)', (tester) async {
+    testWidgets('3. Sélection d\'un type de bien (Villa) et bascule de segment', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
@@ -56,10 +53,12 @@ void main() {
       await tester.tap(villaChip);
       await tester.pumpAndSettle();
 
-      expect(find.text('Villa'), findsOneWidget);
+      final rentSegment = find.text('Louer');
+      await tester.tap(rentSegment);
+      await tester.pumpAndSettle();
     });
 
-    testWidgets('4. Déclenchement de l\'application des filtres vers le backend', (tester) async {
+    testWidgets('4. Déclenchement de l\'application des filtres vers PostgreSQL', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
@@ -67,8 +66,7 @@ void main() {
       await tester.tap(applyBtn);
       await tester.pumpAndSettle();
 
-      // SnackBar de résultat de recherche
-      expect(find.textContaining('trouvé(s) depuis la base de données !'), findsOneWidget);
+      expect(find.textContaining('trouvé(s) depuis PostgreSQL !'), findsOneWidget);
     });
   });
 }

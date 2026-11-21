@@ -265,4 +265,83 @@ public class FullWorkflowBackendTest {
         List<PropertyDto> userAProps = propertyService.getUserProperties(userAId);
         assertTrue(userAProps.stream().noneMatch(p -> p.getId().equals(propertyId)));
     }
+
+    @Autowired
+    private com.darlink.service.MessageService messageService;
+
+    @Autowired
+    private com.darlink.service.NotificationService notificationService;
+
+    @Autowired
+    private com.darlink.repository.UserRepository userRepository;
+
+    @Test
+    @Order(12)
+    @DisplayName("12. Modification sécurisée du mot de passe utilisateur (V4)")
+    void testChangeUserPassword() {
+        // Tentative avec mauvais mot de passe actuel -> Exception
+        assertThrows(ForbiddenException.class, () ->
+                userService.changePassword(userBId, "MauvaisMotDePasse", "NouveauSuperP@ss2026!")
+        );
+
+        // Succès avec bon mot de passe
+        userService.changePassword(userBId, "SecretKey123!", "NouveauSuperP@ss2026!");
+
+        // Connexion avec le nouveau mot de passe
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setEmail("amira@darlink.tn");
+        loginReq.setPassword("NouveauSuperP@ss2026!");
+        AuthResponse loginRes = authService.login(loginReq);
+        assertNotNull(loginRes.getToken());
+    }
+
+    @Test
+    @Order(13)
+    @DisplayName("13. Envoi de message instantané et notification automatique (V9)")
+    void testMessagingAndNotification() {
+        com.darlink.dto.message.SendMessageRequest msgReq = new com.darlink.dto.message.SendMessageRequest();
+        msgReq.setReceiverId(userAId);
+        msgReq.setContent("Bonjour Mohamed, je suis intéressée par vos biens à Tunis.");
+
+        com.darlink.dto.message.MessageDto msg = messageService.sendMessage(userBId, msgReq);
+        assertNotNull(msg.getId());
+        assertEquals("Bonjour Mohamed, je suis intéressée par vos biens à Tunis.", msg.getContent());
+
+        // L'utilisateur A consulte sa conversation
+        List<com.darlink.dto.message.MessageDto> conv = messageService.getConversation(userAId, userBId);
+        assertFalse(conv.isEmpty());
+
+        // L'utilisateur A a reçu une notification automatique
+        List<com.darlink.dto.notification.NotificationDto> notifs = notificationService.getUserNotifications(userAId);
+        assertTrue(notifs.stream().anyMatch(n -> "MESSAGE".equals(n.getType())));
+
+        // Marquer la conversation comme lue
+        messageService.markConversationAsRead(userAId, userBId);
+        assertEquals(0, messageService.getUnreadMessagesCount(userAId));
+    }
+
+    @Test
+    @Order(14)
+    @DisplayName("14. Gestion des notifications in-app et alertes (V10)")
+    void testNotificationManagement() {
+        notificationService.createNotification(userBId, "Alerte Baisse de Prix", "Une villa a baissé de 10%", "PRICE_DROP", 2L);
+        long unread = notificationService.getUnreadCount(userBId);
+        assertTrue(unread > 0);
+
+        notificationService.markAllAsRead(userBId);
+        assertEquals(0, notificationService.getUnreadCount(userBId));
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("15. Rôle Administrateur et modération de la plateforme (V11)")
+    void testAdminRoleAndModeration() {
+        // Promouvoir l'utilisateur A en ADMIN
+        com.darlink.entity.UserEntity userA = userRepository.findById(userAId).orElseThrow();
+        userA.setRole("ADMIN");
+        userRepository.save(userA);
+
+        com.darlink.entity.UserEntity refreshed = userRepository.findById(userAId).orElseThrow();
+        assertEquals("ADMIN", refreshed.getRole());
+    }
 }

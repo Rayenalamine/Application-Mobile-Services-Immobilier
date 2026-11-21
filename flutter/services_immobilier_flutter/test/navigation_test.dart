@@ -80,10 +80,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Vérification des données de profil
-      expect(find.text('Mon Profil'), findsOneWidget);
-      expect(find.text('Rayen Lamine'), findsOneWidget);
-      expect(find.text('rayen.lamine@darlink.tn'), findsOneWidget);
-      expect(find.text('Compte Client Vérifié'), findsOneWidget);
+      expect(find.text('Bienvenue sur DarLink'), findsOneWidget);
+      expect(find.text('Se connecter'), findsWidgets);
       expect(find.text('Mode sombre'), findsOneWidget);
     });
 
@@ -102,7 +100,7 @@ void main() {
       // Navigation vers Profil
       await tester.tap(find.text('Profil'));
       await tester.pumpAndSettle();
-      expect(find.text('Mon Profil'), findsOneWidget);
+      expect(find.text('Bienvenue sur DarLink'), findsOneWidget);
 
       // Retour vers Accueil
       await tester.tap(find.text('Accueil'));

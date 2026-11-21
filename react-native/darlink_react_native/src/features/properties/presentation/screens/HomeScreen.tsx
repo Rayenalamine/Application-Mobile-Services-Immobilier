@@ -31,7 +31,11 @@ const FILTER_PILLS = [
   'Chambres',
 ] as const;
 
-export const HomeScreen: React.FC = () => {
+interface HomeScreenProps {
+  onNavigateToSearch?: () => void;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) => {
   const [currentView, setCurrentView] = useState<'home' | 'map' | 'add'>('home');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
@@ -178,7 +182,10 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {/* 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE */}
-        <View
+        <TouchableOpacity
+          testID="home_search_bar"
+          onPress={onNavigateToSearch}
+          activeOpacity={0.85}
           style={[
             styles.searchBar,
             {
@@ -200,7 +207,7 @@ export const HomeScreen: React.FC = () => {
           >
             <Text style={styles.tuneIcon}>⚙️</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* 3. RANGÉE DE JETONS DE FILTRES HORIZONTAUX */}
         <ScrollView
@@ -218,9 +225,9 @@ export const HomeScreen: React.FC = () => {
                   styles.filterPill,
                   {
                     backgroundColor: isSelected
-                      ? (isDark ? '#FFFFFF' : '#0F1015')
+                      ? colors.accentBlue
                       : colors.surface,
-                    borderColor: isSelected ? 'transparent' : colors.border,
+                    borderColor: isSelected ? colors.accentBlue : colors.border,
                   },
                 ]}
                 onPress={() => setActiveFilter(filtre)}
@@ -231,7 +238,7 @@ export const HomeScreen: React.FC = () => {
                     styles.filterText,
                     {
                       color: isSelected
-                        ? (isDark ? '#0F1015' : '#FFFFFF')
+                        ? '#FFFFFF'
                         : colors.textSecondary,
                       fontWeight: isSelected ? '700' : '500',
                     },

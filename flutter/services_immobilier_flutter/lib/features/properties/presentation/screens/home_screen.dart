@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../data/mock_properties.dart';
 import '../../domain/models/property.dart';
 import '../../../map/presentation/screens/map_screen.dart';
+import '../../../navigation/presentation/screens/search_screen.dart';
 import '../widgets/property_card.dart';
 import 'add_property_screen.dart';
 
@@ -180,48 +181,58 @@ class _EcranAccueilState extends State<EcranAccueil> {
             // ------------------------------------------------------------
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: borderColor, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+              child: GestureDetector(
+                key: const Key('home_search_bar_clickable'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const EcranRecherche(),
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Icon(Icons.search, color: textSec, size: 22),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Tunis, Sousse, Djerba, Hammamet...',
-                        style: TextStyle(
-                          color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-                          fontSize: 14,
+                  );
+                },
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: borderColor, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Icon(Icons.search, color: textSec, size: 22),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Tunis, Sousse, Djerba, Hammamet...',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                            fontSize: 14,
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: isDark ? const Color(0x1AFFFFFF) : const Color(0x0A000000),
-                        child: Icon(
-                          Icons.tune,
-                          color: isDark ? Colors.white : const Color(0xFF111827),
-                          size: 18,
+                      Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: isDark ? const Color(0x1AFFFFFF) : const Color(0x0A000000),
+                          child: Icon(
+                            Icons.tune,
+                            color: isDark ? Colors.white : const Color(0xFF111827),
+                            size: 18,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

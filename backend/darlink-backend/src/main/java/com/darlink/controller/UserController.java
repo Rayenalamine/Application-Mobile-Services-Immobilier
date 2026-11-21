@@ -1,5 +1,6 @@
 package com.darlink.controller;
 
+import com.darlink.dto.auth.ChangePasswordRequest;
 import com.darlink.dto.auth.UpdateProfileRequest;
 import com.darlink.dto.auth.UserResponse;
 import com.darlink.dto.property.PropertyDto;
@@ -14,10 +15,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@Tag(name = "Users", description = "Gestion du profil utilisateur, de ses annonces et de ses favoris")
+@Tag(name = "Users", description = "Gestion du profil utilisateur, de ses annonces, favoris et mot de passe (V4)")
 public class UserController {
 
     private final UserService userService;
@@ -54,6 +56,17 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/me/change-password")
+    @Operation(summary = "Modifier le mot de passe de l'utilisateur connecté")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication auth
+    ) {
+        Long userId = resolveUserId(auth);
+        userService.changePassword(userId, request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Mot de passe modifié avec succès."));
+    }
+
     @GetMapping("/me/properties")
     @Operation(summary = "Lister les annonces publiées par l'utilisateur connecté")
     public ResponseEntity<List<PropertyDto>> getMyProperties(Authentication auth) {
@@ -68,4 +81,3 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserFavorites(userId));
     }
 }
-

@@ -42,8 +42,12 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
   const { isDark, colors } = useTheme();
 
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
-  const [senderName, setSenderName] = useState<string>(authService.getCurrentUser().fullName);
-  const [senderEmail, setSenderEmail] = useState<string>(authService.getCurrentUser().email);
+  const [senderName, setSenderName] = useState<string>(
+    authService.getCurrentUser()?.fullName || 'Visiteur'
+  );
+  const [senderEmail, setSenderEmail] = useState<string>(
+    authService.getCurrentUser()?.email || 'visiteur@darlink.tn'
+  );
   const [senderPhone, setSenderPhone] = useState<string>('+216 20 123 456');
   const [contactMessage, setContactMessage] = useState<string>(
     `Bonjour, je souhaite visiter ce bien (${property.titre}).`

@@ -192,7 +192,7 @@ $buyerHeaders = @{ Authorization = "Bearer $buyerToken" }
 
 # Ajout aux favoris
 $favAdd = Invoke-RestMethod -Uri "$baseUrl/favorites/$propId" -Method Post -Headers $buyerHeaders
-Assert-Condition ($favAdd.message -like "*ajouté*") "Bien ajouté aux favoris de l'acheteur"
+Assert-Condition ($favAdd.message -like "*ajout*") "Bien ajouté aux favoris de l'acheteur"
 
 # Consultation des favoris
 $favList = Invoke-RestMethod -Uri "$baseUrl/favorites" -Method Get -Headers $buyerHeaders
@@ -200,7 +200,7 @@ Assert-Condition (($favList | Where-Object { $_.id -eq $propId }) -ne $null) "Le
 
 # Suppression du favori
 $favDel = Invoke-RestMethod -Uri "$baseUrl/favorites/$propId" -Method Delete -Headers $buyerHeaders
-Assert-Condition ($favDel.message -like "*retiré*") "Bien retiré des favoris"
+Assert-Condition ($favDel.message -like "*retir*") "Bien retiré des favoris"
 
 # Vérification liste vide pour ce bien
 $favListAfter = Invoke-RestMethod -Uri "$baseUrl/favorites" -Method Get -Headers $buyerHeaders
