@@ -21,6 +21,7 @@ import { AddPropertyScreen } from './AddPropertyScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
 import { propertyApiService } from '../../services/propertyApiService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { authService } from '../../../auth/services/authService';
 
 const FILTER_PILLS = [
   'Tous',
@@ -40,7 +41,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
   const [properties, setProperties] = useState<Property[]>([...mockProperties]);
+  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const { isDark, toggleTheme, colors } = useTheme();
+
+  useEffect(() => {
+    const unsub = authService.subscribe(() => {
+      setCurrentUser(authService.getCurrentUser());
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -116,15 +125,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                 },
               ]}
             >
-              <Text style={[styles.monogramText, { color: colors.textPrimary }]}>RL</Text>
+              <Text style={[styles.monogramText, { color: colors.textPrimary }]}>
+                {currentUser && currentUser.fullName
+                  ? currentUser.fullName.split(' ').map((e) => (e ? e[0] : '')).slice(0, 2).join('')
+                  : 'IN'}
+              </Text>
             </View>
 
             <View style={styles.userTextContainer}>
               <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
-                Bonjour ! 👋
+                {currentUser ? 'Bonjour ! 👋' : 'Bienvenue !'}
               </Text>
               <Text style={[styles.userNameText, { color: colors.textPrimary }]}>
-                Rayen Lamine
+                {currentUser ? currentUser.fullName : 'Invité'}
               </Text>
             </View>
           </View>

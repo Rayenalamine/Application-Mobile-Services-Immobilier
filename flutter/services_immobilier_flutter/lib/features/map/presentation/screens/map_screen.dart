@@ -357,8 +357,27 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.explore, color: AppColors.accentBlue, size: 22),
-                        const SizedBox(width: 8),
+                        // Bouton Retour
+                        IconButton(
+                          key: const Key('map_back_button'),
+                          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textPrim, size: 18),
+                          tooltip: 'Retour',
+                          onPressed: () {
+                            if (Navigator.of(context).canPop()) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                        ),
+                        // Bouton Accueil direct (toujours accessible)
+                        IconButton(
+                          key: const Key('map_home_button'),
+                          icon: const Icon(Icons.home_rounded, color: AppColors.accentBlue, size: 22),
+                          tooltip: 'Retour à l\'accueil',
+                          onPressed: () {
+                            Navigator.of(context).popUntil((route) => route.isFirst);
+                          },
+                        ),
+                        const SizedBox(width: 4),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

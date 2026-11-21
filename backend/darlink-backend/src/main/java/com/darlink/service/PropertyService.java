@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import com.darlink.repository.UserRepository;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,10 +30,16 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
     private final PropertyImageRepository propertyImageRepository;
+    private final UserRepository userRepository;
 
-    public PropertyService(PropertyRepository propertyRepository, PropertyImageRepository propertyImageRepository) {
+    public PropertyService(
+            PropertyRepository propertyRepository,
+            PropertyImageRepository propertyImageRepository,
+            UserRepository userRepository
+    ) {
         this.propertyRepository = propertyRepository;
         this.propertyImageRepository = propertyImageRepository;
+        this.userRepository = userRepository;
     }
 
     public PageResponse<PropertyDto> getProperties(
@@ -148,9 +155,16 @@ public class PropertyService {
             entity.setAmenities(String.join(",", req.getAmenities()));
         }
 
+        String agentName = "Propriétaire";
         if (req.getAgentName() != null && !req.getAgentName().isBlank()) {
-            entity.setAgentName(req.getAgentName().trim());
+            agentName = req.getAgentName().trim();
+        } else if (ownerId != null) {
+            agentName = userRepository.findById(ownerId)
+                    .map(com.darlink.entity.UserEntity::getFullName)
+                    .orElse("Propriétaire");
         }
+        entity.setAgentName(agentName);
+
         if (req.getAgentPhone() != null && !req.getAgentPhone().isBlank()) {
             entity.setAgentPhone(req.getAgentPhone().trim());
         }
@@ -163,8 +177,8 @@ public class PropertyService {
 
         entity.setOwnerId(ownerId != null ? ownerId : 1L);
 
-        entity = propertyRepository.save(entity);
-        return PropertyDto.fromEntity(entity);
+        PropertyEntity saved = propertyRepository.save(entity);
+        return PropertyDto.fromEntity(saved);
     }
 
     @Transactional
@@ -173,7 +187,7 @@ public class PropertyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Aucun bien immobilier trouvé avec l'identifiant " + id + "."));
 
         // Vérification stricte de la propriété
-        if (entity.getOwnerId() != null && userId != null && !entity.getOwnerId().equals(userId)) {
+        if (entity.getOwnerId() == null || userId == null || !entity.getOwnerId().equals(userId)) {
             throw new ForbiddenException("Action refusée : vous n'êtes pas le propriétaire de ce bien immobilier.");
         }
 
@@ -215,7 +229,7 @@ public class PropertyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Aucun bien immobilier trouvé avec l'identifiant " + id + "."));
 
         // Vérification stricte de la propriété
-        if (entity.getOwnerId() != null && userId != null && !entity.getOwnerId().equals(userId)) {
+        if (entity.getOwnerId() == null || userId == null || !entity.getOwnerId().equals(userId)) {
             throw new ForbiddenException("Action refusée : vous n'êtes pas le propriétaire de ce bien immobilier.");
         }
 

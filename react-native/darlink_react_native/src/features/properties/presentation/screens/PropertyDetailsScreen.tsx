@@ -176,54 +176,25 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
               <Text style={styles.circleBtnIcon}>{isFavorite ? '❤️' : '🤍'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              onPress={handleDeleteProperty}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.circleBtnIcon, { color: '#EF4444' }]}>
-                🗑️
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              onPress={() =>
-                Alert.alert('Partager', 'Lien de l\'annonce copié dans le presse-papier.')
-              }
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.circleBtnIcon, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-                📤
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.circleBtnIcon, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-                •••
-              </Text>
-            </TouchableOpacity>
+            {/* Suppression réservée au propriétaire légitime */}
+            {authService.getCurrentUser() &&
+              String(authService.getCurrentUser()?.id) === String((property as any).proprietaireId || (property as any).ownerId) && (
+                <TouchableOpacity
+                  style={[
+                    styles.glassCircleBtn,
+                    {
+                      backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
+                  onPress={handleDeleteProperty}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.circleBtnIcon, { color: '#EF4444' }]}>
+                    🗑️
+                  </Text>
+                </TouchableOpacity>
+              )}
           </View>
         </View>
 
@@ -428,14 +399,18 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           ]}
         >
           <View style={styles.agentAvatarBox}>
-            <Text style={styles.agentAvatarText}>SB</Text>
+            <Text style={styles.agentAvatarText}>
+              {property.agentNom && property.agentNom.length > 0
+                ? property.agentNom.split(' ').map(e => e ? e[0] : '').slice(0, 2).join('')
+                : 'P'}
+            </Text>
           </View>
           <View style={styles.agentInfo}>
             <Text style={[styles.agentName, { color: colors.textPrimary }]}>
-              {property.agentNom ?? 'Sonia Ben Salem'}
+              {property.agentNom ?? 'Propriétaire'}
             </Text>
             <Text style={[styles.agentRole, { color: colors.textSecondary }]}>
-              Consultante Immobilière Prestige
+              Propriétaire / Annonceur
             </Text>
             <Text style={styles.agentPhone}>
               {property.agentTel ?? '+216 71 888 999'}

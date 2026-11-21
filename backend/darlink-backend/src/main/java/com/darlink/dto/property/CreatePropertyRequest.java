@@ -49,7 +49,7 @@ public class CreatePropertyRequest {
     private String standing = "Haut Standing";
     private Boolean isRental = false;
     private List<String> amenities;
-    private String agentName = "Sonia Ben Salem";
+    private String agentName;
     private String agentPhone = "+216 71 888 999";
     private BigDecimal latitude = new BigDecimal("36.806500");
     private BigDecimal longitude = new BigDecimal("10.181500");

@@ -6,7 +6,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../data/mock_properties.dart';
+import '../../../../core/localization/app_locale.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../data/property_api_service.dart';
 import '../../domain/models/property.dart';
 import '../../../map/presentation/screens/map_screen.dart';
 import '../../../navigation/presentation/screens/search_screen.dart';
@@ -23,6 +25,8 @@ class EcranAccueil extends StatefulWidget {
 
 class _EcranAccueilState extends State<EcranAccueil> {
   String _filtreActif = 'Tous';
+  List<Propriete> _proprietes = [];
+  bool _isLoading = true;
 
   final List<String> _filtres = const [
     'Tous',
@@ -33,8 +37,37 @@ class _EcranAccueilState extends State<EcranAccueil> {
     'Chambres',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _chargerBiens();
+    AuthState.instance.addListener(_onStateChange);
+    AppLocale.instance.addListener(_onStateChange);
+  }
+
+  @override
+  void dispose() {
+    AuthState.instance.removeListener(_onStateChange);
+    AppLocale.instance.removeListener(_onStateChange);
+    super.dispose();
+  }
+
+  void _onStateChange() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _chargerBiens() async {
+    final list = await PropertyApiService.instance.getProperties();
+    if (mounted) {
+      setState(() {
+        _proprietes = list;
+        _isLoading = false;
+      });
+    }
+  }
+
   List<Propriete> get _proprietesFiltrees {
-    return listeProprietes.where((p) {
+    return _proprietes.where((p) {
       final matchCategorie = _filtreActif == 'Tous' ||
           _filtreActif == 'Prix' ||
           _filtreActif == 'Chambres' ||
@@ -53,6 +86,14 @@ class _EcranAccueilState extends State<EcranAccueil> {
     final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
+
+    final authUser = AuthState.instance.currentUser;
+    final isAuth = AuthState.instance.isAuthenticated;
+    final userName = isAuth && authUser != null ? authUser.fullName : AppLocale.instance.tr('guest');
+    final monogram = isAuth && authUser != null && authUser.fullName.isNotEmpty
+        ? authUser.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
+        : 'IN';
+    final greeting = isAuth ? AppLocale.instance.tr('greeting') : AppLocale.instance.tr('welcome_guest');
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -82,10 +123,10 @@ class _EcranAccueilState extends State<EcranAccueil> {
                             width: 1.5,
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'RL',
-                            style: TextStyle(
+                            monogram,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                               color: AppColors.accentBlue,
@@ -98,7 +139,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Bonjour ! 👋',
+                            greeting,
                             style: TextStyle(
                               color: textSec,
                               fontSize: 12,
@@ -106,7 +147,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                             ),
                           ),
                           Text(
-                            'Rayen Lamine',
+                            userName,
                             style: TextStyle(
                               color: textPrim,
                               fontSize: 17,
@@ -308,22 +349,32 @@ class _EcranAccueilState extends State<EcranAccueil> {
             // 5. LISTE IMMERSIVE DES ANNONCES DE BIENS
             // ------------------------------------------------------------
             Expanded(
-              child: _proprietesFiltrees.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Aucun bien ne correspond à votre recherche',
-                        style: TextStyle(color: textSec),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                      itemCount: _proprietesFiltrees.length,
-                      itemBuilder: (context, index) {
-                        return CartePropriete(
-                          propriete: _proprietesFiltrees[index],
-                        );
-                      },
-                    ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 820),
+                  child: RefreshIndicator(
+                    onRefresh: _chargerBiens,
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : _proprietesFiltrees.isEmpty
+                            ? Center(
+                                child: Text(
+                                  AppLocale.instance.tr('empty_search'),
+                                  style: TextStyle(color: textSec),
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                                itemCount: _proprietesFiltrees.length,
+                                itemBuilder: (context, index) {
+                                  return CartePropriete(
+                                    propriete: _proprietesFiltrees[index],
+                                  );
+                                },
+                              ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -362,16 +413,19 @@ class SectionBienvenue extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.home_work_rounded, color: AppColors.accentBlue, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Bienvenue sur Services Immobilier',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accentBlue,
+                    const Icon(Icons.home_work_rounded, color: AppColors.accentBlue, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Bienvenue sur Services Immobilier',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.accentBlue,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -394,15 +448,19 @@ class SectionBienvenue extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Nos biens immobiliers',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: textPrim,
-                  letterSpacing: -0.3,
+              Expanded(
+                child: Text(
+                  'Nos biens immobiliers',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: textPrim,
+                    letterSpacing: -0.3,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(

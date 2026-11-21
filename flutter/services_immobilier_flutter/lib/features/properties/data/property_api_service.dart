@@ -227,7 +227,7 @@ class PropertyApiService {
       estLocation: json['isRental'] as bool? ?? false,
       imagesGalerie: gallery,
       commodites: amenities,
-      agentNom: json['agentName'] as String? ?? 'Sonia Ben Salem',
+      agentNom: json['agentName'] as String? ?? 'Propriétaire',
       agentTel: json['agentPhone'] as String? ?? '+216 71 888 999',
     );
   }

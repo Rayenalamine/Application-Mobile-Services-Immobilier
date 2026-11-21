@@ -275,16 +275,34 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
             {
               backgroundColor: isDark ? 'rgba(30,32,40,0.95)' : 'rgba(255,255,255,0.95)',
               borderColor: colors.border,
+              flexDirection: 'row',
+              alignItems: 'center',
             },
           ]}
         >
-          <Text style={[styles.titleText, { color: colors.textPrimary }]}>
-            🗺️ Cartographie OpenStreetMap
-          </Text>
-          <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
-            {filteredProperties.length} bien(s) géolocalisé(s) en Tunisie
-          </Text>
-          {loading && <ActivityIndicator size="small" color={colors.accentBlue} style={{ marginTop: 4 }} />}
+          <TouchableOpacity
+            onPress={onBack}
+            style={{
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              backgroundColor: colors.accentBlue,
+              marginRight: 10,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Retour à l'accueil"
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 13 }}>‹ Accueil</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.titleText, { color: colors.textPrimary }]}>
+              🗺️ OpenStreetMap
+            </Text>
+            <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
+              {filteredProperties.length} bien(s) géolocalisé(s)
+            </Text>
+          </View>
+          {loading && <ActivityIndicator size="small" color={colors.accentBlue} />}
         </View>
 
         {/* PASTILLES DES VILLES */}

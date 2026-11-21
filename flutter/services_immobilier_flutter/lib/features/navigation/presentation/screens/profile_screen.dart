@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../../auth/data/auth_service.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../properties/presentation/screens/add_property_screen.dart';
@@ -776,33 +777,50 @@ class _EcranProfilState extends State<EcranProfil> {
               ),
               const SizedBox(height: 10),
 
-              // Sélecteur de langue Français / Arabe (RTL)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.language, color: AppColors.accentBlue),
-                        const SizedBox(width: 12),
-                        Text('Langue (Français / العربية)', style: TextStyle(color: textPrim, fontWeight: FontWeight.w600)),
-                      ],
+              // Sélecteur de langue interactif Français / Arabe (RTL) / English
+              InkWell(
+                key: const Key('profile_language_selector'),
+                onTap: () {
+                  AppLocale.instance.toggleLanguage();
+                  final current = AppLocale.instance.currentLang.toUpperCase();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Langue active : $current'),
+                      duration: const Duration(seconds: 1),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.accentBlue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.language, color: AppColors.accentBlue),
+                          const SizedBox(width: 12),
+                          Text('Langue (Français / العربية / EN)', style: TextStyle(color: textPrim, fontWeight: FontWeight.w600)),
+                        ],
                       ),
-                      child: const Text('FR / AR', style: TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
-                  ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentBlue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          AppLocale.instance.currentLang.toUpperCase(),
+                          style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 

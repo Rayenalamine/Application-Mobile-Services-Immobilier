@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS properties (
     standing VARCHAR(80) DEFAULT 'Haut Standing',
     is_rental BOOLEAN DEFAULT FALSE,
     amenities TEXT, -- Liste d'équipements séparés par virgule
-    agent_name VARCHAR(120) DEFAULT 'Sonia Ben Salem',
+    agent_name VARCHAR(120),
     agent_phone VARCHAR(40) DEFAULT '+216 71 888 999',
     latitude NUMERIC(10, 6) DEFAULT 36.806500,
     longitude NUMERIC(10, 6) DEFAULT 10.181500,

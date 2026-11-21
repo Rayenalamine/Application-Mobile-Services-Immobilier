@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # DARLINK - 10 MASTER END-TO-END USER JOURNEYS (Mandatory Verification Suite)
 # Complies with Mandate Section 8: Journeys 1 to 10
 # Target: Real PostgreSQL 18 + Spring Boot 3.3.5 Backend (Port 8085)

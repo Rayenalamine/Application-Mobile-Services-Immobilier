@@ -25,6 +25,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
   final _surfaceCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _adresseCtrl = TextEditingController();
+  final _imageUrlCtrl = TextEditingController();
 
   String _typeSelectionne = 'Appartement';
   String _villeSelectionnee = 'Tunis';
@@ -32,6 +33,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
   final int _nbSallesDeBain = 2;
   bool _isLocation = false;
   bool _isSubmitting = false;
+  String? _imageSelectionnee;
 
   final List<String> _types = const ['Appartement', 'Villa', 'Maison'];
   final List<String> _villes = const ['Tunis', 'Sousse', 'Hammamet', 'Djerba', 'Monastir', 'Sfax'];
@@ -40,8 +42,24 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
   ];
   final Set<String> _commoditesChoisies = {'Climatisation', 'Ascenseur'};
 
-  final String _imageParDefaut =
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800';
+  final List<({String label, String url})> _photosPredefinies = const [
+    (
+      label: 'Villa avec piscine',
+      url: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800',
+    ),
+    (
+      label: 'Appartement moderne',
+      url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+    ),
+    (
+      label: 'Maison traditionnelle',
+      url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
+    ),
+    (
+      label: 'Résidence bord de mer',
+      url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
+    ),
+  ];
 
   @override
   void initState() {
@@ -53,6 +71,8 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
       _surfaceCtrl.text = p.surfaceM2.toString();
       _descCtrl.text = p.description;
       _adresseCtrl.text = p.localisation;
+      _imageUrlCtrl.text = p.imageUrl;
+      _imageSelectionnee = p.imageUrl.isNotEmpty ? p.imageUrl : null;
       if (_types.contains(p.type)) _typeSelectionne = p.type;
       _nbChambres = p.nombreChambres;
       _isLocation = p.estLocation;
@@ -67,6 +87,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
     _surfaceCtrl.dispose();
     _descCtrl.dispose();
     _adresseCtrl.dispose();
+    _imageUrlCtrl.dispose();
     super.dispose();
   }
 
@@ -80,6 +101,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
     final localisation = _adresseCtrl.text.isNotEmpty
         ? '${_adresseCtrl.text}, $_villeSelectionnee'
         : 'Centre-ville, $_villeSelectionnee';
+    final photoFinale = _imageSelectionnee?.trim() ?? _imageUrlCtrl.text.trim();
 
     Propriete? resultProp;
 
@@ -88,11 +110,12 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
         widget.proprieteAEditer!.id,
         {
           'title': _titreCtrl.text.trim(),
-          'description': _descCtrl.text.isNotEmpty ? _descCtrl.text.trim() : 'Superbe bien haut de gamme.',
+          'description': _descCtrl.text.trim(),
           'location': localisation,
           'city': _villeSelectionnee,
           'price': prix,
           'type': _typeSelectionne,
+          'imageUrl': photoFinale,
           'bedrooms': _nbChambres,
           'bathrooms': _nbSallesDeBain,
           'surfaceM2': surface,
@@ -103,14 +126,12 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
     } else {
       resultProp = await PropertyApiService.instance.createProperty(
         title: _titreCtrl.text.trim(),
-        description: _descCtrl.text.isNotEmpty
-            ? _descCtrl.text.trim()
-            : 'Superbe bien immobilier situé à $_villeSelectionnee, finitions haut de gamme.',
+        description: _descCtrl.text.trim(),
         location: localisation,
         city: _villeSelectionnee,
         price: prix,
         type: _typeSelectionne,
-        imageUrl: _imageParDefaut,
+        imageUrl: photoFinale,
         bedrooms: _nbChambres,
         bathrooms: _nbSallesDeBain,
         surfaceM2: surface,
@@ -166,33 +187,110 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Aperçu visuel
-                Container(
-                  height: 180,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    image: DecorationImage(
-                      image: NetworkImage(_imageParDefaut),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: Container(
+                // SECTION PHOTO SÉLECTIONNÉE PAR L'UTILISATEUR
+                _buildLabel('Photo de l\'annonce (Sélection manuelle)', textPrim),
+                if (_imageSelectionnee != null && _imageSelectionnee!.isNotEmpty) ...[
+                  Container(
+                    height: 190,
+                    width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        colors: [Colors.black.withValues(alpha: 0.5), Colors.transparent],
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
+                      image: DecorationImage(
+                        image: NetworkImage(_imageSelectionnee!),
+                        fit: BoxFit.cover,
                       ),
                     ),
-                    padding: const EdgeInsets.all(16),
-                    alignment: Alignment.bottomLeft,
-                    child: const Text(
-                      '📷 Photo principale sélectionnée',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      alignment: Alignment.bottomRight,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        label: const Text('Retirer la photo'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.withValues(alpha: 0.85),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _imageSelectionnee = null;
+                            _imageUrlCtrl.clear();
+                          });
+                        },
+                      ),
                     ),
                   ),
+                ] else ...[
+                  Container(
+                    height: 120,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: borderColor, style: BorderStyle.solid),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate_outlined, size: 36, color: textSec),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Aucune photo sélectionnée (Annonce sans photo)',
+                            style: TextStyle(color: textSec, fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 10),
+
+                // Sélecteur de photos prédéfinies ou saisie URL
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _photosPredefinies.map((preset) {
+                    final isSel = _imageSelectionnee == preset.url;
+                    return ActionChip(
+                      label: Text(preset.label),
+                      backgroundColor: isSel ? AppColors.accentBlue : cardBg,
+                      labelStyle: TextStyle(
+                        color: isSel ? Colors.white : textPrim,
+                        fontSize: 12,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                      ),
+                      side: BorderSide(color: isSel ? AppColors.accentBlue : borderColor),
+                      onPressed: () {
+                        setState(() {
+                          _imageSelectionnee = preset.url;
+                          _imageUrlCtrl.text = preset.url;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+
+                const SizedBox(height: 8),
+
+                TextFormField(
+                  controller: _imageUrlCtrl,
+                  style: TextStyle(color: textPrim, fontSize: 13),
+                  decoration: _inputDeco('Ou collez l\'URL directe d\'une image...', cardBg, borderColor, textSec),
+                  onChanged: (val) {
+                    setState(() {
+                      _imageSelectionnee = val.trim().isNotEmpty ? val.trim() : null;
+                    });
+                  },
                 ),
 
                 const SizedBox(height: 20),
@@ -419,7 +517,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                   controller: _descCtrl,
                   maxLines: 3,
                   style: TextStyle(color: textPrim),
-                  decoration: _inputDeco('Détails supplémentaires...', cardBg, borderColor, textSec),
+                  decoration: _inputDeco('Description de votre annonce (facultatif)...', cardBg, borderColor, textSec),
                 ),
 
                 const SizedBox(height: 30),

@@ -12,6 +12,7 @@ import '../../presentation/screens/add_property_screen.dart';
 import '../../../favorites/data/favorites_api_service.dart';
 import '../../../contact/data/contact_api_service.dart';
 import '../../../auth/data/auth_service.dart';
+import '../../../auth/domain/models/auth_state.dart';
 
 /// Écran affichant la fiche détaillée d'un bien immobilier (Screen 2).
 class EcranDetails extends StatefulWidget {
@@ -212,6 +213,9 @@ class _EcranDetailsState extends State<EcranDetails> {
     final bottomDockBg = isDark ? const Color(0xE60F1015) : const Color(0xF2FFFFFF);
     final bottomDockBorder = isDark ? const Color(0x1FFFFFFF) : const Color(0x18000000);
 
+    final currentUserId = AuthState.instance.currentUser?.id;
+    final isOwner = currentUserId != null && currentUserId.toString() == widget.propriete.proprietaireId;
+
     return Scaffold(
       backgroundColor: bgColor,
       extendBodyBehindAppBar: true,
@@ -251,44 +255,33 @@ class _EcranDetailsState extends State<EcranDetails> {
                   isDark: isDark,
                   onTap: _basculerFavori,
                 ),
-                const SizedBox(width: 8),
-                _GlassCircleButton(
-                  icon: Icons.edit_note_rounded,
-                  iconColor: AppColors.accentBlue,
-                  isDark: isDark,
-                  onTap: () async {
-                    final res = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EcranDepotAnnonce(proprieteAEditer: widget.propriete),
-                      ),
-                    );
-                    if (!mounted || !context.mounted) return;
-                    if (res == true) {
-                      Navigator.pop(context);
-                    }
-                  },
-                ),
-                const SizedBox(width: 8),
-                _GlassCircleButton(
-                  icon: Icons.delete_outline_rounded,
-                  iconColor: AppColors.accentRed,
-                  isDark: isDark,
-                  onTap: () => _confirmerSuppression(context),
-                ),
-                const SizedBox(width: 8),
-                _GlassCircleButton(
-                  icon: Icons.share_outlined,
-                  isDark: isDark,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Partage de l\'annonce activé'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                ),
+                if (isOwner) ...[
+                  const SizedBox(width: 8),
+                  _GlassCircleButton(
+                    icon: Icons.edit_note_rounded,
+                    iconColor: AppColors.accentBlue,
+                    isDark: isDark,
+                    onTap: () async {
+                      final res = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EcranDepotAnnonce(proprieteAEditer: widget.propriete),
+                        ),
+                      );
+                      if (!mounted || !context.mounted) return;
+                      if (res == true) {
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _GlassCircleButton(
+                    icon: Icons.delete_outline_rounded,
+                    iconColor: AppColors.accentRed,
+                    isDark: isDark,
+                    onTap: () => _confirmerSuppression(context),
+                  ),
+                ],
               ],
             ),
           ),
@@ -321,16 +314,33 @@ class _EcranDetailsState extends State<EcranDetails> {
                           bottomLeft: Radius.circular(36),
                           bottomRight: Radius.circular(36),
                         ),
-                        child: Image.network(
-                          _imageAffichee,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
-                            child: const Center(
-                              child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                            ),
-                          ),
-                        ),
+                        child: _imageAffichee.isNotEmpty
+                            ? Image.network(
+                                _imageAffichee,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                                  child: const Center(
+                                    child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.home_work_outlined, size: 56, color: textSec.withValues(alpha: 0.5)),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Aucune photo fournie par le propriétaire',
+                                        style: TextStyle(color: textSec, fontSize: 13, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
 
@@ -772,7 +782,12 @@ class _EcranDetailsState extends State<EcranDetails> {
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: AppColors.accentBlue.withValues(alpha: 0.15),
-                          child: const Text('SB', style: TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            p.agentNom.isNotEmpty
+                                ? p.agentNom.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
+                                : 'P',
+                            style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold),
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -781,7 +796,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                             children: [
                               Text(p.agentNom, style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
                               const SizedBox(height: 2),
-                              Text('Conseillère Prestige DarLink', style: TextStyle(color: textSec, fontSize: 12)),
+                              Text('Propriétaire / Annonceur', style: TextStyle(color: textSec, fontSize: 12)),
                             ],
                           ),
                         ),

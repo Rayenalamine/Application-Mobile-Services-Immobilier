@@ -6,6 +6,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:services_immobilier_flutter/features/auth/domain/models/auth_state.dart';
 import 'package:services_immobilier_flutter/features/properties/domain/models/property.dart';
 import 'package:services_immobilier_flutter/features/properties/presentation/screens/property_details_screen.dart';
 import 'test_helper.dart';
@@ -31,7 +32,7 @@ void main() {
     anneeConstruction: 2024,
     estLocation: false,
     commodites: ['Piscine', 'Vue mer', 'Jardin', 'Climatisation'],
-    agentNom: 'Sonia Ben Salem',
+    agentNom: 'Karim Trabelsi',
     agentTel: '+216 71 888 999',
   );
 
@@ -66,7 +67,12 @@ void main() {
       expect(find.byIcon(Icons.favorite), findsOneWidget);
     });
 
-    testWidgets('3. Boutons d\'administration réservés au propriétaire (Édition & Suppression)', (tester) async {
+    testWidgets('3. Boutons d\'administration réservés au propriétaire connecté (Édition & Suppression)', (tester) async {
+      AuthState.instance.setSession(
+        user: const ClientUser(id: 1, fullName: 'Karim Trabelsi', email: 'owner@darlink.tn', role: 'PROPRIETAIRE'),
+        token: 'fake_jwt_token',
+      );
+
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
@@ -83,9 +89,21 @@ void main() {
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
       expect(find.text('Supprimer ce bien ?'), findsNothing);
+
+      AuthState.instance.logout();
     });
 
-    testWidgets('4. Ouverture du formulaire modal de visite et saisie des champs', (tester) async {
+    testWidgets('4. Boutons d\'administration masqués pour un non-propriétaire ou invité', (tester) async {
+      AuthState.instance.logout();
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.edit_note_rounded), findsNothing);
+      expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
+    });
+
+    testWidgets('5. Ouverture du formulaire modal de visite et saisie des champs', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 

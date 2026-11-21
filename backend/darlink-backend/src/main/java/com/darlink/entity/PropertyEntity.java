@@ -58,7 +58,7 @@ public class PropertyEntity {
     private String amenities;
 
     @Column(name = "agent_name", length = 120)
-    private String agentName = "Sonia Ben Salem";
+    private String agentName;
 
     @Column(name = "agent_phone", length = 40)
     private String agentPhone = "+216 71 888 999";

@@ -98,7 +98,7 @@ class Propriete {
       'Sécurité 24/7',
       'Balcon terrasse',
     ],
-    this.agentNom = 'Sonia Ben Salem',
+    this.agentNom = 'Propriétaire',
     this.agentTel = '+216 71 888 999',
   });
 

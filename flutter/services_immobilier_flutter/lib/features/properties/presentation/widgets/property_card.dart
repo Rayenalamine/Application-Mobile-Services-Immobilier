@@ -78,20 +78,45 @@ class _CarteProprieteState extends State<CartePropriete> {
               // ------------------------------------------------------------
               // 1. IMAGE PRINCIPALE HAUTE DÉFINITION
               // ------------------------------------------------------------
-              Image.network(
-                p.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
-                  child: Center(
-                    child: Icon(
-                      Icons.apartment_rounded,
-                      size: 64,
-                      color: textSec.withValues(alpha: 0.5),
+              p.imageUrl.isNotEmpty
+                  ? Image.network(
+                      p.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                        child: Center(
+                          child: Icon(
+                            Icons.apartment_rounded,
+                            size: 64,
+                            color: textSec.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.home_work_outlined,
+                              size: 56,
+                              color: textSec.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Aucune photo fournie',
+                              style: TextStyle(
+                                color: textSec.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
 
               // Gradient supérieur pour lisibilité des badges
               Positioned(
