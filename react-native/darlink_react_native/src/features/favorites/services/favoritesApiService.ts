@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — SERVICE DES FAVORIS (React Native V6)
-// Synchronisation REST avec Spring Boot & persistance locale
+// DARLINK — SERVICE DES FAVORIS (React Native V6 & V9)
+// Synchronisation REST avec Spring Boot & persistance réelle
 // ============================================================
 
 import { api } from '../../../core/network/apiClient';
@@ -9,7 +9,9 @@ import { propertyApiService, SpringPropertyDto } from '../../properties/services
 
 class FavoritesApiService {
   private static instance: FavoritesApiService;
-  private favoriteIds = new Set<string>(['1', '3']);
+  private favoriteIds = new Set<string>();
+  private cachedFavorites: Property[] = [];
+  private listeners = new Set<() => void>();
 
   private constructor() {}
 
@@ -20,50 +22,88 @@ class FavoritesApiService {
     return FavoritesApiService.instance;
   }
 
-  public async getFavorites(userId: number = 1): Promise<Property[]> {
+  public addListener(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notify(): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch {
+        // Ignorer les erreurs d'écouteurs détachés
+      }
+    });
+  }
+
+  public clear(): void {
+    this.favoriteIds.clear();
+    this.cachedFavorites = [];
+    this.notify();
+  }
+
+  public async getFavorites(): Promise<Property[]> {
     try {
-      const list = await api.get<SpringPropertyDto[]>(`/favorites?userId=${userId}`);
+      const list = await api.get<SpringPropertyDto[]>('/favorites');
       if (Array.isArray(list)) {
         const mapped = list.map((dto) => propertyApiService.mapDtoToProperty(dto));
-        this.favoriteIds = new Set(mapped.map((p) => p.id || '1'));
+        this.favoriteIds = new Set(mapped.map((p) => String(p.id)));
+        this.cachedFavorites = mapped;
+        this.notify();
         return mapped;
       }
     } catch {
-      // Garder les données locales
+      // Retourner le cache mémoire en cas d'indisponibilité
     }
-    return [];
+    return this.cachedFavorites;
   }
 
-  public async getFavoriteIds(userId: number = 1): Promise<string[]> {
+  public async getFavoriteIds(): Promise<string[]> {
     try {
-      const ids = await api.get<number[]>(`/favorites/ids?userId=${userId}`);
+      const ids = await api.get<number[]>('/favorites/ids');
       if (Array.isArray(ids)) {
         this.favoriteIds = new Set(ids.map(String));
+        this.notify();
       }
     } catch {
-      // Garder le cache local en mode hors-ligne
+      // Conserver le cache
     }
     return Array.from(this.favoriteIds);
   }
 
   public isFavorite(propertyId: string): boolean {
-    return this.favoriteIds.has(propertyId);
+    return this.favoriteIds.has(String(propertyId));
   }
 
-  public async toggleFavorite(propertyId: string, userId: number = 1): Promise<boolean> {
-    const isFav = this.favoriteIds.has(propertyId);
+  public async toggleFavorite(propertyId: string, property?: Property): Promise<boolean> {
+    const idStr = String(propertyId);
+    const isFav = this.favoriteIds.has(idStr);
+
     if (isFav) {
-      this.favoriteIds.delete(propertyId);
+      this.favoriteIds.delete(idStr);
+      this.cachedFavorites = this.cachedFavorites.filter((p) => String(p.id) !== idStr);
+      this.notify();
+
       try {
-        await api.delete(`/favorites/${propertyId}?userId=${userId}`);
+        await api.delete(`/favorites/${idStr}`);
       } catch {
         // Enregistré localement
       }
       return false;
     } else {
-      this.favoriteIds.add(propertyId);
+      this.favoriteIds.add(idStr);
+      if (property) {
+        if (!this.cachedFavorites.some((p) => String(p.id) === idStr)) {
+          this.cachedFavorites.push(property);
+        }
+      }
+      this.notify();
+
       try {
-        await api.post(`/favorites/${propertyId}?userId=${userId}`);
+        await api.post(`/favorites/${idStr}`);
       } catch {
         // Enregistré localement
       }
@@ -73,4 +113,3 @@ class FavoritesApiService {
 }
 
 export const favoritesApiService = FavoritesApiService.getInstance();
-

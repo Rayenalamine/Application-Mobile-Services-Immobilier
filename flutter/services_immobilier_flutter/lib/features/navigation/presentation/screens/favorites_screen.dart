@@ -7,6 +7,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../../favorites/data/favorites_api_service.dart';
 import '../../../properties/domain/models/property.dart';
 import '../../../properties/presentation/widgets/property_card.dart';
@@ -68,7 +69,7 @@ class _EcranFavorisState extends State<EcranFavoris> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: Text(
-          'Mes Favoris',
+          AppLocale.instance.tr('favorites_title'),
           style: TextStyle(
             color: textPrim,
             fontWeight: FontWeight.w700,
@@ -146,7 +147,7 @@ class _EcranFavorisState extends State<EcranFavoris> {
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'Aucun favori enregistré',
+              AppLocale.instance.tr('empty_favorites_title'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -159,7 +160,7 @@ class _EcranFavorisState extends State<EcranFavoris> {
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 320),
               child: Text(
-                'Retrouvez ici les annonces que vous aurez ajoutées à vos favoris en appuyant sur le cœur de la fiche détaillée.',
+                AppLocale.instance.tr('empty_favorites_hint'),
                 style: TextStyle(
                   fontSize: 14,
                   color: textSec,
@@ -198,7 +199,7 @@ class _EcranFavorisState extends State<EcranFavoris> {
                       const SizedBox(width: AppSpacing.sm),
                       Flexible(
                         child: Text(
-                          'Vos favoris sont sauvegardés et synchronisés',
+                          AppLocale.instance.tr('empty_favorites_sub'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,

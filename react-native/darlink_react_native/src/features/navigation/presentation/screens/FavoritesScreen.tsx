@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
@@ -22,6 +23,7 @@ import { PropertyDetailsScreen } from '../../../properties/presentation/screens/
 
 export const FavoritesScreen: React.FC = () => {
   const { isDark, colors } = useTheme();
+  const { t } = useTranslation();
   const [favorites, setFavorites] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -41,6 +43,12 @@ export const FavoritesScreen: React.FC = () => {
 
   useEffect(() => {
     loadFavorites();
+    const unsubscribe = favoritesApiService.addListener(() => {
+      favoritesApiService.getFavorites().then((list) => {
+        setFavorites(list);
+      });
+    });
+    return unsubscribe;
   }, [loadFavorites]);
 
   const onRefresh = () => {
@@ -63,7 +71,7 @@ export const FavoritesScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Mes Favoris</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('favorites_title')}</Text>
         <TouchableOpacity
           onPress={onRefresh}
           style={styles.refreshButton}
@@ -96,10 +104,10 @@ export const FavoritesScreen: React.FC = () => {
           </View>
 
           <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Aucun favori enregistré
+            {t('empty_favorites_title')}
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Retrouvez ici les annonces que vous aurez ajoutées à vos favoris en appuyant sur le cœur de la fiche détaillée.
+            {t('empty_favorites_hint')}
           </Text>
 
           {/* Carte note de statut */}
@@ -114,7 +122,7 @@ export const FavoritesScreen: React.FC = () => {
           >
             <Text style={styles.noticeIcon}>🔖</Text>
             <Text style={[styles.noticeText, { color: colors.textSecondary }]}>
-              Vos favoris sont sauvegardés et synchronisés
+              {t('empty_favorites_sub')}
             </Text>
           </View>
         </ScrollView>

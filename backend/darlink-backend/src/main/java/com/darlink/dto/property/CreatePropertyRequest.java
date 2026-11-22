@@ -50,7 +50,7 @@ public class CreatePropertyRequest {
     private Boolean isRental = false;
     private List<String> amenities;
     private String agentName;
-    private String agentPhone = "+216 71 888 999";
+    private String agentPhone;
     private BigDecimal latitude = new BigDecimal("36.806500");
     private BigDecimal longitude = new BigDecimal("10.181500");
 

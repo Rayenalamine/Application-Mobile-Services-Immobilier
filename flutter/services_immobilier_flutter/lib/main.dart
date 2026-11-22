@@ -9,7 +9,9 @@ import 'core/localization/app_locale.dart';
 import 'features/navigation/presentation/screens/main_navigation_screen.dart';
 
 /// Point d'entrée standard de l'application Flutter DarLink.
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppLocale.instance.init();
   runApp(const ServicesImmobilierApp());
 }
 

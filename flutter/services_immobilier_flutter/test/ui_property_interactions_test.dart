@@ -125,5 +125,25 @@ void main() {
 
       expect(find.text('Demande de visite transmise et enregistrée dans PostgreSQL !'), findsOneWidget);
     });
+
+    testWidgets('6. Bouton d\'appel et lien téléphone natif pour contacter le propriétaire', (tester) async {
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      final callButton = find.byKey(const Key('details_call_button'));
+      await tester.ensureVisible(callButton);
+      await tester.pumpAndSettle();
+      expect(callButton, findsOneWidget);
+
+      final phoneLink = find.byKey(const Key('details_phone_link'));
+      expect(phoneLink, findsOneWidget);
+      expect(find.text('+216 71 888 999'), findsOneWidget);
+
+      await tester.tap(callButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(phoneLink);
+      await tester.pumpAndSettle();
+    });
   });
 }

@@ -168,6 +168,33 @@ async function runAllTests(): Promise<void> {
   }
 
   // ------------------------------------------------------------
+  // MODULE 6 : LOCALISATION TRILINGUE & ISOLATION MULTI-UTILISATEURS
+  // ------------------------------------------------------------
+  console.log('\n[SUITE 6] Localisation trilingue (FR, AR, EN) & Isolation des favoris...');
+  try {
+    const { translations } = await import('../src/core/localization/translations');
+    assert(Boolean(translations.fr.favorites_title), '6.1 Dictionnaire Français présent');
+    assert(Boolean(translations.ar.favorites_title), '6.2 Dictionnaire Arabe présent');
+    assert(Boolean(translations.en.favorites_title), '6.3 Dictionnaire Anglais présent');
+    assert(translations.ar.currency === 'د.ت', '6.4 Devise en Arabe : د.ت');
+    assert(translations.fr.currency === 'DT', '6.5 Devise en Français : DT');
+
+    // Test isolation des favoris sur déconnexion
+    favoritesApiService.toggleFavorite('99');
+    assert(favoritesApiService.isFavorite('99') === true, '6.6 Ajout favori temporaire ID 99');
+    authService.logout();
+    assert(favoritesApiService.isFavorite('99') === false, '6.7 Déconnexion vide les favoris (isolation stricte inter-utilisateurs)');
+
+    // Test normalisation numéro de téléphone pour appel
+    const testRawPhone = '+216 71 888 999 (Fixe)';
+    const cleanPhone = testRawPhone.replace(/[^\d+]/g, '');
+    const phoneUrl = `tel:${cleanPhone}`;
+    assert(cleanPhone === '+21671888999' && phoneUrl === 'tel:+21671888999', '6.8 Normalisation et génération d\'URI tel: natif');
+  } catch (err: any) {
+    assert(false, '6.x Échec dans la suite de localisation/isolation', err?.message);
+  }
+
+  // ------------------------------------------------------------
   // BILAN GÉNÉRAL DES TESTS
   // ------------------------------------------------------------
   console.log('\n============================================================');

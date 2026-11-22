@@ -16,3 +16,4 @@ WHERE p.owner_id = u.id;
 UPDATE properties
 SET agent_name = 'Propriétaire'
 WHERE agent_name = 'Sonia Ben Salem' OR agent_name IS NULL;
+

@@ -327,7 +327,9 @@ npx expo start --lan
 ### Q1. Pourquoi avoir développé à la fois un client Flutter et un client React Native ?
 > **Réponse de l'équipe :**
 > Notre démarche académique visait à comparer objectivement deux technologies phares du développement multiplateforme moderne face à une même API RESTful Spring Boot et un même schéma de données PostgreSQL. 
-> - Flutter nous a permis d'exploiter la puissance du moteur de rendu Impeller/Skia pour concevoir une interface Material 3 avec des effets visuels avancés (glassmorphism, dégradés d'accentuation, micro-animations).
+> - Flutter nous a permis d'exploiter la puissance du moteur de rendu Impeller/Skia pour concevoir une interface Material 3 avec des effets visuels avancés (glassmorphism
+
+, dégradés d'accentuation, micro-animations).
 > - React Native (avec Expo et TypeScript) nous a permis d'évaluer la rapidité de prototypage dans l'écosystème JavaScript moderne, avec un typage strict et une portabilité native immédiate via Expo Go.
 > Les deux applications partagent rigoureusement la même logique métier, les mêmes endpoints et la même expérience utilisateur.
 

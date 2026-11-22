@@ -21,6 +21,7 @@ import { AddPropertyScreen } from './AddPropertyScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
 import { propertyApiService } from '../../services/propertyApiService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { authService } from '../../../auth/services/authService';
 
 const FILTER_PILLS = [
@@ -43,6 +44,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   const [properties, setProperties] = useState<Property[]>([...mockProperties]);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const { isDark, toggleTheme, colors } = useTheme();
+  const { t, language, setLanguage } = useTranslation();
+
+  const getFilterLabel = (pill: string) => {
+    switch (pill) {
+      case 'Tous': return t('filter_all');
+      case 'Prix': return t('filter_price');
+      case 'Appartement': return t('filter_apartment');
+      case 'Villa': return t('filter_villa');
+      case 'Maison': return t('filter_house');
+      case 'Chambres': return t('filter_bedrooms');
+      default: return pill;
+    }
+  };
 
   useEffect(() => {
     const unsub = authService.subscribe(() => {
@@ -160,6 +174,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               <Text style={styles.actionEmoji}>{isDark ? '☀️' : '🌙'}</Text>
             </TouchableOpacity>
 
+            {/* Bouton de langue trilingue FR / AR / EN */}
+            <TouchableOpacity
+              style={[
+                styles.headerActionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={() => {
+                if (language === 'fr') setLanguage('ar');
+                else if (language === 'ar') setLanguage('en');
+                else setLanguage('fr');
+              }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Changer de langue"
+            >
+              <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary }}>
+                {language === 'fr' ? 'FR' : language === 'ar' ? 'عربي' : 'EN'}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.headerActionBtn,
@@ -210,7 +247,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
         >
           <Text style={styles.searchIcon}>🔍</Text>
           <Text style={[styles.searchPlaceholder, { color: colors.textTertiary }]}>
-            Tunis, Sousse, Djerba, Hammamet...
+            {t('search_placeholder')}
           </Text>
           <View
             style={[
@@ -257,7 +294,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                     },
                   ]}
                 >
-                  {filtre}
+                  {getFilterLabel(filtre)}
                 </Text>
               </TouchableOpacity>
             );

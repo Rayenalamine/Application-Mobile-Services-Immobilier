@@ -4,6 +4,7 @@
 // ============================================================
 
 import '../../../core/network/api_client.dart';
+import '../../favorites/data/favorites_api_service.dart';
 import '../domain/models/auth_state.dart';
 
 class AuthService {
@@ -117,6 +118,7 @@ class AuthService {
 
   void logout() {
     _api.authToken = null;
+    FavoritesApiService.instance.clear();
     AuthState.instance.logout();
   }
 }

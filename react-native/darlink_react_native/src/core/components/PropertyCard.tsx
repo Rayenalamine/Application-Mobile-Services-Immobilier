@@ -3,7 +3,7 @@
 // Adaptatif Clair / Sombre, parité exacte avec le composant Flutter
 // ============================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { AppColors } from '../constants/colors';
-import { Property, formatPrice } from '../../features/properties/domain/models/property';
+import { Property } from '../../features/properties/domain/models/property';
 import { useTheme } from '../theme/ThemeContext';
+import { useTranslation } from '../localization/LocalizationContext';
+import { favoritesApiService } from '../../features/favorites/services/favoritesApiService';
 
 interface PropertyCardProps {
   readonly property: Property;
@@ -21,8 +23,26 @@ interface PropertyCardProps {
 }
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress }) => {
-  const [isFavorite, setIsFavorite] = useState<boolean>(property.isFavorite ?? false);
+  const [isFavorite, setIsFavorite] = useState<boolean>(
+    property.id ? favoritesApiService.isFavorite(property.id) : (property.isFavorite ?? false)
+  );
   const { isDark, colors } = useTheme();
+  const { t, formatPrice } = useTranslation();
+
+  useEffect(() => {
+    const propId = property.id;
+    if (!propId) return;
+    setIsFavorite(favoritesApiService.isFavorite(propId));
+    const unsubscribe = favoritesApiService.addListener(() => {
+      setIsFavorite(favoritesApiService.isFavorite(propId));
+    });
+    return unsubscribe;
+  }, [property.id]);
+
+  const handleToggleFavorite = () => {
+    if (!property.id) return;
+    favoritesApiService.toggleFavorite(property.id, property);
+  };
 
   return (
     <View
@@ -54,7 +74,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
       >
         <View style={styles.statusDot} />
         <Text style={[styles.statusText, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-          {property.estLocation ? 'À Louer' : 'À Vendre'}
+          {property.estLocation ? t('for_rent') : t('for_sale')}
         </Text>
       </View>
 
@@ -67,10 +87,10 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
             borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.08)',
           },
         ]}
-        onPress={() => setIsFavorite(!isFavorite)}
+        onPress={handleToggleFavorite}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel="Ajouter aux favoris"
+        accessibilityLabel={isFavorite ? t('removed_from_favorites') : t('added_to_favorites')}
       >
         <Text style={[styles.favoriteIcon, isFavorite && styles.favoriteIconActive]}>
           {isFavorite ? '❤️' : '🤍'}
@@ -92,7 +112,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
           <View style={styles.priceContainer}>
             <Text style={[styles.priceText, { color: colors.textPrimary }]}>
               {property.estLocation
-                ? `${formatPrice(property.prix)}/mo`
+                ? `${formatPrice(property.prix)} ${t('per_month')}`
                 : formatPrice(property.prix)}
             </Text>
             <Text style={[styles.propertyTitle, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -110,7 +130,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
             onPress={() => onPress(property)}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel="Voir détails"
+            accessibilityLabel={t('btn_details')}
           >
             <Text
               style={[
@@ -118,7 +138,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
                 { color: isDark ? '#0F1015' : '#FFFFFF' },
               ]}
             >
-              Voir détails
+              {t('btn_details')}
             </Text>
             <Text
               style={[
@@ -152,7 +172,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
           >
             <Text style={styles.specIcon}>🛏️</Text>
             <Text style={[styles.specText, { color: colors.textSecondary }]}>
-              {property.nombreChambres} Bd
+              {property.nombreChambres} {t('bedrooms_short')}
             </Text>
           </View>
 
@@ -167,7 +187,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
           >
             <Text style={styles.specIcon}>🚿</Text>
             <Text style={[styles.specText, { color: colors.textSecondary }]}>
-              {property.nombreSallesDeBain} Ba
+              {property.nombreSallesDeBain} {t('bathrooms_short')}
             </Text>
           </View>
 
@@ -182,7 +202,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
           >
             <Text style={styles.specIcon}>📐</Text>
             <Text style={[styles.specText, { color: colors.textSecondary }]}>
-              {property.surfaceM2 ?? 120} m²
+              {property.surfaceM2 ?? 120} {t('area_unit')}
             </Text>
           </View>
         </View>

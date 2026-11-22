@@ -15,10 +15,12 @@ import {
   Alert,
   Modal,
   TextInput,
+  Linking,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { Property, formatPrice } from '../../domain/models/property';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
 import { contactApiService } from '../../../contact/services/contactApiService';
 import { propertyApiService } from '../../services/propertyApiService';
@@ -40,6 +42,27 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
     property.isFavorite ?? favoritesApiService.isFavorite(propId)
   );
   const { isDark, colors } = useTheme();
+  const { t, formatPrice: fmtPrice, translateAmenity } = useTranslation();
+
+  const handleCallOwner = async () => {
+    const phone = property.agentTel;
+    if (!phone || phone.trim().length === 0) {
+      Alert.alert(t('call_owner'), t('phone_unavailable'));
+      return;
+    }
+    const cleanPhone = phone.trim().replace(/[^\d+]/g, '');
+    const url = `tel:${cleanPhone}`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(t('call_owner'), `${t('call_error')} ${cleanPhone}`);
+      }
+    } catch {
+      Alert.alert(t('call_owner'), `${t('call_error')} ${cleanPhone}`);
+    }
+  };
 
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
   const [senderName, setSenderName] = useState<string>(
@@ -61,13 +84,14 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
   };
 
   const handleToggleFavorite = async () => {
-    await favoritesApiService.toggleFavorite(propId);
-    setIsFavorite(!isFavorite);
+    await favoritesApiService.toggleFavorite(propId, property);
+    const updated = favoritesApiService.isFavorite(propId);
+    setIsFavorite(updated);
     Alert.alert(
-      isFavorite ? 'Favori retiré' : 'Favori ajouté',
-      isFavorite
-        ? 'Le bien a été retiré de vos favoris.'
-        : 'Le bien a été ajouté à vos favoris et synchronisé avec PostgreSQL.'
+      updated ? t('added_to_favorites') : t('removed_from_favorites'),
+      updated
+        ? `${property.titre} — ${t('added_to_favorites')}`
+        : `${property.titre} — ${t('removed_from_favorites')}`
     );
   };
 
@@ -364,7 +388,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         {property.commodites && property.commodites.length > 0 && (
           <View style={styles.amenitiesSection}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Atouts & Commodités
+              {t('amenities_title')}
             </Text>
             <View style={styles.amenitiesGrid}>
               {property.commodites.map((item) => (
@@ -380,7 +404,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                 >
                   <Text style={styles.amenityCheck}>✓</Text>
                   <Text style={[styles.amenityText, { color: colors.textSecondary }]}>
-                    {item}
+                    {translateAmenity(item)}
                   </Text>
                 </View>
               ))}
@@ -410,16 +434,20 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
               {property.agentNom ?? 'Propriétaire'}
             </Text>
             <Text style={[styles.agentRole, { color: colors.textSecondary }]}>
-              Propriétaire / Annonceur
+              {t('owner_role')}
             </Text>
-            <Text style={styles.agentPhone}>
-              {property.agentTel ?? '+216 71 888 999'}
-            </Text>
+            <TouchableOpacity onPress={handleCallOwner} activeOpacity={0.7}>
+              <Text style={[styles.agentPhone, { textDecorationLine: 'underline' }]}>
+                {property.agentTel || t('phone_unavailable')}
+              </Text>
+            </TouchableOpacity>
           </View>
           <TouchableOpacity
             style={styles.agentCallBtn}
-            onPress={() => Alert.alert('Appel', 'Numéro de l\'agent : +216 71 888 999')}
+            onPress={handleCallOwner}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={t('btn_call')}
           >
             <Text style={styles.agentCallIcon}>📞</Text>
           </TouchableOpacity>
@@ -428,7 +456,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         {/* 10. DESCRIPTION */}
         <View style={styles.descriptionSection}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Description du bien
+            {t('description_title')}
           </Text>
           <Text style={[styles.descriptionBody, { color: colors.textSecondary }]}>
             {property.description}
@@ -460,7 +488,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           activeOpacity={0.8}
         >
           <Text style={[styles.backButtonText, { color: colors.textPrimary }]}>
-            ← Retour à la liste
+            ← {t('btn_cancel')}
           </Text>
         </TouchableOpacity>
 
@@ -480,7 +508,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
               { color: isDark ? '#0F1015' : '#FFFFFF' },
             ]}
           >
-            Planifier une visite
+            {t('btn_schedule_visit')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -491,10 +519,10 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           <View style={[modalStyles.content, { backgroundColor: colors.surface }]}>
             <View style={modalStyles.handleBar} />
             <Text style={[modalStyles.title, { color: colors.textPrimary }]}>
-              Planifier une visite / Contact
+              {t('contact_owner')}
             </Text>
             <Text style={[modalStyles.subTitle, { color: colors.textSecondary }]}>
-              Transmettez votre message directement pour {property.titre}.
+              {t('contact_owner_sub')}
             </Text>
 
             <TextInput
@@ -543,11 +571,11 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                 style={[modalStyles.cancelBtn, { borderColor: colors.border }]}
                 onPress={() => setShowContactModal(false)}
               >
-                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>Annuler</Text>
+                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{t('btn_cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={modalStyles.submitBtn} onPress={handleSendContact}>
-                <Text style={modalStyles.submitBtnText}>Envoyer la demande</Text>
+                <Text style={modalStyles.submitBtnText}>{t('send_request')}</Text>
               </TouchableOpacity>
             </View>
           </View>

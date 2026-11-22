@@ -165,9 +165,19 @@ public class PropertyService {
         }
         entity.setAgentName(agentName);
 
+        String agentPhone = null;
         if (req.getAgentPhone() != null && !req.getAgentPhone().isBlank()) {
-            entity.setAgentPhone(req.getAgentPhone().trim());
+            agentPhone = req.getAgentPhone().trim();
+        } else if (ownerId != null) {
+            agentPhone = userRepository.findById(ownerId)
+                    .map(com.darlink.entity.UserEntity::getPhone)
+                    .filter(p -> p != null && !p.isBlank())
+                    .orElse(null);
         }
+        if (agentPhone == null || agentPhone.isBlank() || agentPhone.contains("888 999")) {
+            agentPhone = "+216 71 999 888";
+        }
+        entity.setAgentPhone(agentPhone);
         if (req.getLatitude() != null) {
             entity.setLatitude(req.getLatitude());
         }

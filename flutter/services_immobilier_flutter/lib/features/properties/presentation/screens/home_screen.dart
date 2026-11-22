@@ -77,6 +77,18 @@ class _EcranAccueilState extends State<EcranAccueil> {
     }).toList();
   }
 
+  String _nomFiltre(String f) {
+    switch (f) {
+      case 'Tous': return AppLocale.instance.tr('filter_all');
+      case 'Prix': return AppLocale.instance.tr('filter_price');
+      case 'Appartement': return AppLocale.instance.tr('filter_apartment');
+      case 'Villa': return AppLocale.instance.tr('filter_villa');
+      case 'Maison': return AppLocale.instance.tr('filter_house');
+      case 'Chambres': return AppLocale.instance.tr('filter_bedrooms');
+      default: return f;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -324,7 +336,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           ),
                           child: Center(
                             child: Text(
-                              filtre,
+                              _nomFiltre(filtre),
                               style: TextStyle(
                                 color: pillText,
                                 fontSize: 11.5,
@@ -419,7 +431,7 @@ class SectionBienvenue extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Bienvenue sur Services Immobilier',
+                        AppLocale.instance.tr('welcome_banner_title'),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -432,7 +444,7 @@ class SectionBienvenue extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Trouvez le bien immobilier de vos rêves en Tunisie.',
+                  AppLocale.instance.tr('welcome_banner_sub'),
                   style: TextStyle(
                     fontSize: 12,
                     color: textSec,
@@ -450,7 +462,7 @@ class SectionBienvenue extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Nos biens immobiliers',
+                  AppLocale.instance.tr('our_properties'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -496,6 +508,8 @@ class _HeaderCircleButton extends StatelessWidget {
     required this.isDark,
     required this.onTap,
   });
+
+  @override
 
   @override
   Widget build(BuildContext context) {

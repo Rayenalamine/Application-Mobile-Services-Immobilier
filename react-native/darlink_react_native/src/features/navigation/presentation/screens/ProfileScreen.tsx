@@ -17,6 +17,7 @@ import {
   Image,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { authService, UserProfile } from '../../../auth/services/authService';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property, formatPrice } from '../../../properties/domain/models/property';
@@ -31,6 +32,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onNavigateToAddProperty,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
+  const { t, language, setLanguage } = useTranslation();
 
   const [user, setUser] = useState<UserProfile | null>(authService.getCurrentUser());
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(authService.isAuthenticated());
@@ -575,13 +577,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         ]}
       >
         <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>
-          🌐 Langue (Français / العربية)
+          🌐 {t('language_choice')}
         </Text>
-        <View style={[styles.langBadge, { backgroundColor: 'rgba(37,99,235,0.1)' }]}>
+        <TouchableOpacity
+          style={[styles.langBadge, { backgroundColor: 'rgba(37,99,235,0.1)' }]}
+          onPress={() => {
+            if (language === 'fr') setLanguage('ar');
+            else if (language === 'ar') setLanguage('en');
+            else setLanguage('fr');
+          }}
+        >
           <Text style={{ color: colors.accentBlue, fontWeight: 'bold', fontSize: 12 }}>
-            FR / AR
+            {language === 'fr' ? 'Français (FR)' : language === 'ar' ? 'العربية (AR)' : 'English (EN)'}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* BOUTON DÉCONNEXION */}
@@ -590,7 +599,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           style={styles.logoutButton}
           onPress={() => authService.logout()}
         >
-          <Text style={styles.logoutButtonText}>🚪 Se déconnecter</Text>
+          <Text style={styles.logoutButtonText}>🚪 {t('btn_logout')}</Text>
         </TouchableOpacity>
       )}
     </ScrollView>

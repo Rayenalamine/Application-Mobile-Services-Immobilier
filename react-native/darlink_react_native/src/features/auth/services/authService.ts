@@ -4,6 +4,7 @@
 // ============================================================
 
 import { api } from '../../../core/network/apiClient';
+import { favoritesApiService } from '../../favorites/services/favoritesApiService';
 
 export interface UserProfile {
   id: number;
@@ -159,6 +160,7 @@ class AuthService {
     this.token = null;
     this.currentUser = null;
     api.setToken(null);
+    favoritesApiService.clear();
     this.notify();
   }
 }

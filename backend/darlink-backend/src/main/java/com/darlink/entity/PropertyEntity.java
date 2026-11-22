@@ -61,7 +61,7 @@ public class PropertyEntity {
     private String agentName;
 
     @Column(name = "agent_phone", length = 40)
-    private String agentPhone = "+216 71 888 999";
+    private String agentPhone;
 
     @Column(precision = 10, scale = 6)
     private BigDecimal latitude = new BigDecimal("36.806500");

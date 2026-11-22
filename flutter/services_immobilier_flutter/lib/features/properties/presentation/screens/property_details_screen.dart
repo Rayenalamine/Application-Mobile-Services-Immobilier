@@ -5,7 +5,9 @@
 
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../domain/models/property.dart';
 import '../../data/property_api_service.dart';
 import '../../presentation/screens/add_property_screen.dart';
@@ -43,11 +45,40 @@ class _EcranDetailsState extends State<EcranDetails> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isFavorite ? 'Ajouté à vos favoris' : 'Retiré de vos favoris'),
+        content: Text(_isFavorite ? AppLocale.instance.tr('added_to_favorites') : AppLocale.instance.tr('removed_from_favorites')),
         duration: const Duration(seconds: 1),
         backgroundColor: _isFavorite ? AppColors.accentBlue : AppColors.accentRed,
       ),
     );
+  }
+
+  Future<void> _appelerProprietaire(String? phone) async {
+    if (phone == null || phone.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocale.instance.tr('phone_unavailable')),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+      return;
+    }
+    final cleanPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    final uri = Uri.parse('tel:$cleanPhone');
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocale.instance.tr('call_error')} $cleanPhone'),
+            backgroundColor: AppColors.accentRed,
+          ),
+        );
+      }
+    }
   }
 
   void _ouvrirModalContact(BuildContext context) {
@@ -590,7 +621,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Caractéristiques',
+                        AppLocale.instance.tr('characteristics'),
                         style: TextStyle(
                           color: textPrim,
                           fontSize: 17,
@@ -603,8 +634,8 @@ class _EcranDetailsState extends State<EcranDetails> {
                           Expanded(
                             child: _BoxCarac(
                               icone: Icons.bed_outlined,
-                              titre: 'Chambres',
-                              valeur: '${p.nombreChambres} Bed',
+                              titre: AppLocale.instance.tr('bedrooms'),
+                              valeur: '${p.nombreChambres}',
                               isDark: isDark,
                             ),
                           ),
@@ -612,8 +643,8 @@ class _EcranDetailsState extends State<EcranDetails> {
                           Expanded(
                             child: _BoxCarac(
                               icone: Icons.bathtub_outlined,
-                              titre: 'Salles de bain',
-                              valeur: '${p.nombreSallesDeBain} Bath',
+                              titre: AppLocale.instance.tr('bathrooms'),
+                              valeur: '${p.nombreSallesDeBain}',
                               isDark: isDark,
                             ),
                           ),
@@ -621,7 +652,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                           Expanded(
                             child: _BoxCarac(
                               icone: Icons.crop_square_rounded,
-                              titre: 'Surface',
+                              titre: AppLocale.instance.tr('surface'),
                               valeur: '${p.surfaceM2} m²',
                               isDark: isDark,
                             ),
@@ -717,7 +748,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Atouts & Commodités',
+                        AppLocale.instance.tr('amenities'),
                         style: TextStyle(
                           color: textPrim,
                           fontSize: 17,
@@ -742,7 +773,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                                 const Icon(Icons.check_circle_rounded, size: 16, color: AppColors.accentGreen),
                                 const SizedBox(width: 6),
                                 Text(
-                                  item,
+                                  AppLocale.instance.translateAmenity(item),
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
@@ -796,17 +827,37 @@ class _EcranDetailsState extends State<EcranDetails> {
                             children: [
                               Text(p.agentNom, style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
                               const SizedBox(height: 2),
-                              Text('Propriétaire / Annonceur', style: TextStyle(color: textSec, fontSize: 12)),
+                              Text(AppLocale.instance.tr('owner_role'), style: TextStyle(color: textSec, fontSize: 12)),
+                              if (p.agentTel.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                InkWell(
+                                  key: const Key('details_phone_link'),
+                                  onTap: () => _appelerProprietaire(p.agentTel),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.phone, size: 13, color: AppColors.accentGreen),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        p.agentTel,
+                                        style: const TextStyle(
+                                          color: AppColors.accentBlue,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
                         IconButton(
+                          key: const Key('details_call_button'),
                           icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.accentGreen),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Appel de ${p.agentNom} (${p.agentTel})')),
-                            );
-                          },
+                          tooltip: AppLocale.instance.tr('btn_call'),
+                          onPressed: () => _appelerProprietaire(p.agentTel),
                         ),
                       ],
                     ),
@@ -822,7 +873,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Description',
+                        AppLocale.instance.tr('description'),
                         style: TextStyle(
                           color: textPrim,
                           fontSize: 17,
@@ -876,7 +927,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                         child: Text(
-                          'Retour à la liste',
+                          AppLocale.instance.tr('btn_back'),
                           style: TextStyle(
                             color: textPrim,
                             fontWeight: FontWeight.w600,
@@ -898,9 +949,9 @@ class _EcranDetailsState extends State<EcranDetails> {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             elevation: isDark ? 0 : 3,
                           ),
-                          child: const Text(
-                            'Planifier une visite',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocale.instance.tr('btn_schedule_visit'),
+                            style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
                             ),

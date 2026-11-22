@@ -4,6 +4,7 @@
 // ============================================================
 
 import 'package:flutter/foundation.dart';
+import '../../../favorites/data/favorites_api_service.dart';
 
 class ClientUser {
   final int id;
@@ -75,6 +76,7 @@ class AuthState extends ChangeNotifier {
     _currentUser = null;
     _token = null;
     _isAuthenticated = false;
+    FavoritesApiService.instance.clear();
     notifyListeners();
   }
 }
