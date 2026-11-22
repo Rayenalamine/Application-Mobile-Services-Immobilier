@@ -16,6 +16,7 @@ import { SearchScreen } from './SearchScreen';
 import { FavoritesScreen } from './FavoritesScreen';
 import { ProfileScreen } from './ProfileScreen';
 import { ThemeProvider, useTheme } from '../../../../core/theme/ThemeContext';
+import { LocalizationProvider, useTranslation } from '../../../../core/localization/LocalizationContext';
 
 type TabKey = 'home' | 'search' | 'favorites' | 'profile';
 
@@ -25,21 +26,22 @@ interface TabItem {
   readonly icon: string;
 }
 
-const TABS: readonly TabItem[] = [
-  { key: 'home', label: 'Accueil', icon: '⊞' },
-  { key: 'search', label: 'Recherche', icon: '🔍' },
-  { key: 'favorites', label: 'Favoris', icon: '♡' },
-  { key: 'profile', label: 'Profil', icon: '👤' },
-] as const;
-
 const MainNavigationContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const { isDark, colors } = useTheme();
+  const { t } = useTranslation();
+
+  const tabs: readonly TabItem[] = [
+    { key: 'home', label: t('nav_home'), icon: '⊞' },
+    { key: 'search', label: t('nav_search'), icon: '🔍' },
+    { key: 'favorites', label: t('nav_favorites'), icon: '♡' },
+    { key: 'profile', label: t('nav_profile'), icon: '👤' },
+  ];
 
   const renderActiveScreen = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeScreen />;
+        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
       case 'search':
         return <SearchScreen />;
       case 'favorites':
@@ -47,7 +49,7 @@ const MainNavigationContent: React.FC = () => {
       case 'profile':
         return <ProfileScreen />;
       default:
-        return <HomeScreen />;
+        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
     }
   };
 
@@ -67,7 +69,7 @@ const MainNavigationContent: React.FC = () => {
             },
           ]}
         >
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <TouchableOpacity
@@ -83,7 +85,7 @@ const MainNavigationContent: React.FC = () => {
                   style={[
                     styles.iconPill,
                     isActive && {
-                      backgroundColor: isDark ? '#FFFFFF' : '#0F1015',
+                      backgroundColor: colors.accentBlue,
                     },
                   ]}
                 >
@@ -92,7 +94,7 @@ const MainNavigationContent: React.FC = () => {
                       styles.tabIcon,
                       { color: colors.textSecondary },
                       isActive && {
-                        color: isDark ? '#0F1015' : '#FFFFFF',
+                        color: '#FFFFFF',
                         fontWeight: '800',
                       },
                     ]}
@@ -123,9 +125,11 @@ const MainNavigationContent: React.FC = () => {
 
 export const MainNavigationScreen: React.FC = () => {
   return (
-    <ThemeProvider>
-      <MainNavigationContent />
-    </ThemeProvider>
+    <LocalizationProvider>
+      <ThemeProvider>
+        <MainNavigationContent />
+      </ThemeProvider>
+    </LocalizationProvider>
   );
 };
 

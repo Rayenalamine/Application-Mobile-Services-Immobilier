@@ -6,6 +6,8 @@
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/localization/app_locale.dart';
+import '../../../favorites/data/favorites_api_service.dart';
 import '../../domain/models/property.dart';
 import '../screens/property_details_screen.dart';
 
@@ -28,7 +30,37 @@ class _CarteProprieteState extends State<CartePropriete> {
   @override
   void initState() {
     super.initState();
-    _isFavorite = widget.propriete.isFavorite;
+    _isFavorite = FavoritesApiService.instance.isFavorite(widget.propriete.id);
+    FavoritesApiService.instance.addListener(_onFavoritesUpdated);
+  }
+
+  @override
+  void dispose() {
+    FavoritesApiService.instance.removeListener(_onFavoritesUpdated);
+    super.dispose();
+  }
+
+  void _onFavoritesUpdated() {
+    if (mounted) {
+      final fav = FavoritesApiService.instance.isFavorite(widget.propriete.id);
+      if (fav != _isFavorite) {
+        setState(() => _isFavorite = fav);
+      }
+    }
+  }
+
+  void _basculerFavori() {
+    FavoritesApiService.instance.toggleFavorite(widget.propriete.id);
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isFavorite ? AppLocale.instance.tr('added_to_favorites') : AppLocale.instance.tr('removed_from_favorites')),
+        duration: const Duration(seconds: 1),
+        backgroundColor: _isFavorite ? AppColors.accentBlue : AppColors.accentRed,
+      ),
+    );
   }
 
   void _ouvrirDetails(BuildContext context) {
@@ -78,20 +110,45 @@ class _CarteProprieteState extends State<CartePropriete> {
               // ------------------------------------------------------------
               // 1. IMAGE PRINCIPALE HAUTE DÉFINITION
               // ------------------------------------------------------------
-              Image.network(
-                p.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
-                  child: Center(
-                    child: Icon(
-                      Icons.apartment_rounded,
-                      size: 64,
-                      color: textSec.withValues(alpha: 0.5),
+              p.imageUrl.isNotEmpty
+                  ? Image.network(
+                      p.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                        child: Center(
+                          child: Icon(
+                            Icons.apartment_rounded,
+                            size: 64,
+                            color: textSec.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.home_work_outlined,
+                              size: 56,
+                              color: textSec.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Aucune photo fournie',
+                              style: TextStyle(
+                                color: textSec.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
 
               // Gradient supérieur pour lisibilité des badges
               Positioned(
@@ -150,7 +207,7 @@ class _CarteProprieteState extends State<CartePropriete> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            p.estLocation ? 'À Louer' : 'À Vendre',
+                            p.estLocation ? AppLocale.instance.tr('for_rent') : AppLocale.instance.tr('for_sale'),
                             style: TextStyle(
                               color: isDark ? Colors.white : const Color(0xFF111827),
                               fontSize: 12,
@@ -174,11 +231,7 @@ class _CarteProprieteState extends State<CartePropriete> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isFavorite = !_isFavorite;
-                        });
-                      },
+                      onTap: _basculerFavori,
                       child: Container(
                         width: 40,
                         height: 40,
@@ -237,7 +290,7 @@ class _CarteProprieteState extends State<CartePropriete> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      p.estLocation ? '${p.prixFormate} DT/mois' : '${p.prixFormate} DT',
+                                      AppLocale.instance.formatCurrency(p.prix, isRental: p.estLocation),
                                       style: TextStyle(
                                         color: textPrim,
                                         fontSize: 22,
@@ -273,18 +326,18 @@ class _CarteProprieteState extends State<CartePropriete> {
                                   ),
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Voir détails',
-                                      style: TextStyle(
+                                      AppLocale.instance.tr('btn_details'),
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 13,
                                       ),
                                     ),
-                                    SizedBox(width: 4),
-                                    Icon(Icons.arrow_forward_rounded, size: 16),
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.arrow_forward_rounded, size: 16),
                                   ],
                                 ),
                               ),

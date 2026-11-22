@@ -5,8 +5,16 @@
 
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../domain/models/property.dart';
+import '../../data/property_api_service.dart';
+import '../../presentation/screens/add_property_screen.dart';
+import '../../../favorites/data/favorites_api_service.dart';
+import '../../../contact/data/contact_api_service.dart';
+import '../../../auth/data/auth_service.dart';
+import '../../../auth/domain/models/auth_state.dart';
 
 /// Écran affichant la fiche détaillée d'un bien immobilier (Screen 2).
 class EcranDetails extends StatefulWidget {
@@ -27,7 +35,193 @@ class _EcranDetailsState extends State<EcranDetails> {
   void initState() {
     super.initState();
     _imageAffichee = widget.propriete.imageUrl;
-    _isFavorite = widget.propriete.isFavorite;
+    _isFavorite = FavoritesApiService.instance.isFavorite(widget.propriete.id);
+  }
+
+  void _basculerFavori() {
+    FavoritesApiService.instance.toggleFavorite(widget.propriete.id);
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isFavorite ? AppLocale.instance.tr('added_to_favorites') : AppLocale.instance.tr('removed_from_favorites')),
+        duration: const Duration(seconds: 1),
+        backgroundColor: _isFavorite ? AppColors.accentBlue : AppColors.accentRed,
+      ),
+    );
+  }
+
+  Future<void> _appelerProprietaire(String? phone) async {
+    if (phone == null || phone.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocale.instance.tr('phone_unavailable')),
+          backgroundColor: AppColors.accentRed,
+        ),
+      );
+      return;
+    }
+    final cleanPhone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+    final uri = Uri.parse('tel:$cleanPhone');
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocale.instance.tr('call_error')} $cleanPhone'),
+            backgroundColor: AppColors.accentRed,
+          ),
+        );
+      }
+    }
+  }
+
+  void _ouvrirModalContact(BuildContext context) {
+    final nomCtrl = TextEditingController(text: AuthService.instance.state.currentUser?.fullName ?? 'Rayen Lamine');
+    final emailCtrl = TextEditingController(text: AuthService.instance.state.currentUser?.email ?? 'rayen@darlink.tn');
+    final telCtrl = TextEditingController(text: '+216 ');
+    final msgCtrl = TextEditingController(text: 'Bonjour, je souhaite visiter ce bien (${widget.propriete.titre}).');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF13141C) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Contacter l\'agent / Propriétaire',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Votre message sera transmis pour ${widget.propriete.titre}.',
+                style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nomCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Votre nom complet',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: emailCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Votre adresse e-mail',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: telCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Numéro de téléphone',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: msgCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Votre message',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (nomCtrl.text.isEmpty || emailCtrl.text.isEmpty) return;
+                    Navigator.pop(ctx);
+                    await ContactApiService.instance.sendContactRequest(
+                      propertyId: widget.propriete.id,
+                      senderName: nomCtrl.text.trim(),
+                      senderEmail: emailCtrl.text.trim(),
+                      senderPhone: telCtrl.text.trim(),
+                      message: msgCtrl.text.trim(),
+                    );
+                    if (!mounted || !context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Demande de visite transmise et enregistrée dans PostgreSQL !'),
+                        backgroundColor: AppColors.accentGreen,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accentBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Envoyer la demande', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmerSuppression(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer ce bien ?'),
+        content: Text('Êtes-vous certain de vouloir supprimer "${widget.propriete.titre}" ? Cette action est irréversible.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentRed, foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await PropertyApiService.instance.deleteProperty(widget.propriete.id);
+              if (!mounted || !context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Bien immobilier supprimé de la base de données.'),
+                  backgroundColor: AppColors.accentRed,
+                ),
+              );
+              Navigator.pop(context);
+            },
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
   }
 
   List<String> get _toutesLesImages {
@@ -49,6 +243,9 @@ class _EcranDetailsState extends State<EcranDetails> {
     final textSec = AppColors.textSecondaryOf(context);
     final bottomDockBg = isDark ? const Color(0xE60F1015) : const Color(0xF2FFFFFF);
     final bottomDockBorder = isDark ? const Color(0x1FFFFFFF) : const Color(0x18000000);
+
+    final currentUserId = AuthState.instance.currentUser?.id;
+    final isOwner = currentUserId != null && currentUserId.toString() == widget.propriete.proprietaireId;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -87,25 +284,35 @@ class _EcranDetailsState extends State<EcranDetails> {
                   icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
                   iconColor: _isFavorite ? AppColors.accentRed : null,
                   isDark: isDark,
-                  onTap: () {
-                    setState(() {
-                      _isFavorite = !_isFavorite;
-                    });
-                  },
+                  onTap: _basculerFavori,
                 ),
-                const SizedBox(width: 8),
-                _GlassCircleButton(
-                  icon: Icons.share_outlined,
-                  isDark: isDark,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Partage de l\'annonce activé'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                ),
+                if (isOwner) ...[
+                  const SizedBox(width: 8),
+                  _GlassCircleButton(
+                    icon: Icons.edit_note_rounded,
+                    iconColor: AppColors.accentBlue,
+                    isDark: isDark,
+                    onTap: () async {
+                      final res = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EcranDepotAnnonce(proprieteAEditer: widget.propriete),
+                        ),
+                      );
+                      if (!mounted || !context.mounted) return;
+                      if (res == true) {
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _GlassCircleButton(
+                    icon: Icons.delete_outline_rounded,
+                    iconColor: AppColors.accentRed,
+                    isDark: isDark,
+                    onTap: () => _confirmerSuppression(context),
+                  ),
+                ],
               ],
             ),
           ),
@@ -138,16 +345,33 @@ class _EcranDetailsState extends State<EcranDetails> {
                           bottomLeft: Radius.circular(36),
                           bottomRight: Radius.circular(36),
                         ),
-                        child: Image.network(
-                          _imageAffichee,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
-                            child: const Center(
-                              child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                            ),
-                          ),
-                        ),
+                        child: _imageAffichee.isNotEmpty
+                            ? Image.network(
+                                _imageAffichee,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                                  child: const Center(
+                                    child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.home_work_outlined, size: 56, color: textSec.withValues(alpha: 0.5)),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Aucune photo fournie par le propriétaire',
+                                        style: TextStyle(color: textSec, fontSize: 13, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
 
@@ -397,7 +621,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Caractéristiques',
+                        AppLocale.instance.tr('characteristics'),
                         style: TextStyle(
                           color: textPrim,
                           fontSize: 17,
@@ -410,8 +634,8 @@ class _EcranDetailsState extends State<EcranDetails> {
                           Expanded(
                             child: _BoxCarac(
                               icone: Icons.bed_outlined,
-                              titre: 'Chambres',
-                              valeur: '${p.nombreChambres} Bed',
+                              titre: AppLocale.instance.tr('bedrooms'),
+                              valeur: '${p.nombreChambres}',
                               isDark: isDark,
                             ),
                           ),
@@ -419,8 +643,8 @@ class _EcranDetailsState extends State<EcranDetails> {
                           Expanded(
                             child: _BoxCarac(
                               icone: Icons.bathtub_outlined,
-                              titre: 'Salles de bain',
-                              valeur: '${p.nombreSallesDeBain} Bath',
+                              titre: AppLocale.instance.tr('bathrooms'),
+                              valeur: '${p.nombreSallesDeBain}',
                               isDark: isDark,
                             ),
                           ),
@@ -428,7 +652,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                           Expanded(
                             child: _BoxCarac(
                               icone: Icons.crop_square_rounded,
-                              titre: 'Surface',
+                              titre: AppLocale.instance.tr('surface'),
                               valeur: '${p.surfaceM2} m²',
                               isDark: isDark,
                             ),
@@ -524,7 +748,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Atouts & Commodités',
+                        AppLocale.instance.tr('amenities'),
                         style: TextStyle(
                           color: textPrim,
                           fontSize: 17,
@@ -549,7 +773,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                                 const Icon(Icons.check_circle_rounded, size: 16, color: AppColors.accentGreen),
                                 const SizedBox(width: 6),
                                 Text(
-                                  item,
+                                  AppLocale.instance.translateAmenity(item),
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
@@ -589,7 +813,12 @@ class _EcranDetailsState extends State<EcranDetails> {
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: AppColors.accentBlue.withValues(alpha: 0.15),
-                          child: const Text('SB', style: TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            p.agentNom.isNotEmpty
+                                ? p.agentNom.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
+                                : 'P',
+                            style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold),
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -598,17 +827,37 @@ class _EcranDetailsState extends State<EcranDetails> {
                             children: [
                               Text(p.agentNom, style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
                               const SizedBox(height: 2),
-                              Text('Conseillère Prestige DarLink', style: TextStyle(color: textSec, fontSize: 12)),
+                              Text(AppLocale.instance.tr('owner_role'), style: TextStyle(color: textSec, fontSize: 12)),
+                              if (p.agentTel.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                InkWell(
+                                  key: const Key('details_phone_link'),
+                                  onTap: () => _appelerProprietaire(p.agentTel),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.phone, size: 13, color: AppColors.accentGreen),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        p.agentTel,
+                                        style: const TextStyle(
+                                          color: AppColors.accentBlue,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
                         IconButton(
+                          key: const Key('details_call_button'),
                           icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.accentGreen),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Appel de ${p.agentNom} (${p.agentTel})')),
-                            );
-                          },
+                          tooltip: AppLocale.instance.tr('btn_call'),
+                          onPressed: () => _appelerProprietaire(p.agentTel),
                         ),
                       ],
                     ),
@@ -624,7 +873,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Description',
+                        AppLocale.instance.tr('description'),
                         style: TextStyle(
                           color: textPrim,
                           fontSize: 17,
@@ -678,7 +927,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                         child: Text(
-                          'Retour à la liste',
+                          AppLocale.instance.tr('btn_back'),
                           style: TextStyle(
                             color: textPrim,
                             fontWeight: FontWeight.w600,
@@ -687,17 +936,10 @@ class _EcranDetailsState extends State<EcranDetails> {
                       ),
                       const SizedBox(width: 12),
 
-                      // Bouton d'action principal blanc éclatant (Schedule Tour)
+                      // Bouton d'action principal blanc éclatant (Contacter le propriétaire / Visite)
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Réservation de visite enregistrée !'),
-                                backgroundColor: AppColors.accentGreen,
-                              ),
-                            );
-                          },
+                          onPressed: () => _ouvrirModalContact(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isDark ? Colors.white : AppColors.accentBlue,
                             foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
@@ -707,9 +949,9 @@ class _EcranDetailsState extends State<EcranDetails> {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             elevation: isDark ? 0 : 3,
                           ),
-                          child: const Text(
-                            'Planifier une visite',
-                            style: TextStyle(
+                          child: Text(
+                            AppLocale.instance.tr('btn_schedule_visit'),
+                            style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
                             ),

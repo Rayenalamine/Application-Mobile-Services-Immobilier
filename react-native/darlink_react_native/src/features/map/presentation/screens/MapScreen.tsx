@@ -1,9 +1,10 @@
 // ============================================================
-// DARLINK — ÉCRAN DE CARTOGRAPHIE INTERACTIVE & GPS (React Native V8)
-// Visualisation des biens géolocalisés en Tunisie avec pins interactifs
+// DARLINK — ÉCRAN DE CARTOGRAPHIE INTERACTIVE OPENSTREETMAP (React Native V8)
+// Rendu réel de tuiles OpenStreetMap Slippy Map (Web Mercator)
+// Géolocalisation réelle avec pins dynamiques issus de PostgreSQL
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +13,9 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  PanResponder,
+  PanResponderGestureState,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
@@ -24,6 +28,46 @@ interface MapScreenProps {
   onSelectProperty?: (property: Property) => void;
 }
 
+// ============================================================
+// FORMULES DE PROJECTION WEB MERCATOR (EPSG:3857)
+// ============================================================
+function latToY(lat: number, zoom: number): number {
+  const latRad = (lat * Math.PI) / 180.0;
+  const n = Math.pow(2.0, zoom);
+  const clamped = Math.max(-85.0511, Math.min(85.0511, lat));
+  const radClamped = (clamped * Math.PI) / 180.0;
+  return (
+    ((1.0 - Math.log(Math.tan(radClamped) + 1.0 / Math.cos(radClamped)) / Math.PI) / 2.0) *
+    n *
+    256.0
+  );
+}
+
+function lngToX(lng: number, zoom: number): number {
+  const n = Math.pow(2.0, zoom);
+  return ((lng + 180.0) / 360.0) * n * 256.0;
+}
+
+function xToLng(x: number, zoom: number): number {
+  const n = Math.pow(2.0, zoom);
+  return (x / (n * 256.0)) * 360.0 - 180.0;
+}
+
+function yToLat(y: number, zoom: number): number {
+  const n = Math.pow(2.0, zoom);
+  const latRad = Math.atan(Math.sinh(Math.PI * (1.0 - (2.0 * y) / (n * 256.0))));
+  return (latRad * 180.0) / Math.PI;
+}
+
+const CITY_COORDS: Record<string, { lat: number; lng: number; zoom: number }> = {
+  Tunis: { lat: 36.8065, lng: 10.1815, zoom: 13 },
+  'La Marsa': { lat: 36.8785, lng: 10.3247, zoom: 14 },
+  Sousse: { lat: 35.8256, lng: 10.6369, zoom: 13 },
+  Hammamet: { lat: 36.4, lng: 10.6167, zoom: 13 },
+  Djerba: { lat: 33.8075, lng: 10.8451, zoom: 12 },
+  Sfax: { lat: 34.7406, lng: 10.7603, zoom: 13 },
+};
+
 export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }) => {
   const { colors, isDark } = useTheme();
 
@@ -32,7 +76,14 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
   const [selectedCity, setSelectedCity] = useState('Toutes');
   const [loading, setLoading] = useState(true);
 
-  const cities = ['Toutes', 'Tunis', 'Sousse', 'Hammamet', 'Djerba', 'Monastir'];
+  // Coordonnées du centre de la carte
+  const [centerLat, setCenterLat] = useState(36.8065);
+  const [centerLng, setCenterLng] = useState(10.1815);
+  const [zoom, setZoom] = useState(12);
+
+  const startCoordsRef = useRef({ lat: 36.8065, lng: 10.1815 });
+
+  const cities = ['Toutes', 'Tunis', 'La Marsa', 'Sousse', 'Hammamet', 'Djerba', 'Sfax'];
 
   useEffect(() => {
     let isMounted = true;
@@ -52,139 +103,240 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     };
   }, []);
 
+  // Gestionnaire de glisser tactile (PanResponder)
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        startCoordsRef.current = { lat: centerLat, lng: centerLng };
+      },
+      onPanResponderMove: (_, gestureState: PanResponderGestureState) => {
+        const currentCenterX = lngToX(startCoordsRef.current.lng, zoom);
+        const currentCenterY = latToY(startCoordsRef.current.lat, zoom);
+        const newCenterX = currentCenterX - gestureState.dx;
+        const newCenterY = currentCenterY - gestureState.dy;
+
+        setCenterLng(xToLng(newCenterX, zoom));
+        setCenterLat(yToLat(newCenterY, zoom));
+      },
+    })
+  ).current;
+
+  // Calcul des tuiles visibles
+  const viewW = SCREEN_WIDTH;
+  const viewH = SCREEN_HEIGHT;
+  const centerX = lngToX(centerLng, zoom);
+  const centerY = latToY(centerLat, zoom);
+  const viewLeft = centerX - viewW / 2;
+  const viewTop = centerY - viewH / 2;
+
+  const minTileX = Math.floor(viewLeft / 256.0);
+  const maxTileX = Math.floor((viewLeft + viewW) / 256.0);
+  const minTileY = Math.floor(viewTop / 256.0);
+  const maxTileY = Math.floor((viewTop + viewH) / 256.0);
+
+  const numTiles = Math.pow(2, zoom);
+
+  const visibleTiles: { tx: number; ty: number; x: number; y: number; key: string }[] = [];
+  for (let tx = minTileX; tx <= maxTileX; tx++) {
+    for (let ty = minTileY; ty <= maxTileY; ty++) {
+      if (ty >= 0 && ty < numTiles) {
+        const wrappedTx = ((tx % numTiles) + numTiles) % numTiles;
+        visibleTiles.push({
+          tx: wrappedTx,
+          ty,
+          x: tx * 256.0 - viewLeft,
+          y: ty * 256.0 - viewTop,
+          key: `${zoom}-${wrappedTx}-${ty}`,
+        });
+      }
+    }
+  }
+
+  // Filtrage des biens par ville
   const filteredProperties = properties.filter((p) => {
     if (selectedCity === 'Toutes') return true;
     return p.localisation.toLowerCase().includes(selectedCity.toLowerCase());
   });
 
-  // Calcul des coordonnées relatives sur la carte stylisée de Tunisie
-  const getPinOffset = (localisation: string) => {
-    const loc = localisation.toLowerCase();
-    if (loc.includes('tunis')) return { left: SCREEN_WIDTH * 0.44, top: SCREEN_HEIGHT * 0.22 };
-    if (loc.includes('hammamet')) return { left: SCREEN_WIDTH * 0.56, top: SCREEN_HEIGHT * 0.31 };
-    if (loc.includes('sousse')) return { left: SCREEN_WIDTH * 0.52, top: SCREEN_HEIGHT * 0.42 };
-    if (loc.includes('monastir')) return { left: SCREEN_WIDTH * 0.62, top: SCREEN_HEIGHT * 0.46 };
-    if (loc.includes('djerba')) return { left: SCREEN_WIDTH * 0.64, top: SCREEN_HEIGHT * 0.72 };
-    return { left: SCREEN_WIDTH * 0.48, top: SCREEN_HEIGHT * 0.48 };
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    if (CITY_COORDS[city]) {
+      const c = CITY_COORDS[city];
+      setCenterLat(c.lat);
+      setCenterLng(c.lng);
+      setZoom(c.zoom);
+    } else {
+      setCenterLat(36.8065);
+      setCenterLng(10.1815);
+      setZoom(11);
+    }
+  };
+
+  const handleCenterMyLocation = () => {
+    setCenterLat(36.8065);
+    setCenterLng(10.1815);
+    setZoom(14);
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0B0D13' : '#E5E9F0' }]}>
-      {/* 1. CARTE STYLISÉE ET PINS GPS */}
-      <View style={StyleSheet.absoluteFill}>
-        {/* Lignes de quadrillage cartographiques */}
-        <View style={styles.gridOverlay}>
-          {[...Array(6)].map((_, i) => (
-            <View
-              key={`h-${i}`}
-              style={[
-                styles.gridLineH,
-                { top: (i + 1) * (SCREEN_HEIGHT / 7), borderColor: isDark ? '#1C2030' : '#D0D7E5' },
-              ]}
-            />
-          ))}
-          {[...Array(4)].map((_, i) => (
-            <View
-              key={`v-${i}`}
-              style={[
-                styles.gridLineV,
-                { left: (i + 1) * (SCREEN_WIDTH / 5), borderColor: isDark ? '#1C2030' : '#D0D7E5' },
-              ]}
-            />
-          ))}
+    <View style={[styles.container, { backgroundColor: isDark ? '#1E2028' : '#E5E9F0' }]}>
+      {/* 1. MOTEUR CARTOGRAPHIQUE SLIPPY MAP */}
+      <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers}>
+        {/* A. TUILES OPENSTREETMAP */}
+        {visibleTiles.map((tile) => (
+          <Image
+            key={tile.key}
+            source={{
+              uri: `https://tile.openstreetmap.org/${zoom}/${tile.tx}/${tile.ty}.png`,
+              headers: {
+                'User-Agent': 'DarLink-App/1.0 (academic-project; contact: rayen@darlink.tn)',
+              },
+            }}
+            style={[
+              styles.tile,
+              {
+                left: tile.x,
+                top: tile.y,
+              },
+            ]}
+          />
+        ))}
+
+        {/* B. PIN MA POSITION GPS */}
+        <View
+          style={[
+            styles.myLocationMarker,
+            {
+              left: lngToX(10.1815, zoom) - viewLeft - 10,
+              top: latToY(36.8065, zoom) - viewTop - 10,
+            },
+          ]}
+        >
+          <View style={styles.myLocationDot} />
         </View>
 
-        {/* Repères géographiques de Tunisie */}
-        <View style={[styles.geoLabel, { left: SCREEN_WIDTH * 0.54, top: SCREEN_HEIGHT * 0.22 }]}>
-          <Text style={[styles.geoText, { color: isDark ? '#3A4259' : '#94A3B8' }]}>Golfe de Tunis</Text>
-        </View>
-        <View style={[styles.geoLabel, { left: SCREEN_WIDTH * 0.64, top: SCREEN_HEIGHT * 0.42 }]}>
-          <Text style={[styles.geoText, { color: isDark ? '#3A4259' : '#94A3B8' }]}>Sahel Tunisien</Text>
-        </View>
-        <View style={[styles.geoLabel, { left: SCREEN_WIDTH * 0.66, top: SCREEN_HEIGHT * 0.74 }]}>
-          <Text style={[styles.geoText, { color: isDark ? '#3A4259' : '#94A3B8' }]}>Île de Djerba</Text>
-        </View>
-
-        {/* PINS INTERACTIFS */}
-        {filteredProperties.map((p) => {
-          const { left, top } = getPinOffset(p.localisation);
-          const isSelected = selectedProperty?.id === p.id;
+        {/* C. PINS GÉOLOCALISÉS ISSUS DE POSTGRESQL */}
+        {filteredProperties.map((prop) => {
+          const px = lngToX(prop.longitude ?? 10.1815, zoom) - viewLeft;
+          const py = latToY(prop.latitude ?? 36.8065, zoom) - viewTop;
+          const isSelected = selectedProperty?.id === prop.id;
 
           return (
             <TouchableOpacity
-              key={p.id || p.titre}
-              activeOpacity={0.85}
+              key={prop.id || prop.titre}
+              activeOpacity={0.8}
+              onPress={() => setSelectedProperty(prop)}
               style={[
-                styles.pinContainer,
+                styles.markerContainer,
                 {
-                  left: left - 40,
-                  top: top - 20,
-                  backgroundColor: isSelected ? colors.accentBlue : isDark ? '#181920' : '#FFFFFF',
-                  borderColor: isSelected ? '#FFFFFF' : colors.border,
-                  borderWidth: isSelected ? 2 : 1,
-                  shadowColor: '#000',
-                  shadowOpacity: isSelected ? 0.35 : 0.15,
-                  shadowRadius: isSelected ? 10 : 4,
-                  elevation: isSelected ? 8 : 3,
+                  left: px - 40,
+                  top: py - 35,
+                  transform: [{ scale: isSelected ? 1.15 : 1.0 }],
                 },
               ]}
-              onPress={() => setSelectedProperty(p)}
             >
               <View
                 style={[
-                  styles.pinDot,
-                  { backgroundColor: isSelected ? '#FFFFFF' : colors.accentBlue },
-                ]}
-              />
-              <Text
-                style={[
-                  styles.pinText,
-                  { color: isSelected ? '#FFFFFF' : colors.textPrimary },
+                  styles.priceBadge,
+                  {
+                    backgroundColor: isSelected
+                      ? colors.accentBlue
+                      : isDark
+                      ? colors.surfaceElevated
+                      : '#FFFFFF',
+                    borderColor: isSelected ? '#FFFFFF' : colors.accentBlue,
+                  },
                 ]}
               >
-                {p.estLocation ? `${Math.round(p.prix)} DT/m` : formatPrice(p.prix)}
-              </Text>
+                <Text
+                  style={[
+                    styles.priceBadgeText,
+                    {
+                      color: isSelected ? '#FFFFFF' : isDark ? '#FFFFFF' : colors.accentBlue,
+                    },
+                  ]}
+                >
+                  {((prop.prix || 0) / 1000).toFixed(0)}k DT
+                </Text>
+              </View>
+              <Text style={{ fontSize: 20, textAlign: 'center' }}>📍</Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      {/* 2. TOP FLOATING BAR */}
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={[styles.circleBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={onBack}
+      {/* 2. EN-TÊTE : RECHERCHE ET VILLES */}
+      <View style={styles.headerContainer}>
+        <View
+          style={[
+            styles.titleCard,
+            {
+              backgroundColor: isDark ? 'rgba(30,32,40,0.95)' : 'rgba(255,255,255,0.95)',
+              borderColor: colors.border,
+              flexDirection: 'row',
+              alignItems: 'center',
+            },
+          ]}
         >
-          <Text style={[styles.backIcon, { color: colors.textPrimary }]}>‹</Text>
-        </TouchableOpacity>
-
-        <View style={[styles.titleBubble, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.titleText, { color: colors.textPrimary }]}>
-            Carte des biens en Tunisie ({filteredProperties.length})
-          </Text>
+          <TouchableOpacity
+            onPress={onBack}
+            style={{
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              backgroundColor: colors.accentBlue,
+              marginRight: 10,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Retour à l'accueil"
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 13 }}>‹ Accueil</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.titleText, { color: colors.textPrimary }]}>
+              🗺️ OpenStreetMap
+            </Text>
+            <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
+              {filteredProperties.length} bien(s) géolocalisé(s)
+            </Text>
+          </View>
+          {loading && <ActivityIndicator size="small" color={colors.accentBlue} />}
         </View>
-      </View>
 
-      {/* 3. CITY FILTER CHIPS */}
-      <View style={styles.filterBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+        {/* PASTILLES DES VILLES */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.citiesScroll}
+        >
           {cities.map((city) => {
-            const active = selectedCity === city;
+            const isSelected = selectedCity === city;
             return (
               <TouchableOpacity
                 key={city}
+                activeOpacity={0.7}
+                onPress={() => handleCitySelect(city)}
                 style={[
-                  styles.cityFilterChip,
-                  active
-                    ? { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }
-                    : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
+                  styles.cityChip,
+                  {
+                    backgroundColor: isSelected
+                      ? colors.accentBlue
+                      : isDark
+                      ? 'rgba(30,32,40,0.95)'
+                      : 'rgba(255,255,255,0.95)',
+                    borderColor: isSelected ? colors.accentBlue : colors.border,
+                  },
                 ]}
-                onPress={() => setSelectedCity(city)}
               >
                 <Text
                   style={[
-                    styles.cityFilterText,
-                    { color: active ? (isDark ? '#0F1015' : '#FFFFFF') : colors.textSecondary },
+                    styles.cityChipText,
+                    {
+                      color: isSelected ? '#FFFFFF' : colors.textPrimary,
+                      fontWeight: isSelected ? '700' : '500',
+                    },
                   ]}
                 >
                   {city}
@@ -195,64 +347,82 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
         </ScrollView>
       </View>
 
-      {/* 4. PREVIEW CARD FLOATING AT BOTTOM */}
+      {/* 3. CONTRÔLES FLOTTANTS : ZOOM & MA POSITION */}
+      <View style={styles.controlsContainer}>
+        <TouchableOpacity
+          style={[
+            styles.fab,
+            {
+              backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+              borderColor: colors.border,
+            },
+          ]}
+          onPress={() => setZoom((z) => Math.min(18, z + 1))}
+        >
+          <Text style={[styles.fabText, { color: colors.textPrimary }]}>+</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.fab,
+            {
+              backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+              borderColor: colors.border,
+            },
+          ]}
+          onPress={() => setZoom((z) => Math.max(6, z - 1))}
+        >
+          <Text style={[styles.fabText, { color: colors.textPrimary }]}>−</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.fab,
+            {
+              backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+              borderColor: colors.border,
+            },
+          ]}
+          onPress={handleCenterMyLocation}
+        >
+          <Text style={{ fontSize: 16 }}>🎯</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 4. ATTRIBUTION LÉGALE OPENSTREETMAP */}
+      <View style={[styles.attributionBadge, { bottom: selectedProperty ? 135 : 16 }]}>
+        <Text style={styles.attributionText}>© OpenStreetMap contributors</Text>
+      </View>
+
+      {/* 5. CARTE D'APERÇU DU BIEN SÉLECTIONNÉ */}
       {selectedProperty && (
         <TouchableOpacity
           activeOpacity={0.9}
+          onPress={() => onSelectProperty && onSelectProperty(selectedProperty)}
           style={[
             styles.previewCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
+            {
+              backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+              borderColor: colors.border,
+            },
           ]}
-          onPress={() => onSelectProperty && onSelectProperty(selectedProperty)}
         >
           <Image source={{ uri: selectedProperty.imageUrl }} style={styles.previewImage} />
-
           <View style={styles.previewContent}>
-            <View style={styles.previewHeaderRow}>
-              <Text style={[styles.previewPrice, { color: colors.textPrimary }]}>
-                {formatPrice(selectedProperty.prix)}
-              </Text>
-              <View
-                style={[
-                  styles.badgeTag,
-                  { backgroundColor: selectedProperty.estLocation ? '#2563EB20' : '#16A34A20' },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.badgeText,
-                    { color: selectedProperty.estLocation ? '#2563EB' : '#16A34A' },
-                  ]}
-                >
-                  {selectedProperty.estLocation ? 'Location' : 'Vente'}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={[styles.previewTitle, { color: colors.textSecondary }]} numberOfLines={1}>
+            <Text
+              style={[styles.previewTitle, { color: colors.textPrimary }]}
+              numberOfLines={1}
+            >
               {selectedProperty.titre}
             </Text>
-
             <Text style={[styles.previewLocation, { color: colors.textSecondary }]} numberOfLines={1}>
               📍 {selectedProperty.localisation}
             </Text>
-
-            <View style={styles.previewFeatures}>
-              <Text style={[styles.featureText, { color: colors.textPrimary }]}>
-                🛏 {selectedProperty.nombreChambres} ch.
+            <View style={styles.previewFooter}>
+              <Text style={[styles.previewPrice, { color: colors.accentBlue }]}>
+                {formatPrice(selectedProperty.prix)}
               </Text>
-              <Text style={[styles.featureDot, { color: colors.textSecondary }]}>•</Text>
-              <Text style={[styles.featureText, { color: colors.textPrimary }]}>
-                🚿 {selectedProperty.nombreSallesDeBain} sdb
-              </Text>
-              {selectedProperty.surfaceM2 && (
-                <>
-                  <Text style={[styles.featureDot, { color: colors.textSecondary }]}>•</Text>
-                  <Text style={[styles.featureText, { color: colors.textPrimary }]}>
-                    📐 {selectedProperty.surfaceM2} m²
-                  </Text>
-                </>
-              )}
+              <View style={[styles.consultBtn, { backgroundColor: colors.accentBlue }]}>
+                <Text style={styles.consultBtnText}>Consulter →</Text>
+              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -264,178 +434,178 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    overflow: 'hidden',
   },
-  gridOverlay: {
+  tile: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    width: 256,
+    height: 256,
   },
-  gridLineH: {
+  myLocationMarker: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    borderBottomWidth: 1,
-    borderStyle: 'dashed',
-  },
-  gridLineV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    borderRightWidth: 1,
-    borderStyle: 'dashed',
-  },
-  geoLabel: {
-    position: 'absolute',
-  },
-  geoText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  pinContainer: {
-    position: 'absolute',
-    flexDirection: 'row',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(37, 99, 235, 0.3)',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 18,
-    gap: 5,
   },
-  pinDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  myLocationDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#2563EB',
   },
-  pinText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  topBar: {
+  markerContainer: {
     position: 'absolute',
-    top: 48,
+    alignItems: 'center',
+    width: 80,
+  },
+  priceBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  priceBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 16,
     left: 16,
     right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
   },
-  circleBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  backIcon: {
-    fontSize: 26,
-    fontWeight: '300',
-    marginTop: -3,
-  },
-  titleBubble: {
-    flex: 1,
+  titleCard: {
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 22,
+    borderRadius: 16,
     borderWidth: 1,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    marginBottom: 8,
   },
   titleText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
-  filterBar: {
-    position: 'absolute',
-    top: 102,
-    left: 0,
-    right: 0,
+  subtitleText: {
+    fontSize: 11,
+    marginTop: 2,
   },
-  filterScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
+  citiesScroll: {
+    paddingBottom: 4,
   },
-  cityFilterChip: {
+  cityChip: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 18,
+    borderWidth: 1,
+    marginRight: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
-  cityFilterText: {
+  cityChipText: {
     fontSize: 12,
-    fontWeight: '700',
+  },
+  controlsContainer: {
+    position: 'absolute',
+    right: 16,
+    top: 140,
+  },
+  fab: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    marginBottom: 8,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  fabText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  attributionBadge: {
+    position: 'absolute',
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  attributionText: {
+    color: '#FFFFFF',
+    fontSize: 9,
   },
   previewCard: {
     position: 'absolute',
-    bottom: 24,
     left: 16,
     right: 16,
-    borderRadius: 22,
-    borderWidth: 1,
+    bottom: 16,
     flexDirection: 'row',
-    padding: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
     elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   previewImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 16,
+    width: 85,
+    height: 75,
+    borderRadius: 12,
   },
   previewContent: {
     flex: 1,
     marginLeft: 12,
-    justifyContent: 'center',
-  },
-  previewHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-  previewPrice: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  badgeTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
   },
   previewTitle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   previewLocation: {
     fontSize: 11,
     marginTop: 2,
   },
-  previewFeatures: {
+  previewFooter: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
-    gap: 6,
+    marginTop: 4,
   },
-  featureText: {
+  previewPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  consultBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  consultBtnText: {
+    color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '600',
-  },
-  featureDot: {
-    fontSize: 10,
+    fontWeight: 'bold',
   },
 });

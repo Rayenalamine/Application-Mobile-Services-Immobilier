@@ -24,7 +24,7 @@ INSERT INTO properties (
     'Haut standing',
     FALSE,
     'Terrasse panoramique,Cuisine équipée,Place de parking sous-sol,Climatisation centrale,Double vitrage phonique',
-    'Sonia Ben Salem',
+    'Rayen Lamine',
     '+216 71 888 999',
     36.832800,
     10.234500
@@ -45,7 +45,7 @@ INSERT INTO properties (
     'Luxe Prestige',
     FALSE,
     'Piscine à débordement,Jardin paysagé 400m²,Garage double sécurisé,Suite parentale avec dressing,Système domotique intégré',
-    'Sonia Ben Salem',
+    'Rayen Lamine',
     '+216 71 888 999',
     35.836100,
     10.598200
@@ -66,7 +66,7 @@ INSERT INTO properties (
     'Houch Authentique',
     FALSE,
     'Patio central djerbien,Carrelage artisanal faïence,Toit terrasse vue mer,Puits traditionnel & citerne,Cuisine voûtée authentique',
-    'Sonia Ben Salem',
+    'Rayen Lamine',
     '+216 71 888 999',
     33.875000,
     10.857500
@@ -87,7 +87,7 @@ INSERT INTO properties (
     'Vue Panoramique',
     FALSE,
     'Vue imprenable sur le golfe,Accès plage à 150m,Ascenseur sécurisé avec badge,Balcon filant orienté sud,Chauffage individuel au gaz',
-    'Sonia Ben Salem',
+    'Rayen Lamine',
     '+216 71 888 999',
     36.400000,
     10.616700

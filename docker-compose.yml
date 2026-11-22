@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  darlink-db:
+    image: postgres:18-alpine
+    container_name: darlink-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: darlink_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - darlink_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d darlink_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  darlink_pgdata:
+    driver: local
+

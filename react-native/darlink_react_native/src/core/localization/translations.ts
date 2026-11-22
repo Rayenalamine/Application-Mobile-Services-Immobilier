@@ -1,0 +1,293 @@
+// ============================================================
+// DARLINK — DICTIONNAIRE TRILINGUE (FRANÇAIS, ARABE RTL, ANGLAIS)
+// Couverture complète de l'application DarLink React Native
+// ============================================================
+
+export type Language = 'fr' | 'ar' | 'en';
+
+export const translations: Record<Language, Record<string, string>> = {
+  fr: {
+    // Navigation
+    nav_home: 'Accueil',
+    nav_search: 'Recherche',
+    nav_favorites: 'Favoris',
+    nav_profile: 'Profil',
+
+    // Home
+    home_welcome_title: 'Trouvez votre bien d\'exception en Tunisie',
+    home_welcome_sub: 'DarLink vous connecte aux meilleures opportunités immobilières de luxe',
+    search_placeholder: 'Rechercher ville, quartier, mot-clé...',
+    section_exclusive: 'Annonces Récentes & Exclusives',
+    section_nearby: 'Biens recommandés pour vous',
+    view_all: 'Tout afficher',
+
+    // Property Card & Details
+    for_rent: 'À Louer',
+    for_sale: 'À Vendre',
+    currency: 'DT',
+    per_month: '/mois',
+    bedrooms_short: 'ch.',
+    bathrooms_short: 'sdb.',
+    area_unit: 'm²',
+    btn_details: 'Voir détails',
+    btn_call: 'Appeler',
+    btn_schedule_visit: 'Planifier une visite',
+    btn_contact: 'Contacter',
+    btn_edit: 'Modifier',
+    btn_edit_property: 'Modifier ce bien',
+    btn_delete_property: 'Supprimer ce bien',
+    btn_cancel: 'Annuler',
+    btn_save: 'Enregistrer',
+    btn_publish: 'Publier l\'annonce',
+    btn_filter: 'Filtrer',
+    btn_apply_filters: 'Appliquer les filtres',
+    btn_reset: 'Réinitialiser',
+    btn_login: 'Se connecter',
+    btn_register: 'Créer un compte',
+    btn_logout: 'Déconnexion',
+    btn_refresh: 'Actualiser',
+
+    // Property Details
+    details_title: 'Détails du bien',
+    specs_title: 'Caractéristiques principales',
+    amenities_title: 'Équipements & Prestations',
+    description_title: 'Description du bien',
+    owner_info: 'Propriétaire / Annonceur',
+    owner_role: 'Propriétaire vérifié',
+    contact_owner: 'Planifier une visite / Contact',
+    contact_owner_sub: 'Transmettez votre message directement pour ce bien.',
+    send_request: 'Envoyer la demande',
+    call_owner: 'Appeler le propriétaire',
+    call_error: 'Impossible d\'ouvrir l\'application téléphone pour le numéro :',
+    phone_unavailable: 'Numéro de téléphone du propriétaire non disponible',
+    added_to_favorites: 'Ajouté à vos favoris',
+    removed_from_favorites: 'Retiré de vos favoris',
+
+    // Favorites
+    favorites_title: 'Mes Favoris',
+    empty_favorites_title: 'Aucun favori enregistré',
+    empty_favorites_sub: 'Vos favoris sont sauvegardés et synchronisés',
+    empty_favorites_hint: 'Retrouvez ici les annonces que vous aurez ajoutées à vos favoris en appuyant sur le cœur de la fiche détaillée.',
+
+    // Filters
+    filter_all: 'Tous',
+    filter_price: 'Prix',
+    filter_apartment: 'Appartement',
+    filter_villa: 'Villa',
+    filter_house: 'Maison',
+    filter_bedrooms: 'Chambres',
+    filter_min_price: 'Prix min',
+    filter_max_price: 'Prix max',
+
+    // Amenities
+    amenity_wifi: 'Wi-Fi haut débit',
+    amenity_pool: 'Piscine privée',
+    amenity_parking: 'Parking sécurisé',
+    amenity_ac: 'Climatisation centrale',
+    amenity_garden: 'Jardin paysager',
+    amenity_sea_view: 'Vue panoramique sur mer',
+    amenity_terrace: 'Terrasse ensoleillée',
+    amenity_elevator: 'Ascenseur',
+    amenity_security: 'Sécurité & Alarme 24/7',
+    amenity_heating: 'Chauffage central',
+
+    // Profile & Settings
+    profile_title: 'Mon Profil',
+    profile_subtitle: 'Gérez votre compte et vos préférences',
+    account_settings: 'Paramètres du compte',
+    language_choice: 'Langue de l\'application',
+    theme_choice: 'Mode d\'affichage',
+    theme_light: 'Mode Clair',
+    theme_dark: 'Mode Sombre',
+  },
+
+  ar: {
+    // Navigation
+    nav_home: 'الرئيسية',
+    nav_search: 'البحث',
+    nav_favorites: 'المفضلة',
+    nav_profile: 'حسابي',
+
+    // Home
+    home_welcome_title: 'اعثر على عقارك المميز في تونس',
+    home_welcome_sub: 'دار لينك يوصلك بأفضل الفرص العقارية الفاخرة',
+    search_placeholder: 'ابحث عن مدينة، حي، كلمة مفتاحية...',
+    section_exclusive: 'أحدث الإعلانات الحصرية',
+    section_nearby: 'عقارات مقترحة لك',
+    view_all: 'عرض الكل',
+
+    // Property Card & Details
+    for_rent: 'للإيجار',
+    for_sale: 'للبيع',
+    currency: 'د.ت',
+    per_month: '/شهر',
+    bedrooms_short: 'غرف',
+    bathrooms_short: 'حمام',
+    area_unit: 'م²',
+    btn_details: 'عرض التفاصيل',
+    btn_call: 'اتصال',
+    btn_schedule_visit: 'طلب زيارة',
+    btn_contact: 'اتصال بالمالك',
+    btn_edit: 'تعديل',
+    btn_edit_property: 'تعديل العقار',
+    btn_delete_property: 'حذف العقار',
+    btn_cancel: 'إلغاء',
+    btn_save: 'حفظ',
+    btn_publish: 'نشر الإعلان',
+    btn_filter: 'تصفية',
+    btn_apply_filters: 'تطبيق الفلاتر',
+    btn_reset: 'إعادة ضبط',
+    btn_login: 'تسجيل الدخول',
+    btn_register: 'إنشاء حساب جديد',
+    btn_logout: 'تسجيل الخروج',
+    btn_refresh: 'تحديث',
+
+    // Property Details
+    details_title: 'تفاصيل العقار',
+    specs_title: 'المواصفات الرئيسية',
+    amenities_title: 'المرافق والتجهيزات',
+    description_title: 'وصف العقار',
+    owner_info: 'المالك / المعلن',
+    owner_role: 'مالك موثق',
+    contact_owner: 'حجز موعد زيارة / تواصل',
+    contact_owner_sub: 'أرسل رسالتك مباشرة لصاحب هذا العقار.',
+    send_request: 'إرسال الطلب',
+    call_owner: 'الاتصال بالمالك',
+    call_error: 'تعذر فتح تطبيق الهاتف للرقم :',
+    phone_unavailable: 'رقم هاتف المالك غير متوفر',
+    added_to_favorites: 'تمت الإضافة إلى المفضلة',
+    removed_from_favorites: 'تم الحذف من المفضلة',
+
+    // Favorites
+    favorites_title: 'عقاراتي المفضلة',
+    empty_favorites_title: 'لا توجد عقارات في المفضلة',
+    empty_favorites_sub: 'عقاراتك المفضلة محفوظة ومتزامنة تلقائياً',
+    empty_favorites_hint: 'ستجد هنا الإعلانات التي أضفتها إلى المفضلة بالضغط على أيقونة القلب.',
+
+    // Filters
+    filter_all: 'الكل',
+    filter_price: 'السعر',
+    filter_apartment: 'شقة',
+    filter_villa: 'فيلا',
+    filter_house: 'منزل',
+    filter_bedrooms: 'غرف النوم',
+    filter_min_price: 'السعر الأدنى',
+    filter_max_price: 'السعر الأقصى',
+
+    // Amenities
+    amenity_wifi: 'واي فاي سريع',
+    amenity_pool: 'مسبح خاص',
+    amenity_parking: 'موقف سيارات آمن',
+    amenity_ac: 'تكييف مركزي',
+    amenity_garden: 'حديقة منسقة',
+    amenity_sea_view: 'إطلالة بانورامية على البحر',
+    amenity_terrace: 'تراس مشمس',
+    amenity_elevator: 'مصعد كهربائي',
+    amenity_security: 'حراسة وإنذار 24/7',
+    amenity_heating: 'تدفئة مركزية',
+
+    // Profile & Settings
+    profile_title: 'الملف الشخصي',
+    profile_subtitle: 'إدارة حسابك وتفضيلاتك',
+    account_settings: 'إعدادات الحساب',
+    language_choice: 'لغة التطبيق',
+    theme_choice: 'مظهر الشاشة',
+    theme_light: 'الوضع الفاتح',
+    theme_dark: 'الوضع الداكن',
+  },
+
+  en: {
+    // Navigation
+    nav_home: 'Home',
+    nav_search: 'Search',
+    nav_favorites: 'Favorites',
+    nav_profile: 'Profile',
+
+    // Home
+    home_welcome_title: 'Find Your Exceptional Property in Tunisia',
+    home_welcome_sub: 'DarLink connects you with premium luxury real estate opportunities',
+    search_placeholder: 'Search city, neighborhood, keyword...',
+    section_exclusive: 'Recent & Exclusive Listings',
+    section_nearby: 'Recommended for You',
+    view_all: 'View All',
+
+    // Property Card & Details
+    for_rent: 'For Rent',
+    for_sale: 'For Sale',
+    currency: 'TND',
+    per_month: '/month',
+    bedrooms_short: 'bd.',
+    bathrooms_short: 'ba.',
+    area_unit: 'sqm',
+    btn_details: 'View Details',
+    btn_call: 'Call',
+    btn_schedule_visit: 'Schedule a Visit',
+    btn_contact: 'Contact Owner',
+    btn_edit: 'Edit',
+    btn_edit_property: 'Edit Property',
+    btn_delete_property: 'Delete Property',
+    btn_cancel: 'Cancel',
+    btn_save: 'Save',
+    btn_publish: 'Publish Listing',
+    btn_filter: 'Filter',
+    btn_apply_filters: 'Apply Filters',
+    btn_reset: 'Reset',
+    btn_login: 'Log In',
+    btn_register: 'Create Account',
+    btn_logout: 'Log Out',
+    btn_refresh: 'Refresh',
+
+    // Property Details
+    details_title: 'Property Details',
+    specs_title: 'Key Specifications',
+    amenities_title: 'Amenities & Features',
+    description_title: 'Property Description',
+    owner_info: 'Owner / Lister',
+    owner_role: 'Verified Owner',
+    contact_owner: 'Schedule a Visit / Contact',
+    contact_owner_sub: 'Send your message directly regarding this property.',
+    send_request: 'Send Request',
+    call_owner: 'Call Owner',
+    call_error: 'Unable to open phone dialer for number:',
+    phone_unavailable: 'Owner phone number unavailable',
+    added_to_favorites: 'Added to Favorites',
+    removed_from_favorites: 'Removed from Favorites',
+
+    // Favorites
+    favorites_title: 'My Favorites',
+    empty_favorites_title: 'No Favorites Saved',
+    empty_favorites_sub: 'Your favorites are saved and synced automatically',
+    empty_favorites_hint: 'Find here the properties you have added to your favorites by tapping the heart icon.',
+
+    // Filters
+    filter_all: 'All',
+    filter_price: 'Price',
+    filter_apartment: 'Apartment',
+    filter_villa: 'Villa',
+    filter_house: 'House',
+    filter_bedrooms: 'Bedrooms',
+    filter_min_price: 'Min Price',
+    filter_max_price: 'Max Price',
+
+    // Amenities
+    amenity_wifi: 'High-speed Wi-Fi',
+    amenity_pool: 'Private Pool',
+    amenity_parking: 'Secure Parking',
+    amenity_ac: 'Central A/C',
+    amenity_garden: 'Landscaped Garden',
+    amenity_sea_view: 'Panoramic Sea View',
+    amenity_terrace: 'Sun Terrace',
+    amenity_elevator: 'Elevator',
+    amenity_security: '24/7 Security & Alarm',
+    amenity_heating: 'Central Heating',
+
+    // Profile & Settings
+    profile_title: 'My Profile',
+    profile_subtitle: 'Manage your account and preferences',
+    account_settings: 'Account Settings',
+    language_choice: 'Application Language',
+    theme_choice: 'Display Theme',
+    theme_light: 'Light Mode',
+    theme_dark: 'Dark Mode',
+  },
+};

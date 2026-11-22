@@ -13,10 +13,18 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Modal,
+  TextInput,
+  Linking,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { Property, formatPrice } from '../../domain/models/property';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
+import { contactApiService } from '../../../contact/services/contactApiService';
+import { propertyApiService } from '../../services/propertyApiService';
+import { authService } from '../../../auth/services/authService';
 
 interface PropertyDetailsScreenProps {
   readonly property: Property;
@@ -29,8 +37,44 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 }) => {
   const [displayedImage, setDisplayedImage] = useState<string>(property.imageUrl);
   const [imageIndex, setImageIndex] = useState<number>(0);
-  const [isFavorite, setIsFavorite] = useState<boolean>(property.isFavorite ?? false);
+  const propId = property.id || '1';
+  const [isFavorite, setIsFavorite] = useState<boolean>(
+    property.isFavorite ?? favoritesApiService.isFavorite(propId)
+  );
   const { isDark, colors } = useTheme();
+  const { t, formatPrice: fmtPrice, translateAmenity } = useTranslation();
+
+  const handleCallOwner = async () => {
+    const phone = property.agentTel;
+    if (!phone || phone.trim().length === 0) {
+      Alert.alert(t('call_owner'), t('phone_unavailable'));
+      return;
+    }
+    const cleanPhone = phone.trim().replace(/[^\d+]/g, '');
+    const url = `tel:${cleanPhone}`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(t('call_owner'), `${t('call_error')} ${cleanPhone}`);
+      }
+    } catch {
+      Alert.alert(t('call_owner'), `${t('call_error')} ${cleanPhone}`);
+    }
+  };
+
+  const [showContactModal, setShowContactModal] = useState<boolean>(false);
+  const [senderName, setSenderName] = useState<string>(
+    authService.getCurrentUser()?.fullName || 'Visiteur'
+  );
+  const [senderEmail, setSenderEmail] = useState<string>(
+    authService.getCurrentUser()?.email || 'visiteur@darlink.tn'
+  );
+  const [senderPhone, setSenderPhone] = useState<string>('+216 20 123 456');
+  const [contactMessage, setContactMessage] = useState<string>(
+    `Bonjour, je souhaite visiter ce bien (${property.titre}).`
+  );
 
   const allImages = [property.imageUrl, ...(property.imagesGalerie ?? [])];
 
@@ -39,12 +83,58 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
     setImageIndex(idx);
   };
 
-  const handleScheduleTour = () => {
+  const handleToggleFavorite = async () => {
+    await favoritesApiService.toggleFavorite(propId, property);
+    const updated = favoritesApiService.isFavorite(propId);
+    setIsFavorite(updated);
     Alert.alert(
-      'Visite planifiée',
-      'Votre demande de visite a bien été enregistrée pour ce bien avec Sonia Ben Salem.',
-      [{ text: 'OK' }]
+      updated ? t('added_to_favorites') : t('removed_from_favorites'),
+      updated
+        ? `${property.titre} — ${t('added_to_favorites')}`
+        : `${property.titre} — ${t('removed_from_favorites')}`
     );
+  };
+
+  const handleDeleteProperty = () => {
+    Alert.alert(
+      'Supprimer ce bien',
+      `Voulez-vous supprimer définitivement "${property.titre}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            await propertyApiService.deleteProperty(propId);
+            Alert.alert('Supprimé', 'Le bien a été supprimé de la base de données.');
+            onBack();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSendContact = async () => {
+    if (!senderName.trim() || !senderEmail.trim()) {
+      Alert.alert('Erreur', 'Veuillez saisir votre nom et adresse e-mail.');
+      return;
+    }
+    setShowContactModal(false);
+    await contactApiService.sendContactRequest({
+      propertyId: propId,
+      senderName: senderName.trim(),
+      senderEmail: senderEmail.trim(),
+      senderPhone: senderPhone.trim(),
+      message: contactMessage.trim(),
+    });
+    Alert.alert(
+      'Demande transmise !',
+      'Votre demande de contact a été enregistrée dans la base PostgreSQL et transmise au propriétaire.'
+    );
+  };
+
+  const handleScheduleTour = () => {
+    setShowContactModal(true);
   };
 
   return (
@@ -104,44 +194,31 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}
-              onPress={() => setIsFavorite(!isFavorite)}
+              onPress={handleToggleFavorite}
               activeOpacity={0.8}
             >
               <Text style={styles.circleBtnIcon}>{isFavorite ? '❤️' : '🤍'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              onPress={() =>
-                Alert.alert('Partager', 'Lien de l\'annonce copié dans le presse-papier.')
-              }
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.circleBtnIcon, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-                📤
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.circleBtnIcon, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-                •••
-              </Text>
-            </TouchableOpacity>
+            {/* Suppression réservée au propriétaire légitime */}
+            {authService.getCurrentUser() &&
+              String(authService.getCurrentUser()?.id) === String((property as any).proprietaireId || (property as any).ownerId) && (
+                <TouchableOpacity
+                  style={[
+                    styles.glassCircleBtn,
+                    {
+                      backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
+                  onPress={handleDeleteProperty}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.circleBtnIcon, { color: '#EF4444' }]}>
+                    🗑️
+                  </Text>
+                </TouchableOpacity>
+              )}
           </View>
         </View>
 
@@ -311,7 +388,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         {property.commodites && property.commodites.length > 0 && (
           <View style={styles.amenitiesSection}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Atouts & Commodités
+              {t('amenities_title')}
             </Text>
             <View style={styles.amenitiesGrid}>
               {property.commodites.map((item) => (
@@ -327,7 +404,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                 >
                   <Text style={styles.amenityCheck}>✓</Text>
                   <Text style={[styles.amenityText, { color: colors.textSecondary }]}>
-                    {item}
+                    {translateAmenity(item)}
                   </Text>
                 </View>
               ))}
@@ -346,23 +423,31 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           ]}
         >
           <View style={styles.agentAvatarBox}>
-            <Text style={styles.agentAvatarText}>SB</Text>
+            <Text style={styles.agentAvatarText}>
+              {property.agentNom && property.agentNom.length > 0
+                ? property.agentNom.split(' ').map(e => e ? e[0] : '').slice(0, 2).join('')
+                : 'P'}
+            </Text>
           </View>
           <View style={styles.agentInfo}>
             <Text style={[styles.agentName, { color: colors.textPrimary }]}>
-              {property.agentNom ?? 'Sonia Ben Salem'}
+              {property.agentNom ?? 'Propriétaire'}
             </Text>
             <Text style={[styles.agentRole, { color: colors.textSecondary }]}>
-              Consultante Immobilière Prestige
+              {t('owner_role')}
             </Text>
-            <Text style={styles.agentPhone}>
-              {property.agentTel ?? '+216 71 888 999'}
-            </Text>
+            <TouchableOpacity onPress={handleCallOwner} activeOpacity={0.7}>
+              <Text style={[styles.agentPhone, { textDecorationLine: 'underline' }]}>
+                {property.agentTel || t('phone_unavailable')}
+              </Text>
+            </TouchableOpacity>
           </View>
           <TouchableOpacity
             style={styles.agentCallBtn}
-            onPress={() => Alert.alert('Appel', 'Numéro de l\'agent : +216 71 888 999')}
+            onPress={handleCallOwner}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={t('btn_call')}
           >
             <Text style={styles.agentCallIcon}>📞</Text>
           </TouchableOpacity>
@@ -371,7 +456,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         {/* 10. DESCRIPTION */}
         <View style={styles.descriptionSection}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Description du bien
+            {t('description_title')}
           </Text>
           <Text style={[styles.descriptionBody, { color: colors.textSecondary }]}>
             {property.description}
@@ -403,7 +488,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           activeOpacity={0.8}
         >
           <Text style={[styles.backButtonText, { color: colors.textPrimary }]}>
-            ← Retour à la liste
+            ← {t('btn_cancel')}
           </Text>
         </TouchableOpacity>
 
@@ -423,10 +508,79 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
               { color: isDark ? '#0F1015' : '#FFFFFF' },
             ]}
           >
-            Planifier une visite
+            {t('btn_schedule_visit')}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* MODAL DE PRISE DE CONTACT AVEC LE PROPRIÉTAIRE */}
+      <Modal visible={showContactModal} transparent animationType="slide">
+        <View style={modalStyles.overlay}>
+          <View style={[modalStyles.content, { backgroundColor: colors.surface }]}>
+            <View style={modalStyles.handleBar} />
+            <Text style={[modalStyles.title, { color: colors.textPrimary }]}>
+              {t('contact_owner')}
+            </Text>
+            <Text style={[modalStyles.subTitle, { color: colors.textSecondary }]}>
+              {t('contact_owner_sub')}
+            </Text>
+
+            <TextInput
+              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Votre nom complet"
+              placeholderTextColor={colors.textSecondary}
+              value={senderName}
+              onChangeText={setSenderName}
+            />
+
+            <TextInput
+              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Votre adresse e-mail"
+              placeholderTextColor={colors.textSecondary}
+              value={senderEmail}
+              onChangeText={setSenderEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            <TextInput
+              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Votre numéro de téléphone"
+              placeholderTextColor={colors.textSecondary}
+              value={senderPhone}
+              onChangeText={setSenderPhone}
+              keyboardType="phone-pad"
+            />
+
+            <TextInput
+              style={[
+                modalStyles.input,
+                modalStyles.textArea,
+                { color: colors.textPrimary, borderColor: colors.border },
+              ]}
+              placeholder="Votre message"
+              placeholderTextColor={colors.textSecondary}
+              value={contactMessage}
+              onChangeText={setContactMessage}
+              multiline
+              numberOfLines={3}
+            />
+
+            <View style={modalStyles.actions}>
+              <TouchableOpacity
+                style={[modalStyles.cancelBtn, { borderColor: colors.border }]}
+                onPress={() => setShowContactModal(false)}
+              >
+                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{t('btn_cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={modalStyles.submitBtn} onPress={handleSendContact}>
+                <Text style={modalStyles.submitBtnText}>{t('send_request')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -773,5 +927,75 @@ const styles = StyleSheet.create({
   scheduleButtonText: {
     fontSize: 14,
     fontWeight: '800',
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  content: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  handleBar: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#CCCCCC',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  subTitle: {
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  input: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    fontSize: 14,
+  },
+  textArea: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: 'top',
+  },
+  actions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 12,
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitBtn: {
+    flex: 2,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

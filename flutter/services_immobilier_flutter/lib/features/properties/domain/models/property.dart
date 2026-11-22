@@ -60,9 +60,23 @@ class Propriete {
   /// Téléphone de l'agent
   final String agentTel;
 
+  /// Identifiant du propriétaire du bien
+  final String proprietaireId;
+
+  /// Ville (ex: Tunis, Sousse, Djerba)
+  final String ville;
+
+  /// Coordonnées GPS (V8 Cartographie OpenStreetMap)
+  final double latitude;
+  final double longitude;
+
   /// Constructeur constant pour créer un objet Propriete immuable.
   const Propriete({
     this.id = '1',
+    this.proprietaireId = '1',
+    this.ville = 'Tunis',
+    this.latitude = 36.8065,
+    this.longitude = 10.1815,
     required this.titre,
     required this.localisation,
     required this.prix,
@@ -84,7 +98,7 @@ class Propriete {
       'Sécurité 24/7',
       'Balcon terrasse',
     ],
-    this.agentNom = 'Sonia Ben Salem',
+    this.agentNom = 'Propriétaire',
     this.agentTel = '+216 71 888 999',
   });
 
@@ -133,9 +147,11 @@ class Propriete {
     List<String>? commodites,
     String? agentNom,
     String? agentTel,
+    String? proprietaireId,
   }) {
     return Propriete(
       id: id ?? this.id,
+      proprietaireId: proprietaireId ?? this.proprietaireId,
       titre: titre ?? this.titre,
       localisation: localisation ?? this.localisation,
       prix: prix ?? this.prix,

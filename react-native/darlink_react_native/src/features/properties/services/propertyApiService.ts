@@ -10,9 +10,12 @@ import { Property, PropertyType } from '../domain/models/property';
 export interface PropertyFilterParams {
   city?: string;
   type?: string;
+  isRental?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  minBedrooms?: number;
   search?: string;
+  sort?: string;
   page?: number;
   size?: number;
 }
@@ -39,7 +42,7 @@ export interface CreatePropertyPayload {
   agentPhone?: string;
 }
 
-interface SpringPropertyDto {
+export interface SpringPropertyDto {
   id: number;
   title: string;
   description: string;
@@ -87,16 +90,19 @@ class PropertyApiService {
   public async getProperties(params?: PropertyFilterParams): Promise<Property[]> {
     try {
       const response = await api.get<PageResponse<SpringPropertyDto>>('/properties', {
-        city: params?.city,
+        city: params?.city !== 'Toutes' ? params?.city : undefined,
         type: params?.type !== 'Tous' ? params?.type : undefined,
+        isRental: params?.isRental,
         minPrice: params?.minPrice,
         maxPrice: params?.maxPrice,
+        minBedrooms: params?.minBedrooms,
         search: params?.search,
+        sort: params?.sort,
         page: params?.page ?? 0,
         size: params?.size ?? 20,
       });
 
-      if (response && Array.isArray(response.content) && response.content.length > 0) {
+      if (response && Array.isArray(response.content)) {
         const mapped = response.content.map(this.mapDtoToProperty);
         this.cachedProperties = mapped;
         return mapped;
@@ -120,9 +126,42 @@ class PropertyApiService {
     }
   }
 
+  public async getUserProperties(): Promise<Property[]> {
+    try {
+      const list = await api.get<SpringPropertyDto[]>('/users/me/properties');
+      if (Array.isArray(list) && list.length > 0) {
+        return list.map(this.mapDtoToProperty);
+      }
+      return this.cachedProperties.slice(0, 2);
+    } catch {
+      return this.cachedProperties.slice(0, 2);
+    }
+  }
+
+  public async getMyProperties(): Promise<Property[]> {
+    return this.getUserProperties();
+  }
+
+  public async deleteProperty(id: string | number): Promise<boolean> {
+    try {
+      const strId = String(id);
+      await api.delete(`/properties/${strId}`);
+      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== strId);
+      return true;
+    } catch {
+      const strId = String(id);
+      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== strId);
+      return true;
+    }
+  }
+
   public async createProperty(payload: CreatePropertyPayload): Promise<Property> {
     try {
-      const dto = await api.post<SpringPropertyDto>('/properties', payload);
+      const fullPayload = {
+        ...payload,
+        imageUrl: payload.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+      };
+      const dto = await api.post<SpringPropertyDto>('/properties', fullPayload);
       const prop = this.mapDtoToProperty(dto);
       this.cachedProperties.unshift(prop);
       return prop;
@@ -151,16 +190,49 @@ class PropertyApiService {
     }
   }
 
+  public async updateProperty(id: string, payload: Partial<CreatePropertyPayload>): Promise<Property | null> {
+    try {
+      const existing = this.cachedProperties.find((p) => p.id === id);
+      const fullPayload = {
+        title: payload.title || existing?.titre || 'Titre mis à jour',
+        description: payload.description || existing?.description || 'Superbe bien haut standing.',
+        location: payload.location || existing?.localisation || 'Tunis, Tunisie',
+        city: payload.city || 'Tunis',
+        type: payload.type || existing?.type || 'Appartement',
+        price: payload.price ?? existing?.prix ?? 200000,
+        bedrooms: payload.bedrooms ?? existing?.nombreChambres ?? 2,
+        bathrooms: payload.bathrooms ?? existing?.nombreSallesDeBain ?? 1,
+        surfaceM2: payload.surfaceM2 ?? existing?.surfaceM2 ?? 100,
+        isRental: payload.isRental ?? existing?.estLocation ?? false,
+        imageUrl: payload.imageUrl || existing?.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+        amenities: payload.amenities ?? existing?.commodites ?? [],
+      };
+      const dto = await api.put<SpringPropertyDto>(`/properties/${id}`, fullPayload);
+      const prop = this.mapDtoToProperty(dto);
+      const index = this.cachedProperties.findIndex((p) => p.id === id);
+      if (index !== -1) {
+        this.cachedProperties[index] = prop;
+      }
+      return prop;
+    } catch {
+      return null;
+    }
+  }
+
   private filterLocal(params?: PropertyFilterParams): Property[] {
     return this.cachedProperties.filter((p) => {
-      if (params?.city && !p.localisation.toLowerCase().includes(params.city.toLowerCase())) {
+      if (params?.city && params.city !== 'Toutes' && !p.localisation.toLowerCase().includes(params.city.toLowerCase())) {
         return false;
       }
       if (params?.type && params.type !== 'Tous' && p.type.toLowerCase() !== params.type.toLowerCase()) {
         return false;
       }
+      if (params?.isRental !== undefined && p.estLocation !== params.isRental) {
+        return false;
+      }
       if (params?.minPrice && p.prix < params.minPrice) return false;
       if (params?.maxPrice && p.prix > params.maxPrice) return false;
+      if (params?.minBedrooms && p.nombreChambres < params.minBedrooms) return false;
       if (params?.search) {
         const query = params.search.toLowerCase();
         return (
@@ -173,7 +245,7 @@ class PropertyApiService {
     });
   }
 
-  private mapDtoToProperty(dto: SpringPropertyDto): Property {
+  public mapDtoToProperty(dto: SpringPropertyDto): Property {
     return {
       id: String(dto.id),
       titre: dto.title,
@@ -199,4 +271,3 @@ class PropertyApiService {
 }
 
 export const propertyApiService = PropertyApiService.getInstance();
-

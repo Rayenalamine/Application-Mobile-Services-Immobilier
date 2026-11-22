@@ -13,15 +13,53 @@ class FavoritesApiService extends ChangeNotifier {
   FavoritesApiService._internal();
 
   final ApiClient _api = ApiClient.instance;
-  final Set<String> _favoriteIds = {'2'}; // ID 2 en favori initial par défaut
+  final Set<String> _favoriteIds = <String>{};
+  final Map<String, Propriete> _cachedProperties = {};
 
   Set<String> get favoriteIds => _favoriteIds;
 
   bool isFavorite(String propertyId) => _favoriteIds.contains(propertyId);
 
   List<Propriete> get favoriteProperties {
+    final map = <String, Propriete>{};
+    for (var p in _cachedProperties.values) {
+      if (_favoriteIds.contains(p.id)) {
+        map[p.id] = p;
+      }
+    }
     final all = PropertyApiService.instance.currentProperties;
-    return all.where((p) => _favoriteIds.contains(p.id)).toList();
+    for (var p in all) {
+      if (_favoriteIds.contains(p.id)) {
+        map[p.id] = p;
+      }
+    }
+    return map.values.toList();
+  }
+
+  void clear() {
+    _favoriteIds.clear();
+    _cachedProperties.clear();
+    notifyListeners();
+  }
+
+  Future<List<Propriete>> getFavorites() async {
+    try {
+      final res = await _api.get('/favorites');
+      if (res is List<dynamic>) {
+        final list = res
+            .map((item) => PropertyApiService.instance.mapJsonToPropriete(item as Map<String, dynamic>))
+            .toList();
+        _favoriteIds.clear();
+        _cachedProperties.clear();
+        for (var p in list) {
+          _favoriteIds.add(p.id);
+          _cachedProperties[p.id] = p;
+        }
+        notifyListeners();
+        return list;
+      }
+    } catch (_) {}
+    return favoriteProperties;
   }
 
   Future<void> syncFavorites() async {
@@ -42,8 +80,13 @@ class FavoritesApiService extends ChangeNotifier {
 
     if (willBeFavorite) {
       _favoriteIds.add(propertyId);
+      try {
+        final prop = PropertyApiService.instance.currentProperties.firstWhere((p) => p.id == propertyId);
+        _cachedProperties[propertyId] = prop;
+      } catch (_) {}
     } else {
       _favoriteIds.remove(propertyId);
+      _cachedProperties.remove(propertyId);
     }
     notifyListeners();
 

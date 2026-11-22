@@ -54,4 +54,3 @@ Une tâche ne peut être déclarée `DONE` que lorsque :
 - [ ] L'environnement réel du test est clairement précisé (Web, Expo Go, AVD, etc.).
 - [ ] La documentation de la tâche et [`PROJECT_STATUS.md`](PROJECT_STATUS.md) sont à jour.
 - [ ] Les trois membres de l'équipe comprennent l'implémentation et sont capables de l'expliquer lors de la soutenance devant l'enseignant.
-

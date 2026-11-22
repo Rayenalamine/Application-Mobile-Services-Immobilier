@@ -46,6 +46,20 @@ public class GlobalExceptionHandler {
                 .body(problem);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ProblemDetailResponse> handleForbidden(ForbiddenException ex, HttpServletRequest request) {
+        ProblemDetailResponse problem = new ProblemDetailResponse(
+                "https://api.darlink.tn/errors/forbidden",
+                "Accès refusé",
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .header("Content-Type", "application/problem+json")
+                .body(problem);
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ProblemDetailResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
         ProblemDetailResponse problem = new ProblemDetailResponse(

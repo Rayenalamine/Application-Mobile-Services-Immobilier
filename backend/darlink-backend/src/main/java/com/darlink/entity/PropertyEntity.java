@@ -58,16 +58,19 @@ public class PropertyEntity {
     private String amenities;
 
     @Column(name = "agent_name", length = 120)
-    private String agentName = "Sonia Ben Salem";
+    private String agentName;
 
     @Column(name = "agent_phone", length = 40)
-    private String agentPhone = "+216 71 888 999";
+    private String agentPhone;
 
     @Column(precision = 10, scale = 6)
     private BigDecimal latitude = new BigDecimal("36.806500");
 
     @Column(precision = 10, scale = 6)
     private BigDecimal longitude = new BigDecimal("10.181500");
+
+    @Column(name = "owner_id")
+    private Long ownerId = 1L;
 
     @Column(name = "created_at")
     private Instant createdAt = Instant.now();
@@ -77,6 +80,9 @@ public class PropertyEntity {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getOwnerId() { return ownerId; }
+    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

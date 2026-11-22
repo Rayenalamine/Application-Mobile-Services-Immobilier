@@ -21,6 +21,8 @@ import { AddPropertyScreen } from './AddPropertyScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
 import { propertyApiService } from '../../services/propertyApiService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { authService } from '../../../auth/services/authService';
 
 const FILTER_PILLS = [
   'Tous',
@@ -31,12 +33,37 @@ const FILTER_PILLS = [
   'Chambres',
 ] as const;
 
-export const HomeScreen: React.FC = () => {
+interface HomeScreenProps {
+  onNavigateToSearch?: () => void;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) => {
   const [currentView, setCurrentView] = useState<'home' | 'map' | 'add'>('home');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
   const [properties, setProperties] = useState<Property[]>([...mockProperties]);
+  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const { isDark, toggleTheme, colors } = useTheme();
+  const { t, language, setLanguage } = useTranslation();
+
+  const getFilterLabel = (pill: string) => {
+    switch (pill) {
+      case 'Tous': return t('filter_all');
+      case 'Prix': return t('filter_price');
+      case 'Appartement': return t('filter_apartment');
+      case 'Villa': return t('filter_villa');
+      case 'Maison': return t('filter_house');
+      case 'Chambres': return t('filter_bedrooms');
+      default: return pill;
+    }
+  };
+
+  useEffect(() => {
+    const unsub = authService.subscribe(() => {
+      setCurrentUser(authService.getCurrentUser());
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -112,15 +139,19 @@ export const HomeScreen: React.FC = () => {
                 },
               ]}
             >
-              <Text style={[styles.monogramText, { color: colors.textPrimary }]}>RL</Text>
+              <Text style={[styles.monogramText, { color: colors.textPrimary }]}>
+                {currentUser && currentUser.fullName
+                  ? currentUser.fullName.split(' ').map((e) => (e ? e[0] : '')).slice(0, 2).join('')
+                  : 'IN'}
+              </Text>
             </View>
 
             <View style={styles.userTextContainer}>
               <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
-                Bonjour ! 👋
+                {currentUser ? 'Bonjour ! 👋' : 'Bienvenue !'}
               </Text>
               <Text style={[styles.userNameText, { color: colors.textPrimary }]}>
-                Rayen Lamine
+                {currentUser ? currentUser.fullName : 'Invité'}
               </Text>
             </View>
           </View>
@@ -141,6 +172,29 @@ export const HomeScreen: React.FC = () => {
               accessibilityLabel="Basculer le mode sombre ou clair"
             >
               <Text style={styles.actionEmoji}>{isDark ? '☀️' : '🌙'}</Text>
+            </TouchableOpacity>
+
+            {/* Bouton de langue trilingue FR / AR / EN */}
+            <TouchableOpacity
+              style={[
+                styles.headerActionBtn,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={() => {
+                if (language === 'fr') setLanguage('ar');
+                else if (language === 'ar') setLanguage('en');
+                else setLanguage('fr');
+              }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Changer de langue"
+            >
+              <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary }}>
+                {language === 'fr' ? 'FR' : language === 'ar' ? 'عربي' : 'EN'}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -178,7 +232,10 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {/* 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE */}
-        <View
+        <TouchableOpacity
+          testID="home_search_bar"
+          onPress={onNavigateToSearch}
+          activeOpacity={0.85}
           style={[
             styles.searchBar,
             {
@@ -190,7 +247,7 @@ export const HomeScreen: React.FC = () => {
         >
           <Text style={styles.searchIcon}>🔍</Text>
           <Text style={[styles.searchPlaceholder, { color: colors.textTertiary }]}>
-            Tunis, Sousse, Djerba, Hammamet...
+            {t('search_placeholder')}
           </Text>
           <View
             style={[
@@ -200,7 +257,7 @@ export const HomeScreen: React.FC = () => {
           >
             <Text style={styles.tuneIcon}>⚙️</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* 3. RANGÉE DE JETONS DE FILTRES HORIZONTAUX */}
         <ScrollView
@@ -218,9 +275,9 @@ export const HomeScreen: React.FC = () => {
                   styles.filterPill,
                   {
                     backgroundColor: isSelected
-                      ? (isDark ? '#FFFFFF' : '#0F1015')
+                      ? colors.accentBlue
                       : colors.surface,
-                    borderColor: isSelected ? 'transparent' : colors.border,
+                    borderColor: isSelected ? colors.accentBlue : colors.border,
                   },
                 ]}
                 onPress={() => setActiveFilter(filtre)}
@@ -231,13 +288,13 @@ export const HomeScreen: React.FC = () => {
                     styles.filterText,
                     {
                       color: isSelected
-                        ? (isDark ? '#0F1015' : '#FFFFFF')
+                        ? '#FFFFFF'
                         : colors.textSecondary,
                       fontWeight: isSelected ? '700' : '500',
                     },
                   ]}
                 >
-                  {filtre}
+                  {getFilterLabel(filtre)}
                 </Text>
               </TouchableOpacity>
             );

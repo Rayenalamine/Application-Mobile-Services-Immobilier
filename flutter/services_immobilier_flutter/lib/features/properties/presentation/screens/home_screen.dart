@@ -6,9 +6,12 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../data/mock_properties.dart';
+import '../../../../core/localization/app_locale.dart';
+import '../../../auth/domain/models/auth_state.dart';
+import '../../data/property_api_service.dart';
 import '../../domain/models/property.dart';
 import '../../../map/presentation/screens/map_screen.dart';
+import '../../../navigation/presentation/screens/search_screen.dart';
 import '../widgets/property_card.dart';
 import 'add_property_screen.dart';
 
@@ -22,6 +25,8 @@ class EcranAccueil extends StatefulWidget {
 
 class _EcranAccueilState extends State<EcranAccueil> {
   String _filtreActif = 'Tous';
+  List<Propriete> _proprietes = [];
+  bool _isLoading = true;
 
   final List<String> _filtres = const [
     'Tous',
@@ -32,8 +37,37 @@ class _EcranAccueilState extends State<EcranAccueil> {
     'Chambres',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _chargerBiens();
+    AuthState.instance.addListener(_onStateChange);
+    AppLocale.instance.addListener(_onStateChange);
+  }
+
+  @override
+  void dispose() {
+    AuthState.instance.removeListener(_onStateChange);
+    AppLocale.instance.removeListener(_onStateChange);
+    super.dispose();
+  }
+
+  void _onStateChange() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _chargerBiens() async {
+    final list = await PropertyApiService.instance.getProperties();
+    if (mounted) {
+      setState(() {
+        _proprietes = list;
+        _isLoading = false;
+      });
+    }
+  }
+
   List<Propriete> get _proprietesFiltrees {
-    return listeProprietes.where((p) {
+    return _proprietes.where((p) {
       final matchCategorie = _filtreActif == 'Tous' ||
           _filtreActif == 'Prix' ||
           _filtreActif == 'Chambres' ||
@@ -41,6 +75,18 @@ class _EcranAccueilState extends State<EcranAccueil> {
 
       return matchCategorie;
     }).toList();
+  }
+
+  String _nomFiltre(String f) {
+    switch (f) {
+      case 'Tous': return AppLocale.instance.tr('filter_all');
+      case 'Prix': return AppLocale.instance.tr('filter_price');
+      case 'Appartement': return AppLocale.instance.tr('filter_apartment');
+      case 'Villa': return AppLocale.instance.tr('filter_villa');
+      case 'Maison': return AppLocale.instance.tr('filter_house');
+      case 'Chambres': return AppLocale.instance.tr('filter_bedrooms');
+      default: return f;
+    }
   }
 
   @override
@@ -52,6 +98,14 @@ class _EcranAccueilState extends State<EcranAccueil> {
     final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
+
+    final authUser = AuthState.instance.currentUser;
+    final isAuth = AuthState.instance.isAuthenticated;
+    final userName = isAuth && authUser != null ? authUser.fullName : AppLocale.instance.tr('guest');
+    final monogram = isAuth && authUser != null && authUser.fullName.isNotEmpty
+        ? authUser.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
+        : 'IN';
+    final greeting = isAuth ? AppLocale.instance.tr('greeting') : AppLocale.instance.tr('welcome_guest');
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -81,10 +135,10 @@ class _EcranAccueilState extends State<EcranAccueil> {
                             width: 1.5,
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'RL',
-                            style: TextStyle(
+                            monogram,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                               color: AppColors.accentBlue,
@@ -97,7 +151,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Bonjour ! 👋',
+                            greeting,
                             style: TextStyle(
                               color: textSec,
                               fontSize: 12,
@@ -105,7 +159,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                             ),
                           ),
                           Text(
-                            'Rayen Lamine',
+                            userName,
                             style: TextStyle(
                               color: textPrim,
                               fontSize: 17,
@@ -180,48 +234,58 @@ class _EcranAccueilState extends State<EcranAccueil> {
             // ------------------------------------------------------------
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: borderColor, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+              child: GestureDetector(
+                key: const Key('home_search_bar_clickable'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const EcranRecherche(),
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Icon(Icons.search, color: textSec, size: 22),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Tunis, Sousse, Djerba, Hammamet...',
-                        style: TextStyle(
-                          color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-                          fontSize: 14,
+                  );
+                },
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: borderColor, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Icon(Icons.search, color: textSec, size: 22),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Tunis, Sousse, Djerba, Hammamet...',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+                            fontSize: 14,
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: isDark ? const Color(0x1AFFFFFF) : const Color(0x0A000000),
-                        child: Icon(
-                          Icons.tune,
-                          color: isDark ? Colors.white : const Color(0xFF111827),
-                          size: 18,
+                      Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: isDark ? const Color(0x1AFFFFFF) : const Color(0x0A000000),
+                          child: Icon(
+                            Icons.tune,
+                            color: isDark ? Colors.white : const Color(0xFF111827),
+                            size: 18,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -272,7 +336,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           ),
                           child: Center(
                             child: Text(
-                              filtre,
+                              _nomFiltre(filtre),
                               style: TextStyle(
                                 color: pillText,
                                 fontSize: 11.5,
@@ -297,22 +361,32 @@ class _EcranAccueilState extends State<EcranAccueil> {
             // 5. LISTE IMMERSIVE DES ANNONCES DE BIENS
             // ------------------------------------------------------------
             Expanded(
-              child: _proprietesFiltrees.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Aucun bien ne correspond à votre recherche',
-                        style: TextStyle(color: textSec),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                      itemCount: _proprietesFiltrees.length,
-                      itemBuilder: (context, index) {
-                        return CartePropriete(
-                          propriete: _proprietesFiltrees[index],
-                        );
-                      },
-                    ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 820),
+                  child: RefreshIndicator(
+                    onRefresh: _chargerBiens,
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : _proprietesFiltrees.isEmpty
+                            ? Center(
+                                child: Text(
+                                  AppLocale.instance.tr('empty_search'),
+                                  style: TextStyle(color: textSec),
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                                itemCount: _proprietesFiltrees.length,
+                                itemBuilder: (context, index) {
+                                  return CartePropriete(
+                                    propriete: _proprietesFiltrees[index],
+                                  );
+                                },
+                              ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -351,23 +425,26 @@ class SectionBienvenue extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.home_work_rounded, color: AppColors.accentBlue, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Bienvenue sur Services Immobilier',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accentBlue,
+                    const Icon(Icons.home_work_rounded, color: AppColors.accentBlue, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        AppLocale.instance.tr('welcome_banner_title'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.accentBlue,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Trouvez le bien immobilier de vos rêves en Tunisie.',
+                  AppLocale.instance.tr('welcome_banner_sub'),
                   style: TextStyle(
                     fontSize: 12,
                     color: textSec,
@@ -383,15 +460,19 @@ class SectionBienvenue extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Nos biens immobiliers',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: textPrim,
-                  letterSpacing: -0.3,
+              Expanded(
+                child: Text(
+                  AppLocale.instance.tr('our_properties'),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: textPrim,
+                    letterSpacing: -0.3,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -427,6 +508,8 @@ class _HeaderCircleButton extends StatelessWidget {
     required this.isDark,
     required this.onTap,
   });
+
+  @override
 
   @override
   Widget build(BuildContext context) {
