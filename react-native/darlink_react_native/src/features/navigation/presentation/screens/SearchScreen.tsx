@@ -155,7 +155,10 @@ export const SearchScreen: React.FC = () => {
           <View
             style={[
               styles.searchIconContainer,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5',
+                borderRadius: 18,
+              },
             ]}
           >
             <Text style={styles.searchBoxIcon}>🔍</Text>
@@ -525,12 +528,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     marginBottom: 16,
-    overflow: 'hidden',
   },
   searchIconContainer: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,

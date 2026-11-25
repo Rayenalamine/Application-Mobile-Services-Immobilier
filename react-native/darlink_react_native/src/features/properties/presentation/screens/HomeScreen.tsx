@@ -266,7 +266,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           <View
             style={[
               styles.searchIconContainer,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5',
+                borderRadius: 18,
+              },
             ]}
           >
             <Text style={styles.searchIcon}>🔍</Text>
@@ -299,7 +302,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               onPress={onNavigateToSearch}
               style={[
                 styles.tuneButton,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5',
+                  borderRadius: 17,
+                },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Filtres avancés"
@@ -463,12 +469,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 2,
-    overflow: 'hidden',
   },
   searchIconContainer: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -491,6 +500,10 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
+    borderTopLeftRadius: 17,
+    borderTopRightRadius: 17,
+    borderBottomLeftRadius: 17,
+    borderBottomRightRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
