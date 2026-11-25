@@ -447,7 +447,7 @@ export const SearchScreen: React.FC = () => {
           ))
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 180 }} />
       </ScrollView>
 
       {/* DOCK FLOTTANT EN BAS */}
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 16,
+    bottom: 98,
     flexDirection: 'row',
     padding: 12,
     borderRadius: 24,
