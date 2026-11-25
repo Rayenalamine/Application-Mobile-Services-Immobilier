@@ -88,3 +88,4 @@ async function seedCloudFirestore(): Promise<void> {
 seedCloudFirestore().catch((err) => {
   console.error('Erreur critique seeding :', err);
 });
+
