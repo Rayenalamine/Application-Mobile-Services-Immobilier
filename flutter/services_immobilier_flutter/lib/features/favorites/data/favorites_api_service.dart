@@ -1,13 +1,15 @@
 // ============================================================
-// DARLINK — SERVICE DES FAVORIS CLOUD FIRESTORE RÉACTIF (Flutter)
+// DARLINK — SERVICE DES FAVORIS CLOUD FIRESTORE TEMPS RÉEL (Flutter)
 // Persistance Cloud Firestore sur users/{userId}/favorites/{propertyId}
 // Isolation stricte par UID, zéro fuite cross-user,
-// synchronisation périodique réactive (polling 6s) et persistance locale scopée
+// vrai listener Firestore .snapshots() avec nettoyage complet à la déconnexion.
 // ============================================================
 
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/firebase/firebase_sdk.dart';
 import '../../../core/firebase/firestore_client.dart';
 import '../../properties/domain/models/property.dart';
 import '../../properties/data/property_api_service.dart';
@@ -22,7 +24,7 @@ class FavoritesApiService extends ChangeNotifier {
   final Set<String> _favoriteIds = <String>{};
   final Map<String, Propriete> _cachedProperties = {};
   String? _currentUserId;
-  Timer? _syncTimer;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _snapshotSub;
 
   Set<String> get favoriteIds => _favoriteIds;
   String? get currentUserId => _currentUserId;
@@ -54,8 +56,8 @@ class FavoritesApiService extends ChangeNotifier {
 
   void setUserId(String? userId) {
     if (_currentUserId != userId) {
-      _syncTimer?.cancel();
-      _syncTimer = null;
+      _snapshotSub?.cancel();
+      _snapshotSub = null;
       _favoriteIds.clear();
       _cachedProperties.clear();
       _currentUserId = userId;
@@ -69,13 +71,33 @@ class FavoritesApiService extends ChangeNotifier {
   }
 
   void _startRealtimeSync() {
-    _syncTimer?.cancel();
-    if (_currentUserId == null || _currentUserId!.isEmpty) return;
-    _syncTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      if (_currentUserId != null && _currentUserId!.isNotEmpty) {
-        syncFavorites();
-      }
-    });
+    _snapshotSub?.cancel();
+    _snapshotSub = null;
+    final uid = _currentUserId;
+    if (uid == null || uid.isEmpty) return;
+
+    final fs = FirebaseSdk.instance.firestore;
+    if (fs == null) return;
+
+    _snapshotSub = fs.collection('users/$uid/favorites').snapshots().listen(
+      (snapshot) {
+        if (_currentUserId != uid) return;
+        final remoteIds = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return (data['propertyId'] ?? doc.id).toString();
+        }).toSet();
+        if (!setEquals(remoteIds, _favoriteIds)) {
+          _favoriteIds
+            ..clear()
+            ..addAll(remoteIds);
+          _saveToLocalPrefs();
+          notifyListeners();
+        }
+      },
+      onError: (Object err) {
+        debugPrint('[FavoritesApiService] Snapshot listener error: $err');
+      },
+    );
   }
 
   Future<void> _loadFromLocalPrefs() async {
@@ -98,18 +120,19 @@ class FavoritesApiService extends ChangeNotifier {
   }
 
   Future<void> clear() async {
-    _syncTimer?.cancel();
-    _syncTimer = null;
     final oldKey = _getStorageKey('ids');
+    final sub = _snapshotSub;
+    _snapshotSub = null;
     _favoriteIds.clear();
     _cachedProperties.clear();
     _currentUserId = null;
+    notifyListeners();
+    await sub?.cancel();
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(oldKey);
       await prefs.remove('darlink_favorite_ids');
     } catch (_) {}
-    notifyListeners();
   }
 
   /// Récupérer les favoris depuis Cloud Firestore (users/{userId}/favorites)
@@ -193,7 +216,8 @@ class FavoritesApiService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _syncTimer?.cancel();
+    _snapshotSub?.cancel();
+    _snapshotSub = null;
     super.dispose();
   }
 }

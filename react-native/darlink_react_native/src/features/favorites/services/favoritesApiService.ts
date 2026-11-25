@@ -6,7 +6,9 @@
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { firestoreEngine } from '../../../core/firebase/firestoreEngine';
+import { getFirebaseDb } from '../../../core/firebase/firebaseSdk';
 import { Property } from '../../properties/domain/models/property';
 import { propertyApiService } from '../../properties/services/propertyApiService';
 
@@ -24,7 +26,7 @@ class FavoritesApiService {
   private listeners = new Set<() => void>();
   private isInitialized = false;
   private currentUserId: string | null = null;
-  private syncTimer: ReturnType<typeof setInterval> | null = null;
+  private unsubscribeSnapshot: (() => void) | null = null;
 
   private getStorageKey(suffix: string): string {
     const uidScope = this.currentUserId ? `user_${this.currentUserId}` : 'guest';
@@ -148,23 +150,47 @@ class FavoritesApiService {
   }
 
   /**
-   * Démarre la synchronisation réactive en tâche de fond (toutes les 6 secondes)
+   * Démarre le listener Firestore temps réel onSnapshot() sur users/{uid}/favorites
    */
   public startRealtimeSync(): void {
     this.stopRealtimeSync();
-    if (!this.currentUserId) return;
+    const uid = this.currentUserId;
+    if (!uid) return;
 
-    this.syncTimer = setInterval(() => {
-      if (this.currentUserId) {
-        this.syncWithBackend().catch(() => {});
-      }
-    }, 6000);
+    try {
+      const db = getFirebaseDb();
+      const favRef = collection(db, 'users', uid, 'favorites');
+      this.unsubscribeSnapshot = onSnapshot(
+        favRef,
+        async (snapshot) => {
+          if (this.currentUserId !== uid) return;
+          const remoteIds = new Set(
+            snapshot.docs.map((d) => String((d.data() as FirestoreFavoriteDoc).propertyId || d.id))
+          );
+          const isDifferent =
+            remoteIds.size !== this.favoriteIds.size ||
+            Array.from(remoteIds).some((id) => !this.favoriteIds.has(id));
+          if (isDifferent) {
+            this.favoriteIds = remoteIds;
+            const allProps = await propertyApiService.getProperties();
+            this.cachedFavorites = allProps.filter((p) => this.favoriteIds.has(String(p.id)));
+            await this.persistLocally();
+            this.notify();
+          }
+        },
+        (err) => {
+          console.warn('[DarLink Favorites] Erreur listener Firestore onSnapshot:', err.message);
+        }
+      );
+    } catch (err) {
+      console.warn('[DarLink Favorites] Snapshot listener init skipped:', err);
+    }
   }
 
   public stopRealtimeSync(): void {
-    if (this.syncTimer) {
-      clearInterval(this.syncTimer);
-      this.syncTimer = null;
+    if (this.unsubscribeSnapshot) {
+      this.unsubscribeSnapshot();
+      this.unsubscribeSnapshot = null;
     }
   }
 

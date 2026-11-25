@@ -7,7 +7,7 @@
 // Polyfill Node CLI pour AsyncStorage environnement Web
 if (typeof window === 'undefined') {
   const memStore: Record<string, string> = {};
-  (global as unknown as { window: unknown }).window = {
+  (globalThis as unknown as { window: unknown }).window = {
     localStorage: {
       getItem: (k: string) => memStore[k] ?? null,
       setItem: (k: string, v: string) => { memStore[k] = String(v); },

@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_locale.dart';
+import 'core/firebase/firebase_sdk.dart';
 import 'core/firebase/firestore_client.dart';
 import 'features/auth/data/auth_service.dart';
 import 'features/navigation/presentation/screens/main_navigation_screen.dart';
@@ -12,6 +13,7 @@ import 'features/navigation/presentation/screens/main_navigation_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppLocale.instance.init();
+  await FirebaseSdk.instance.ensureInitialized();
   await FirestoreClient.instance.init();
   await AuthService.instance.init();
   runApp(const ServicesImmobilierApp());

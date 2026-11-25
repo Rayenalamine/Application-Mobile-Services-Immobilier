@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/firebase/firebase_config.dart';
+import '../../../core/firebase/firebase_sdk.dart';
 import '../../../core/firebase/firestore_client.dart';
 import '../../favorites/data/favorites_api_service.dart';
 import '../domain/models/auth_state.dart';
@@ -259,6 +260,14 @@ class AuthService {
 
       AuthState.instance.setSession(user: clientUser, token: token, refreshToken: refresh);
       await _persistSession(clientUser, token, refresh);
+      if (FirebaseSdk.instance.auth != null) {
+        try {
+          await FirebaseSdk.instance.auth!.signInWithEmailAndPassword(
+            email: cleanEmail,
+            password: password,
+          );
+        } catch (_) {}
+      }
       FavoritesApiService.instance.setUserId(uid);
       await FavoritesApiService.instance.syncFavorites();
       return null;
