@@ -4,7 +4,10 @@
 // lecture, filtres, statut lu/non-lu, suppression, création.
 // ============================================================
 
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '../../../core/firebase/firebase_sdk.dart';
 import '../../../core/firebase/firestore_client.dart';
 import '../../auth/domain/models/auth_state.dart';
 import '../../properties/domain/models/relationships.dart';
@@ -17,6 +20,42 @@ class NotificationService extends ChangeNotifier {
 
   int _unreadCount = 0;
   int get unreadCount => _unreadCount;
+  List<AppNotificationModel> _notifications = [];
+  List<AppNotificationModel> get notifications => _notifications;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _notifSub;
+
+  void startRealtimeListener(String uid) {
+    _notifSub?.cancel();
+    _notifSub = null;
+    final fs = FirebaseSdk.instance.firestore;
+    if (fs == null || uid.isEmpty) return;
+    _notifSub = fs
+        .collection('notifications')
+        .where('recipientUid', isEqualTo: uid)
+        .limit(50)
+        .snapshots()
+        .listen((snapshot) {
+      final list = snapshot.docs.map((d) {
+        final data = Map<String, dynamic>.from(d.data());
+        data['id'] ??= d.id;
+        return AppNotificationModel.fromJson(data);
+      }).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _notifications = list;
+      _unreadCount = list.where((n) => !n.read).length;
+      notifyListeners();
+    }, onError: (Object e) {
+      debugPrint('[NotificationService] Snapshot error: $e');
+    });
+  }
+
+  Future<void> stopRealtimeListener() async {
+    await _notifSub?.cancel();
+    _notifSub = null;
+    _notifications = [];
+    _unreadCount = 0;
+    notifyListeners();
+  }
 
   /// Charge les notifications de l'utilisateur connecté depuis Cloud Firestore.
   Future<List<AppNotificationModel>> getNotifications() async {

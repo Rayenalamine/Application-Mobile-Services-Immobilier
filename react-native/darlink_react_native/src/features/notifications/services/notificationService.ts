@@ -4,7 +4,9 @@
 // lecture, état lu/non-lu, suppression, compteurs et création.
 // ============================================================
 
+import { collection, limit, onSnapshot, query, where } from 'firebase/firestore';
 import { firestoreEngine } from '../../../core/firebase/firestoreEngine';
+import { getFirebaseDb } from '../../../core/firebase/firebaseSdk';
 import { authService } from '../../auth/services/authService';
 import { AppNotification, NotificationType } from '../../properties/domain/models/relationships';
 
@@ -27,6 +29,44 @@ class NotificationService {
       NotificationService.instance = new NotificationService();
     }
     return NotificationService.instance;
+  }
+
+  public subscribeToMyNotifications(
+    onData: (list: AppNotification[]) => void,
+    onError?: (err: Error) => void
+  ): () => void {
+    const user = authService.getCurrentUser();
+    if (!user || !user.id) {
+      onData([]);
+      return () => {};
+    }
+    try {
+      const db = getFirebaseDb();
+      const q = query(
+        collection(db, 'notifications'),
+        where('recipientUid', '==', user.id),
+        limit(50)
+      );
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const list = snapshot.docs
+            .map((d) => ({ ...(d.data() as AppNotification), id: d.id }))
+            .sort((a, b) => {
+              const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return timeB - timeA;
+            });
+          onData(list);
+        },
+        (err) => {
+          if (onError) onError(err);
+        }
+      );
+    } catch (err) {
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
+    }
   }
 
   /**

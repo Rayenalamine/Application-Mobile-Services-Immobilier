@@ -27,14 +27,14 @@ import {
   Trash2,
   Clock,
 } from 'lucide-react-native';
-import { AppNotification, NotificationType } from '../../properties/domain/models/relationships';
-import { notificationService } from '../services/notificationService';
+import { AppNotification, NotificationType } from '../../../properties/domain/models/relationships';
+import { notificationService } from '../../services/notificationService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { EmptyStateView } from '../../../../core/components/EmptyStateView';
-import { Property } from '../../properties/domain/models/property';
-import { propertyApiService } from '../../properties/services/propertyApiService';
-import { PropertyDetailsScreen } from '../../properties/presentation/screens/PropertyDetailsScreen';
+import { Property } from '../../../properties/domain/models/property';
+import { propertyApiService } from '../../../properties/services/propertyApiService';
+import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
 
 interface NotificationScreenProps {
   onBack: () => void;
@@ -45,7 +45,7 @@ type FilterCategory = 'ALL' | 'CONTACT' | 'LISTING' | 'ACCOUNT';
 
 export const NotificationScreen: React.FC<NotificationScreenProps> = ({ onBack, onOpenProperty }) => {
   const { colors, isDark } = useTheme();
-  const { t, locale } = useTranslation();
+  const { t, language } = useTranslation();
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('ALL');
@@ -147,7 +147,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({ onBack, 
     if (!isoString) return '';
     try {
       const d = new Date(isoString);
-      return d.toLocaleDateString(locale === 'ar' ? 'ar-TN' : 'fr-FR', {
+      return d.toLocaleDateString(language === 'ar' ? 'ar-TN' : 'fr-FR', {
         day: '2-digit',
         month: 'short',
         hour: '2-digit',
@@ -225,7 +225,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({ onBack, 
                     ? isDark
                       ? '#FFFFFF'
                       : '#0F1015'
-                    : colors.cardBackground,
+                    : colors.surface,
                   borderColor: active ? 'transparent' : colors.border,
                 },
               ]}
@@ -280,7 +280,7 @@ export const NotificationScreen: React.FC<NotificationScreenProps> = ({ onBack, 
                 style={[
                   styles.notificationCard,
                   {
-                    backgroundColor: colors.cardBackground,
+                    backgroundColor: colors.surface,
                     borderColor: item.read ? colors.border : '#2563EB',
                     borderLeftWidth: item.read ? 1 : 4,
                   },
