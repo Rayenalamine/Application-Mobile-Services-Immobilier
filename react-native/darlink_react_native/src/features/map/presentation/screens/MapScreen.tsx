@@ -12,7 +12,8 @@ import {
   ScrollView,
   StyleSheet,
   Image,
-  Dimensions,
+  useWindowDimensions,
+  LayoutChangeEvent,
   PanResponder,
   PanResponderGestureState,
   ActivityIndicator,
@@ -20,8 +21,6 @@ import {
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property, formatPrice } from '../../../properties/domain/models/property';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface MapScreenProps {
   onBack: () => void;
@@ -70,18 +69,25 @@ const CITY_COORDS: Record<string, { lat: number; lng: number; zoom: number }> = 
 
 export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }) => {
   const { colors, isDark } = useTheme();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const [containerSize, setContainerSize] = useState({
+    width: windowWidth || 390,
+    height: windowHeight || 700,
+  });
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [selectedCity, setSelectedCity] = useState('Toutes');
   const [loading, setLoading] = useState(true);
 
-  // Coordonnées du centre de la carte
+  // Coordonnées du centre de la carte (Tunisie - Tunis par défaut)
   const [centerLat, setCenterLat] = useState(36.8065);
   const [centerLng, setCenterLng] = useState(10.1815);
   const [zoom, setZoom] = useState(12);
 
   const startCoordsRef = useRef({ lat: 36.8065, lng: 10.1815 });
+  const coordsRef = useRef({ lat: centerLat, lng: centerLng, zoom: zoom });
+  coordsRef.current = { lat: centerLat, lng: centerLng, zoom: zoom };
 
   const cities = ['Toutes', 'Tunis', 'La Marsa', 'Sousse', 'Hammamet', 'Djerba', 'Sfax'];
 
@@ -103,29 +109,39 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     };
   }, []);
 
-  // Gestionnaire de glisser tactile (PanResponder)
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setContainerSize({ width, height });
+    }
+  };
+
+  // Gestionnaire de glisser tactile (PanResponder) - Touches réactives et pas de capture des taps
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState: PanResponderGestureState) => {
+        return Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3;
+      },
       onPanResponderGrant: () => {
-        startCoordsRef.current = { lat: centerLat, lng: centerLng };
+        startCoordsRef.current = { lat: coordsRef.current.lat, lng: coordsRef.current.lng };
       },
       onPanResponderMove: (_, gestureState: PanResponderGestureState) => {
-        const currentCenterX = lngToX(startCoordsRef.current.lng, zoom);
-        const currentCenterY = latToY(startCoordsRef.current.lat, zoom);
+        const curZoom = coordsRef.current.zoom;
+        const currentCenterX = lngToX(startCoordsRef.current.lng, curZoom);
+        const currentCenterY = latToY(startCoordsRef.current.lat, curZoom);
         const newCenterX = currentCenterX - gestureState.dx;
         const newCenterY = currentCenterY - gestureState.dy;
 
-        setCenterLng(xToLng(newCenterX, zoom));
-        setCenterLat(yToLat(newCenterY, zoom));
+        setCenterLng(xToLng(newCenterX, curZoom));
+        setCenterLat(yToLat(newCenterY, curZoom));
       },
     })
   ).current;
 
-  // Calcul des tuiles visibles
-  const viewW = SCREEN_WIDTH;
-  const viewH = SCREEN_HEIGHT;
+  // Calcul dynamique et réactif des tuiles visibles
+  const viewW = containerSize.width > 0 ? containerSize.width : (windowWidth || 390);
+  const viewH = containerSize.height > 0 ? containerSize.height : (windowHeight || 700);
   const centerX = lngToX(centerLng, zoom);
   const centerY = latToY(centerLat, zoom);
   const viewLeft = centerX - viewW / 2;
@@ -180,20 +196,27 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     setZoom(14);
   };
 
+  // Source de tuiles haute disponibilité CartoDB / OSM (non bloquée, rapide, thème adaptatif)
+  const getTileUri = (tile: { tx: number; ty: number }) => {
+    const subIdx = Math.abs(tile.tx + tile.ty) % 4;
+    const subdomain = ['a', 'b', 'c', 'd'][subIdx];
+    return isDark
+      ? `https://${subdomain}.basemaps.cartocdn.com/dark_all/${zoom}/${tile.tx}/${tile.ty}.png`
+      : `https://${subdomain}.basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tile.tx}/${tile.ty}.png`;
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#1E2028' : '#E5E9F0' }]}>
+    <View
+      style={[styles.container, { backgroundColor: isDark ? '#1E2028' : '#E5E9F0' }]}
+      onLayout={handleLayout}
+    >
       {/* 1. MOTEUR CARTOGRAPHIQUE SLIPPY MAP */}
       <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers}>
-        {/* A. TUILES OPENSTREETMAP */}
+        {/* A. TUILES OPENSTREETMAP / CARTODB COMPATIBLES EXPO GO & WEB */}
         {visibleTiles.map((tile) => (
           <Image
             key={tile.key}
-            source={{
-              uri: `https://tile.openstreetmap.org/${zoom}/${tile.tx}/${tile.ty}.png`,
-              headers: {
-                'User-Agent': 'DarLink-App/1.0 (academic-project; contact: rayen@darlink.tn)',
-              },
-            }}
+            source={{ uri: getTileUri(tile) }}
             style={[
               styles.tile,
               {
@@ -201,6 +224,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
                 top: tile.y,
               },
             ]}
+            fadeDuration={0}
+            resizeMode="cover"
           />
         ))}
 
@@ -233,6 +258,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
                 {
                   left: px - 40,
                   top: py - 35,
+                  zIndex: isSelected ? 999 : 10,
                   transform: [{ scale: isSelected ? 1.15 : 1.0 }],
                 },
               ]}
@@ -434,6 +460,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     overflow: 'hidden',
   },
   tile: {

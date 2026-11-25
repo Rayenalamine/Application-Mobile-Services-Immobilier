@@ -44,9 +44,7 @@ export const FavoritesScreen: React.FC = () => {
   useEffect(() => {
     loadFavorites();
     const unsubscribe = favoritesApiService.addListener(() => {
-      favoritesApiService.getFavorites().then((list) => {
-        setFavorites(list);
-      });
+      setFavorites([...favoritesApiService.getCachedFavorites()]);
     });
     return unsubscribe;
   }, [loadFavorites]);
