@@ -7,10 +7,12 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { mockProperties } from '../../data/mockProperties';
@@ -23,6 +25,7 @@ import { propertyApiService } from '../../services/propertyApiService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { authService } from '../../../auth/services/authService';
+import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
 
 const FILTER_PILLS = [
   'Tous',
@@ -41,6 +44,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   const [currentView, setCurrentView] = useState<'home' | 'map' | 'add'>('home');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [properties, setProperties] = useState<Property[]>([...mockProperties]);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const { isDark, toggleTheme, colors } = useTheme();
@@ -66,6 +70,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   }, []);
 
   useEffect(() => {
+    favoritesApiService.init();
+    const unsubFav = favoritesApiService.addListener(() => {
+      // Forcer la mise à jour des cartes lors d'un ajout/suppression de favori
+      setProperties((prev) => [...prev]);
+    });
+    return unsubFav;
+  }, []);
+
+  useEffect(() => {
     let isMounted = true;
     (async () => {
       const list = await propertyApiService.getProperties();
@@ -78,8 +91,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     };
   }, []);
 
-  // Filtrage selon le filtre actif
+  // Filtrage selon le filtre actif et la recherche textuelle
   const filteredProperties = properties.filter((p) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchTitle = (p.titre || '').toLowerCase().includes(q);
+      const matchLoc = (p.localisation || '').toLowerCase().includes(q);
+      const matchType = (p.type || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchLoc && !matchType) return false;
+    }
     if (activeFilter === 'Tous' || activeFilter === 'Prix' || activeFilter === 'Chambres') {
       return true;
     }
@@ -232,10 +252,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
         </View>
 
         {/* 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE */}
-        <TouchableOpacity
+        <View
           testID="home_search_bar"
-          onPress={onNavigateToSearch}
-          activeOpacity={0.85}
           style={[
             styles.searchBar,
             {
@@ -245,19 +263,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             },
           ]}
         >
-          <Text style={styles.searchIcon}>🔍</Text>
-          <Text style={[styles.searchPlaceholder, { color: colors.textTertiary }]}>
-            {t('search_placeholder')}
-          </Text>
           <View
             style={[
-              styles.tuneButton,
+              styles.searchIconContainer,
               { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
             ]}
           >
-            <Text style={styles.tuneIcon}>⚙️</Text>
+            <Text style={styles.searchIcon}>🔍</Text>
           </View>
-        </TouchableOpacity>
+          <TextInput
+            testID="home_search_input"
+            style={[
+              styles.searchInput,
+              { color: colors.textPrimary },
+              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
+            ]}
+            placeholder={t('search_placeholder')}
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            onSubmitEditing={onNavigateToSearch}
+          />
+          {searchQuery.length > 0 ? (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={styles.clearSearchBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Effacer la recherche"
+            >
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: 'bold' }}>✕</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={onNavigateToSearch}
+              style={[
+                styles.tuneButton,
+                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Filtres avancés"
+            >
+              <Text style={styles.tuneIcon}>⚙️</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* 3. RANGÉE DE JETONS DE FILTRES HORIZONTAUX */}
         <ScrollView
@@ -406,21 +456,36 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderWidth: 1,
     marginBottom: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 2,
+    overflow: 'hidden',
+  },
+  searchIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
   },
   searchIcon: {
     fontSize: 16,
-    marginRight: 10,
   },
-  searchPlaceholder: {
+  searchInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
+    paddingVertical: 0,
+    backgroundColor: 'transparent',
+  },
+  clearSearchBtn: {
+    padding: 6,
+    marginRight: 4,
   },
   tuneButton: {
     width: 34,
@@ -428,6 +493,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   tuneIcon: {
     fontSize: 14,

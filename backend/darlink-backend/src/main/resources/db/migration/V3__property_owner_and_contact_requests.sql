@@ -5,6 +5,14 @@
 -- 1. Ajout de la colonne owner_id sur la table properties
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS owner_id BIGINT REFERENCES users(id) ON DELETE SET NULL;
 
+-- Assurer qu'un utilisateur administrateur/agent initial (id = 1) existe
+INSERT INTO users (id, full_name, email, password_hash, phone, role)
+VALUES (1, 'Rayen Lamine', 'rayen@darlink.tn', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKT21C5W', '+216 71 888 999', 'ADMIN')
+ON CONFLICT (id) DO NOTHING;
+
+-- Mettre à jour la séquence des users pour éviter les collisions futures
+SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 1) FROM users));
+
 -- Mise à jour des biens existants pour les rattacher à l'utilisateur administrateur/agent initial (id = 1)
 UPDATE properties SET owner_id = 1 WHERE owner_id IS NULL;
 

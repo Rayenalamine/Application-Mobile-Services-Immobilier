@@ -84,26 +84,45 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     setLoading(true);
     setAuthError(null);
 
+    const cleanEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!cleanEmail) {
+      setAuthError('Veuillez saisir votre adresse email.');
+      setLoading(false);
+      return;
+    }
+    if (!emailRegex.test(cleanEmail)) {
+      setAuthError('Format d\'adresse email invalide (ex: exemple@darlink.tn).');
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setAuthError('Veuillez saisir votre mot de passe.');
+      setLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      setAuthError('Le mot de passe doit contenir au moins 6 caractères.');
+      setLoading(false);
+      return;
+    }
+
     let ok = false;
     if (isRegisterMode) {
-      if (!fullName.trim() || !email.trim() || !password) {
-        setAuthError('Veuillez remplir tous les champs obligatoires.');
+      if (!fullName.trim()) {
+        setAuthError('Veuillez renseigner votre nom complet.');
         setLoading(false);
         return;
       }
-      ok = await authService.register(fullName, email, password, phone);
+      ok = await authService.register(fullName, cleanEmail, password, phone);
     } else {
-      if (!email.trim() || !password) {
-        setAuthError('Veuillez renseigner votre email et mot de passe.');
-        setLoading(false);
-        return;
-      }
-      ok = await authService.login(email, password);
+      ok = await authService.login(cleanEmail, password);
     }
 
     setLoading(false);
     if (!ok) {
-      setAuthError(authService.lastError || 'Erreur d\'authentification.');
+      setAuthError(authService.lastError || 'Échec de l\'authentification.');
     }
   };
 

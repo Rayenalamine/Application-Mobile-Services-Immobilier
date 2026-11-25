@@ -13,6 +13,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
@@ -151,10 +152,21 @@ export const SearchScreen: React.FC = () => {
             },
           ]}
         >
-          <Text style={styles.searchBoxIcon}>🔍</Text>
+          <View
+            style={[
+              styles.searchIconContainer,
+              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+            ]}
+          >
+            <Text style={styles.searchBoxIcon}>🔍</Text>
+          </View>
           <TextInput
             testID="search_input"
-            style={[styles.searchInput, { color: colors.textPrimary }]}
+            style={[
+              styles.searchInput,
+              { color: colors.textPrimary },
+              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
+            ]}
             placeholder="Rechercher par titre, quartier, mot-clé..."
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
@@ -171,6 +183,8 @@ export const SearchScreen: React.FC = () => {
                 fetchFilteredProperties();
               }}
               style={styles.clearBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Effacer la recherche"
             >
               <Text style={{ color: colors.textSecondary, fontSize: 14 }}>✕</Text>
             </TouchableOpacity>
@@ -506,20 +520,30 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 50,
-    borderRadius: 16,
+    height: 52,
+    borderRadius: 26,
     borderWidth: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  searchIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
   },
   searchBoxIcon: {
-    fontSize: 18,
-    marginRight: 10,
+    fontSize: 16,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
     paddingVertical: 0,
+    backgroundColor: 'transparent',
   },
   clearBtn: {
     padding: 6,

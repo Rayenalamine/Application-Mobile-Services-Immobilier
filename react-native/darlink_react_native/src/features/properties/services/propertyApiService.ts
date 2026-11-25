@@ -215,6 +215,23 @@ class PropertyApiService {
       }
       return prop;
     } catch {
+      const index = this.cachedProperties.findIndex((p) => p.id === id);
+      if (index !== -1) {
+        const current = this.cachedProperties[index];
+        const updated: Property = {
+          ...current,
+          titre: payload.title || current.titre,
+          prix: payload.price ?? current.prix,
+          description: payload.description || current.description,
+          localisation: payload.location || current.localisation,
+          type: (payload.type as PropertyType) || current.type,
+          imageUrl: payload.imageUrl || current.imageUrl,
+          nombreChambres: payload.bedrooms ?? current.nombreChambres,
+          nombreSallesDeBain: payload.bathrooms ?? current.nombreSallesDeBain,
+        };
+        this.cachedProperties[index] = updated;
+        return updated;
+      }
       return null;
     }
   }
