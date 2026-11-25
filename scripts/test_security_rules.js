@@ -1,443 +1,207 @@
 // ============================================================
-// DARLINK — SUITE COMPLÈTE DE TESTS DE SÉCURITÉ FIRESTORE
-// Valide les scénarios de sécurité, relations et contrôle d'accès
-// Compatible Émulateur Firestore Local & Cloud Firestore Réel
+// DARLINK — FIRESTORE SECURITY RULES EMULATOR TEST SUITE
+// Tests all 12+ required positive and negative scenarios against
+// Firebase Emulator Suite (FIRESTORE_EMULATOR_HOST).
 // ============================================================
 
-const dns = require('dns');
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
-const fs = require('fs');
-const path = require('path');
+const http = require('http');
 
-function resolveConfig() {
-  const envPaths = [
-    path.resolve(__dirname, '../.env'),
-    path.resolve(__dirname, '../react-native/darlink_react_native/.env'),
-    path.resolve(process.cwd(), '.env'),
-  ];
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'darlink-74715';
+const EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8088';
+const BASE_URL = `http://${EMULATOR_HOST}/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
-  const envVars = {};
-  for (const envPath of envPaths) {
-    if (fs.existsSync(envPath)) {
-      const lines = fs.readFileSync(envPath, 'utf8').split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith('#')) {
-          const eqIdx = trimmed.indexOf('=');
-          if (eqIdx > 0) {
-            const k = trimmed.substring(0, eqIdx).trim();
-            const v = trimmed.substring(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
-            if (!envVars[k]) envVars[k] = v;
-          }
-        }
-      }
-    }
-  }
+let passed = 0;
+let failed = 0;
 
-  const apiKey =
-    process.env.FIREBASE_API_KEY ||
-    process.env.EXPO_PUBLIC_FIREBASE_API_KEY ||
-    envVars.FIREBASE_API_KEY ||
-    envVars.EXPO_PUBLIC_FIREBASE_API_KEY;
-
-  const projectId =
-    process.env.FIREBASE_PROJECT_ID ||
-    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
-    envVars.FIREBASE_PROJECT_ID ||
-    envVars.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
-    'darlink-74715';
-
-  return { apiKey, projectId };
-}
-
-const { apiKey: API_KEY, projectId: PROJECT_ID } = resolveConfig();
-
-const isEmulator = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
-const BASE_FIRESTORE = isEmulator
-  ? `http://${process.env.FIRESTORE_EMULATOR_HOST}/v1/projects/${PROJECT_ID}/databases/(default)/documents`
-  : `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const BASE_AUTH = `https://identitytoolkit.googleapis.com/v1`;
-
-let totalTests = 0;
-let passedTests = 0;
-let failedTests = 0;
-
-function reportTest(num, title, passed, detail) {
-  totalTests++;
-  if (passed) {
-    passedTests++;
-    console.log(`  ✅ [PASS] ${num}. ${title}`);
-    if (detail) console.log(`     └─ ${detail}`);
-  } else {
-    failedTests++;
-    console.error(`  ❌ [FAIL] ${num}. ${title}`);
-    if (detail) console.error(`     └─ ERREUR : ${detail}`);
-  }
-}
-
-function createEmulatorToken(uid, customClaims = {}) {
+function makeEmulatorJwt(uid, claims = {}) {
   const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
-  const payload = Buffer.from(JSON.stringify({
-    sub: uid,
-    user_id: uid,
-    aud: PROJECT_ID,
-    iss: `https://securetoken.google.com/${PROJECT_ID}`,
-    ...customClaims,
-  })).toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({
+      sub: uid,
+      user_id: uid,
+      aud: PROJECT_ID,
+      iss: `https://securetoken.google.com/${PROJECT_ID}`,
+      email: `${uid}@darlink.tn`,
+      ...claims,
+    })
+  ).toString('base64url');
   return `${header}.${payload}.`;
 }
 
-async function runSecurityAudit() {
-  console.log('============================================================');
-  console.log('   DARLINK — AUDIT ET TESTS DE SÉCURITÉ FIRESTORE          ');
-  console.log(`   Cible : ${isEmulator ? 'Émulateur Local (' + process.env.FIRESTORE_EMULATOR_HOST + ')' : 'Cloud Firestore Direct (' + PROJECT_ID + ')'}`);
-  console.log('============================================================\n');
-
-  const ts = Date.now();
-  const userAEmail = `sec.userA.${ts}@darlink.tn`;
-  const userBEmail = `sec.userB.${ts}@darlink.tn`;
-  const password = 'SecurityAudit2026!';
-
-  let userA, userB, adminUser;
-
-  if (isEmulator) {
-    userA = {
-      localId: `uid_sec_A_${ts}`,
-      idToken: createEmulatorToken(`uid_sec_A_${ts}`, { role: 'USER', email: userAEmail }),
-    };
-    userB = {
-      localId: `uid_sec_B_${ts}`,
-      idToken: createEmulatorToken(`uid_sec_B_${ts}`, { role: 'USER', email: userBEmail }),
-    };
-    adminUser = {
-      localId: `uid_admin_${ts}`,
-      idToken: createEmulatorToken(`uid_admin_${ts}`, { role: 'ADMIN', admin: true, email: 'admin@darlink.tn' }),
-    };
-  } else {
-    const regA = await fetch(`${BASE_AUTH}/accounts:signUp?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userAEmail, password, returnSecureToken: true }),
-    });
-    userA = await regA.json();
-
-    const regB = await fetch(`${BASE_AUTH}/accounts:signUp?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: userBEmail, password, returnSecureToken: true }),
-    });
-    userB = await regB.json();
-
-    adminUser = userA;
-  }
-
-  // Pre-create User A profile document so isolation check evaluates against existing record
-  await fetch(`${BASE_FIRESTORE}/users/${userA.localId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-    body: JSON.stringify({
-      fields: {
-        fullName: { stringValue: 'User A Profile' },
-        email: { stringValue: userAEmail },
-        role: { stringValue: 'USER' },
+function fsRequest(method, docPath, bodyObj = null, token = null) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(`${BASE_URL}${docPath}`);
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const body = bodyObj ? JSON.stringify(bodyObj) : null;
+    const req = http.request(
+      {
+        hostname: u.hostname,
+        port: u.port,
+        path: u.pathname + u.search,
+        method,
+        headers,
       },
-    }),
+      (res) => {
+        let data = '';
+        res.on('data', (d) => (data += d));
+        res.on('end', () => resolve({ status: res.statusCode, body: data }));
+      }
+    );
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
   });
+}
 
-  // 1. Unauthenticated cannot read /users
-  try {
-    const res = await fetch(`${BASE_FIRESTORE}/users/${userA.localId}`);
-    reportTest(1, 'Unauthenticated user cannot read private /users profile', res.status === 403, `HTTP ${res.status}`);
-  } catch (err) {
-    reportTest(1, 'Unauthenticated read /users', false, err.message);
+function toFsFields(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'boolean') fields[k] = { booleanValue: v };
+    else if (typeof v === 'number') fields[k] = Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+    else if (typeof v === 'string') fields[k] = { stringValue: v };
   }
+  return { fields };
+}
 
-  // 1b. User B cannot read User A /users profile (strict PII isolation)
-  try {
-    const res = await fetch(`${BASE_FIRESTORE}/users/${userA.localId}`, {
-      headers: { 'Authorization': `Bearer ${userB.idToken}` },
-    });
-    reportTest('1b', 'User B cannot read User A private profile', res.status === 403, `HTTP ${res.status}`);
-  } catch (err) {
-    reportTest('1b', 'Cross-user /users read isolation', false, err.message);
-  }
-
-  // 2. User A cannot read User B's favorites
-  try {
-    const res = await fetch(`${BASE_FIRESTORE}/users/${userB.localId}/favorites`, {
-      headers: { 'Authorization': `Bearer ${userA.idToken}` },
-    });
-    reportTest(2, "User A cannot read User B's favorites", res.status === 403, `HTTP ${res.status}`);
-  } catch (err) {
-    reportTest(2, 'Favorites isolation', false, err.message);
-  }
-
-  // 3. User A cannot modify User B's profile
-  try {
-    const res = await fetch(`${BASE_FIRESTORE}/users/${userB.localId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({ fields: { fullName: { stringValue: 'Attacked Profile' } } }),
-    });
-    reportTest(3, "User A cannot modify User B's profile", res.status === 403, `HTTP ${res.status}`);
-  } catch (err) {
-    reportTest(3, 'Cross-user profile write protection', false, err.message);
-  }
-
-  // 4. User A cannot grant themselves ADMIN privileges
-  try {
-    await fetch(`${BASE_FIRESTORE}/users/${userA.localId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({
-        fields: { fullName: { stringValue: 'User A' }, role: { stringValue: 'USER' }, admin: { booleanValue: false } },
-      }),
-    });
-
-    const escalateRes = await fetch(`${BASE_FIRESTORE}/users/${userA.localId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({ fields: { role: { stringValue: 'ADMIN' }, admin: { booleanValue: true } } }),
-    });
-    reportTest(4, 'User A cannot self-assign ADMIN role', escalateRes.status === 403, `HTTP ${escalateRes.status}`);
-  } catch (err) {
-    reportTest(4, 'Anti-privilege escalation', false, err.message);
-  }
-
-  // 5. Property ownership spoofing, unauthorized modify, ownerId immutability, DRAFT privacy
-  const testPropId = `prop_sec_${ts}`;
-  const draftPropId = `prop_draft_${ts}`;
-  try {
-    const spoofCreateRes = await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({ fields: { title: { stringValue: 'Spoofed' }, ownerId: { stringValue: userB.localId } } }),
-    });
-    reportTest(5, 'Creation rejected if ownerId does not match creator UID', spoofCreateRes.status === 403, `HTTP ${spoofCreateRes.status}`);
-
-    // Create PUBLISHED property owned by User A
-    await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({
-        fields: {
-          title: { stringValue: 'Villa Propriétaire A' },
-          ownerId: { stringValue: userA.localId },
-          listingStatus: { stringValue: 'PUBLISHED' },
-          price: { doubleValue: 450000 },
-        },
-      }),
-    });
-
-    // Create DRAFT property owned by User A & check unauth read is blocked
-    await fetch(`${BASE_FIRESTORE}/properties/${draftPropId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({
-        fields: {
-          title: { stringValue: 'Draft Hidden' },
-          ownerId: { stringValue: userA.localId },
-          listingStatus: { stringValue: 'DRAFT' },
-          price: { doubleValue: 300000 },
-        },
-      }),
-    });
-    const draftPublicRead = await fetch(`${BASE_FIRESTORE}/properties/${draftPropId}`);
-    reportTest('5a', 'Non-published DRAFT listing cannot be read publicly', draftPublicRead.status === 403, `HTTP ${draftPublicRead.status}`);
-
-    const modifyByBRes = await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userB.idToken}` },
-      body: JSON.stringify({ fields: { title: { stringValue: 'Modified by B' } } }),
-    });
-    reportTest('5b', "User B cannot modify User A's property", modifyByBRes.status === 403, `HTTP ${modifyByBRes.status}`);
-
-    const transferRes = await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({ fields: { title: { stringValue: 'Villa A' }, ownerId: { stringValue: userB.localId } } }),
-    });
-    reportTest('5c', 'Property ownership cannot be transferred on update', transferRes.status === 403, `HTTP ${transferRes.status}`);
-  } catch (err) {
-    reportTest(5, 'Property integrity rules', false, err.message);
-  }
-
-  // 6. Unauthorized delete blocked
-  try {
-    const deleteByBRes = await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${userB.idToken}` },
-    });
-    reportTest(6, "User B cannot delete User A's property", deleteByBRes.status === 403, `HTTP ${deleteByBRes.status}`);
-  } catch (err) {
-    reportTest(6, 'Property delete protection', false, err.message);
-  }
-
-  // 7. Invalid contact requests rejected (bad email, forged status, nonexistent propertyId)
-  try {
-    const badEmailRes = await fetch(`${BASE_FIRESTORE}/contact_requests/cr_bad_email_${ts}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fields: {
-          propertyId: { stringValue: testPropId },
-          message: { stringValue: 'Message test' },
-          senderEmail: { stringValue: 'bad-email-no-at' },
-        },
-      }),
-    });
-
-    const badStatusRes = await fetch(`${BASE_FIRESTORE}/contact_requests/cr_bad_status_${ts}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fields: {
-          propertyId: { stringValue: testPropId },
-          message: { stringValue: 'Message test' },
-          senderEmail: { stringValue: 'valid@darlink.tn' },
-          status: { stringValue: 'APPROVED' },
-        },
-      }),
-    });
-
-    const badPropRes = await fetch(`${BASE_FIRESTORE}/contact_requests/cr_bad_prop_${ts}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fields: {
-          propertyId: { stringValue: `nonexistent_prop_${ts}` },
-          message: { stringValue: 'Message test' },
-          senderEmail: { stringValue: 'valid@darlink.tn' },
-          status: { stringValue: 'PENDING' },
-        },
-      }),
-    });
-
-    reportTest(
-      7,
-      'Invalid contact requests rejected (bad email, forged status, missing property ref)',
-      badEmailRes.status === 403 && badStatusRes.status === 403 && badPropRes.status === 403,
-      `badEmail=${badEmailRes.status}, badStatus=${badStatusRes.status}, missingProp=${badPropRes.status}`
-    );
-  } catch (err) {
-    reportTest(7, 'Contact request validation', false, err.message);
-  }
-
-  // 8. Legitimate operations & Agency anti-self-verification
-  try {
-    const favRes = await fetch(`${BASE_FIRESTORE}/users/${userA.localId}/favorites/${testPropId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({
-        fields: { propertyId: { stringValue: testPropId }, createdAt: { stringValue: new Date().toISOString() } },
-      }),
-    });
-
-    const validContactRes = await fetch(`${BASE_FIRESTORE}/contact_requests/cr_valid_${ts}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({
-        fields: {
-          propertyId: { stringValue: testPropId },
-          message: { stringValue: 'Bonjour, je souhaite visiter ce bien.' },
-          senderEmail: { stringValue: 'client@darlink.tn' },
-          senderId: { stringValue: userA.localId },
-          status: { stringValue: 'PENDING' },
-        },
-      }),
-    });
-
-    const fakeVerifiedAgencyRes = await fetch(`${BASE_FIRESTORE}/agencies/ag_fake_${ts}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userA.idToken}` },
-      body: JSON.stringify({
-        fields: {
-          name: { stringValue: 'Fake Verified Agency' },
-          ownerUid: { stringValue: userA.localId },
-          verified: { booleanValue: true },
-        },
-      }),
-    });
-
-    reportTest(
-      8,
-      'Legitimate favorite & contact request pass; agency self-verification blocked',
-      favRes.ok && validContactRes.ok && fakeVerifiedAgencyRes.status === 403,
-      `fav=${favRes.status}, contact=${validContactRes.status}, agencySelfVerify=${fakeVerifiedAgencyRes.status}`
-    );
-  } catch (err) {
-    reportTest(8, 'Legitimate ops & agency rules', false, err.message);
-  }
-
-  // 9. Public PUBLISHED query succeeds without auth
-  try {
-    const pubRes = await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`);
-    reportTest(9, 'Public PUBLISHED listing readable without auth', pubRes.status === 200, `HTTP ${pubRes.status}`);
-  } catch (err) {
-    reportTest(9, 'Public property read', false, err.message);
-  }
-
-  // 10. Cleanup & Admin custom claims
-  try {
-    const normalUserDeleteRes = await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${userB.idToken}` },
-    });
-
-    const adminDeleteRes = isEmulator
-      ? await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${adminUser.idToken}` },
-        })
-      : await fetch(`${BASE_FIRESTORE}/properties/${testPropId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${userA.idToken}` },
-        });
-
-    await fetch(`${BASE_FIRESTORE}/properties/${draftPropId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${userA.idToken}` },
-    });
-
-    if (!isEmulator) {
-      await fetch(`${BASE_FIRESTORE}/users/${userA.localId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${userA.idToken}` },
-      });
-      await fetch(`${BASE_AUTH}/accounts:delete?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: userA.idToken }),
-      });
-      await fetch(`${BASE_AUTH}/accounts:delete?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: userB.idToken }),
-      });
-    }
-
-    reportTest(
-      10,
-      'Admin/Owner deletion enforced & test accounts cleaned up',
-      normalUserDeleteRes.status === 403 && adminDeleteRes.ok,
-      `unauthDelete=${normalUserDeleteRes.status}, authDelete=${adminDeleteRes.status}`
-    );
-  } catch (err) {
-    reportTest(10, 'Custom claims & cleanup', false, err.message);
-  }
-
-  console.log('\n============================================================');
-  console.log(`   BILAN DE SÉCURITÉ : ${passedTests}/${totalTests} tests réussis (${failedTests} échec)`);
-  console.log('============================================================\n');
-
-  if (failedTests > 0) {
-    throw new Error(`Security audit failed with ${failedTests} failures.`);
+function assertTest(name, ok, detail = '') {
+  if (ok) {
+    passed++;
+    console.log(`  ✅ [PASS] ${name}`);
+  } else {
+    failed++;
+    console.error(`  ❌ [FAIL] ${name} — ${detail}`);
   }
 }
 
-runSecurityAudit().catch((err) => {
-  console.error('\n❌ Échec critique audit de sécurité :', err);
+async function run() {
+  console.log('============================================================');
+  console.log(' DARLINK — FIRESTORE EMULATOR SECURITY TESTS');
+  console.log(` Target: ${EMULATOR_HOST} | Project: ${PROJECT_ID}`);
+  console.log('============================================================\n');
+
+  const uidA = 'user_alice_123';
+  const uidB = 'user_bob_456';
+  const uidAdmin = 'admin_root_001';
+  const tokenA = makeEmulatorJwt(uidA);
+  const tokenB = makeEmulatorJwt(uidB);
+  const tokenAdmin = makeEmulatorJwt(uidAdmin, { role: 'ADMIN', admin: true });
+
+  // 1. Anonymous property creation denied
+  const r1 = await fsRequest('PATCH', '/properties/prop_anon_1', toFsFields({
+    title: 'Anon Villa', ownerId: uidA, listingStatus: 'DRAFT', price: 100000, surfaceM2: 120, bedrooms: 3, bathrooms: 2,
+  }));
+  assertTest('1. Anonymous property creation denied', r1.status === 403, `status=${r1.status}`);
+
+  // 2. Authenticated user creating another owner's property denied
+  const r2 = await fsRequest('PATCH', '/properties/prop_spoof_1', toFsFields({
+    title: 'Spoofed Villa', ownerId: uidB, listingStatus: 'DRAFT', price: 100000, surfaceM2: 120, bedrooms: 3, bathrooms: 2,
+  }), tokenA);
+  assertTest('2. Creating property with another ownerId denied', r2.status === 403, `status=${r2.status}`);
+
+  // 3. User publishing their own listing directly denied
+  const r3 = await fsRequest('PATCH', '/properties/prop_direct_pub', toFsFields({
+    title: 'Direct Publish Attempt', ownerId: uidA, listingStatus: 'PUBLISHED', price: 100000, surfaceM2: 120, bedrooms: 3, bathrooms: 2,
+  }), tokenA);
+  assertTest('3. User publishing own listing directly denied', r3.status === 403, `status=${r3.status}`);
+
+  // 4. Valid user draft creation accepted
+  const r4 = await fsRequest('PATCH', '/properties/prop_valid_draft', toFsFields({
+    title: 'Valid Draft Tunis', ownerId: uidA, listingStatus: 'PENDING_REVIEW', price: 240000, surfaceM2: 110, bedrooms: 2, bathrooms: 1,
+  }), tokenA);
+  assertTest('4. Valid user PENDING_REVIEW property creation accepted', r4.status === 200, `status=${r4.status} ${r4.body}`);
+
+  // 5. Owner attempting to change verificationStatus or publish via update denied
+  const r5 = await fsRequest('PATCH', '/properties/prop_valid_draft?updateMask.fieldPaths=listingStatus', toFsFields({
+    listingStatus: 'PUBLISHED',
+  }), tokenA);
+  assertTest('5. Owner self-publishing via update denied', r5.status === 403, `status=${r5.status}`);
+
+  // 6. Admin approving/publishing listing accepted
+  const r6 = await fsRequest('PATCH', '/properties/prop_valid_draft?updateMask.fieldPaths=listingStatus', toFsFields({
+    listingStatus: 'PUBLISHED',
+  }), tokenAdmin);
+  assertTest('6. Admin publishing listing accepted', r6.status === 200, `status=${r6.status} ${r6.body}`);
+
+  // 7. User assigning themselves ADMIN denied
+  const r7 = await fsRequest('PATCH', `/users/${uidA}`, toFsFields({
+    fullName: 'Alice', role: 'ADMIN', admin: true,
+  }), tokenA);
+  assertTest('7. User self-assigning ADMIN denied', r7.status === 403, `status=${r7.status}`);
+
+  // Valid user profile creation
+  const r7b = await fsRequest('PATCH', `/users/${uidA}`, toFsFields({
+    fullName: 'Alice', role: 'USER',
+  }), tokenA);
+  assertTest('7b. Valid user profile creation accepted', r7b.status === 200, `status=${r7b.status}`);
+
+  // 8. User reading another user's private profile denied
+  const r8 = await fsRequest('GET', `/users/${uidA}`, null, tokenB);
+  assertTest('8. Reading another user private profile denied', r8.status === 403, `status=${r8.status}`);
+
+  // 9. User accessing another user's favorites denied (and valid favorite accepted)
+  const r9a = await fsRequest('PATCH', `/users/${uidB}/favorites/prop_valid_draft`, toFsFields({
+    propertyId: 'prop_valid_draft',
+  }), tokenB);
+  assertTest('9a. Valid user favorite creation accepted', r9a.status === 200, `status=${r9a.status}`);
+  const r9b = await fsRequest('GET', `/users/${uidB}/favorites/prop_valid_draft`, null, tokenA);
+  assertTest('9b. Reading another user favorites denied', r9b.status === 403, `status=${r9b.status}`);
+
+  // 10. Contact request: anonymous denied, invalid property denied, spoofed owner denied, valid accepted
+  const r10a = await fsRequest('PATCH', '/contact_requests/cr_anon', toFsFields({
+    propertyId: 'prop_valid_draft', propertyOwnerId: uidA, senderId: uidB, senderName: 'Anon', senderEmail: 'a@b.tn', message: 'Hello', status: 'PENDING', createdAt: '2026-11-25T10:00:00Z',
+  }));
+  assertTest('10a. Anonymous contact request denied', r10a.status === 403, `status=${r10a.status}`);
+
+  const r10b = await fsRequest('PATCH', '/contact_requests/cr_bad_prop', toFsFields({
+    propertyId: 'nonexistent_prop', propertyOwnerId: uidA, senderId: uidB, senderName: 'Bob', senderEmail: 'bob@darlink.tn', message: 'Hello there', status: 'PENDING', createdAt: '2026-11-25T10:00:00Z',
+  }), tokenB);
+  assertTest('10b. Contact request with invalid propertyId denied', r10b.status === 403, `status=${r10b.status}`);
+
+  const r10c = await fsRequest('PATCH', '/contact_requests/cr_spoof_owner', toFsFields({
+    propertyId: 'prop_valid_draft', propertyOwnerId: uidB, senderId: uidB, senderName: 'Bob', senderEmail: 'bob@darlink.tn', message: 'Hello there', status: 'PENDING', createdAt: '2026-11-25T10:00:00Z',
+  }), tokenB);
+  assertTest('10c. Contact request with spoofed propertyOwnerId denied', r10c.status === 403, `status=${r10c.status}`);
+
+  const r10d = await fsRequest('PATCH', '/contact_requests/cr_valid', toFsFields({
+    propertyId: 'prop_valid_draft', propertyOwnerId: uidA, senderId: uidB, senderName: 'Bob', senderEmail: 'bob@darlink.tn', message: 'Je souhaite visiter ce bien', status: 'PENDING', createdAt: '2026-11-25T10:00:00Z',
+  }), tokenB);
+  assertTest('10d. Valid authenticated contact request accepted', r10d.status === 200, `status=${r10d.status} ${r10d.body}`);
+
+  // 11. User creating a notification for another user denied
+  const r11a = await fsRequest('PATCH', '/notifications/notif_spoof', toFsFields({
+    recipientUid: uidA, senderUid: uidB, title: 'Fake', body: 'Spoofed', type: 'SYSTEM', read: false, createdAt: '2026-11-25T10:00:00Z',
+  }), tokenB);
+  assertTest('11a. Client creating notification for another user denied', r11a.status === 403, `status=${r11a.status}`);
+
+  const r11b = await fsRequest('PATCH', '/notifications/notif_admin', toFsFields({
+    recipientUid: uidA, title: 'Visit', body: 'New request', type: 'CONTACT_REQUEST', read: false, createdAt: '2026-11-25T10:00:00Z',
+  }), tokenAdmin);
+  assertTest('11b. Admin/server creating notification accepted', r11b.status === 200, `status=${r11b.status}`);
+
+  // 12. Agency: modifying another user's agency or setting verified=true denied
+  const r12a = await fsRequest('PATCH', '/agencies/ag_alice', toFsFields({
+    name: 'Alice Immo', ownerUid: uidA, verified: true,
+  }), tokenA);
+  assertTest('12a. Agency creation with verified=true denied', r12a.status === 403, `status=${r12a.status}`);
+
+  const r12b = await fsRequest('PATCH', '/agencies/ag_alice', toFsFields({
+    name: 'Alice Immo', ownerUid: uidA, verified: false,
+  }), tokenA);
+  assertTest('12b. Valid agency creation (verified=false) accepted', r12b.status === 200, `status=${r12b.status}`);
+
+  const r12c = await fsRequest('PATCH', '/agencies/ag_alice?updateMask.fieldPaths=name', toFsFields({
+    name: 'Hacked Agency',
+  }), tokenB);
+  assertTest('12c. Modifying another user agency denied', r12c.status === 403, `status=${r12c.status}`);
+
+  console.log(`\n============================================================`);
+  console.log(`EMULATOR SECURITY RESULT: ${passed}/${passed + failed} passed (${failed} failed)`);
+  console.log(`============================================================`);
+  process.exit(failed > 0 ? 1 : 0);
+}
+
+run().catch((err) => {
+  console.error('Fatal test runner error:', err);
   process.exit(1);
 });

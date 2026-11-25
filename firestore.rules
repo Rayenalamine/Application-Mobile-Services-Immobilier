@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for security and role enforcement
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -19,27 +18,24 @@ service cloud.firestore {
       );
     }
 
-    function validListingStatus(status) {
-      return status in [
-        'DRAFT',
-        'PENDING_REVIEW',
-        'PUBLISHED',
-        'REJECTED',
-        'EXPIRED',
-        'SOLD',
-        'RENTED',
-        'ARCHIVED'
-      ];
+    function validOwnerPropertyFields(data) {
+      return (!('title' in data) || (data.title is string && data.title.size() >= 3 && data.title.size() <= 160))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 4000))
+        && (!('price' in data) || (data.price is number && data.price >= 0 && data.price <= 100000000))
+        && (!('surfaceM2' in data) || (data.surfaceM2 is number && data.surfaceM2 > 0 && data.surfaceM2 <= 100000))
+        && (!('bedrooms' in data) || (data.bedrooms is int && data.bedrooms >= 0 && data.bedrooms <= 50))
+        && (!('bathrooms' in data) || (data.bathrooms is int && data.bathrooms >= 0 && data.bathrooms <= 50));
     }
 
     // ============================================================
-    // 1. PROPERTIES COLLECTION (Public Active Catalog & Ownership)
+    // 1. PROPERTIES COLLECTION (Strict Ownership & Trusted Moderation)
     // ============================================================
     match /properties/{propertyId} {
-      // Public visitors can only read PUBLISHED (or legacy active) listings.
-      // Owners, assigned agents, and ADMIN can read their own drafts/archived/sold listings.
+      // Public visitors can only read PUBLISHED listings (or legacy/institutional references marked PUBLISHED).
+      // Owners, assigned agents, and ADMIN can read their own drafts/pending/archived/sold listings.
       allow read: if (
-        (!('listingStatus' in resource.data) || resource.data.listingStatus == 'PUBLISHED')
+        resource.data.listingStatus == 'PUBLISHED' ||
+        resource.data.listingCategory == 'DEVELOPMENT_REFERENCE'
       ) || (
         isAuthenticated() && (
           isAdmin() ||
@@ -48,75 +44,95 @@ service cloud.firestore {
         )
       );
 
-      // Creation: Authenticated users only, bound to their own UID (unless ADMIN)
-      // Enforces non-negative price/surface and valid listing status
+      // Normal users may ONLY create DRAFT or PENDING_REVIEW listings bound to their own UID.
+      // They cannot directly publish, assign arbitrary agentId, or forge verification metadata.
       allow create: if isAuthenticated() && (
         isAdmin() || (
-          (!('ownerId' in request.resource.data) || request.resource.data.ownerId == request.auth.uid) &&
-          (!('listingStatus' in request.resource.data) || (
-            validListingStatus(request.resource.data.listingStatus) &&
-            request.resource.data.listingStatus != 'REJECTED'
-          )) &&
-          (!('price' in request.resource.data) || (request.resource.data.price is number && request.resource.data.price >= 0))
+          request.resource.data.keys().hasAll(['title', 'ownerId', 'listingStatus', 'price', 'surfaceM2', 'bedrooms', 'bathrooms']) &&
+          request.resource.data.ownerId is string &&
+          request.resource.data.ownerId == request.auth.uid &&
+          request.resource.data.listingStatus in ['DRAFT', 'PENDING_REVIEW'] &&
+          (!('agentId' in request.resource.data) || request.resource.data.agentId == '' || request.resource.data.agentId == request.auth.uid) &&
+          (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus in ['UNVERIFIED', 'PENDING_VERIFICATION']) &&
+          validOwnerPropertyFields(request.resource.data)
         )
       );
 
-      // Update: Only property owner, assigned agent, or ADMIN.
-      // ownerId is strictly immutable across updates.
+      // Owners may only edit safe listing fields (diff().affectedKeys() whitelist).
+      // Owners CANNOT set listingStatus to PUBLISHED or REJECTED, nor change ownerId/agentId/verification fields.
       allow update: if isAuthenticated() && (
         isAdmin() || (
-          (resource.data.ownerId == request.auth.uid || resource.data.agentId == request.auth.uid) &&
-          (!('ownerId' in request.resource.data) || request.resource.data.ownerId == resource.data.ownerId) &&
+          resource.data.ownerId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title', 'description', 'location', 'governorate', 'city', 'neighborhood',
+            'price', 'priceOnRequest', 'type', 'imageUrl', 'galleryUrls',
+            'imagePermissionStatus', 'imageAttribution', 'bedrooms', 'bathrooms',
+            'surfaceM2', 'yearBuilt', 'standing', 'isRental', 'amenities',
+            'latitude', 'longitude', 'coordinatePrecision', 'addressVisibility',
+            'listingStatus', 'updatedAt'
+          ]) &&
           (!('listingStatus' in request.resource.data) || (
-            validListingStatus(request.resource.data.listingStatus) &&
-            request.resource.data.listingStatus != 'REJECTED'
+            request.resource.data.listingStatus in ['DRAFT', 'PENDING_REVIEW', 'ARCHIVED'] ||
+            (resource.data.listingStatus == 'PUBLISHED' && request.resource.data.listingStatus in ['SOLD', 'RENTED'])
           )) &&
-          (!('price' in request.resource.data) || (request.resource.data.price is number && request.resource.data.price >= 0))
+          validOwnerPropertyFields(request.resource.data)
         )
       );
 
-      // Deletion: Only property owner, assigned agent, or ADMIN
       allow delete: if isAuthenticated() && (
-        isAdmin() ||
-        resource.data.ownerId == request.auth.uid ||
-        resource.data.agentId == request.auth.uid
+        isAdmin() || resource.data.ownerId == request.auth.uid
       );
     }
 
     // ============================================================
-    // 2. USERS & USER PROFILES (Strict Owner Privacy & Role Guard)
+    // 2. USERS & PUBLIC PROFILES (Strict PII Isolation & Role Guard)
     // ============================================================
     match /users/{userId} {
-      // Strict PII isolation: Only the account owner or ADMIN can read a user document
       allow read: if isOwner(userId) || isAdmin();
 
-      // Profile creation: Users can create their own profile, but CANNOT self-assign ADMIN
       allow create: if isOwner(userId) && (
-        (!('role' in request.resource.data) || (request.resource.data.role in ['USER', 'CLIENT', 'OWNER', 'AGENCY']) || isAdmin()) &&
-        (!('admin' in request.resource.data) || request.resource.data.admin != true || isAdmin())
+        isAdmin() || (
+          (!('role' in request.resource.data) || request.resource.data.role in ['USER', 'CLIENT', 'OWNER', 'AGENCY']) &&
+          (!('admin' in request.resource.data) || request.resource.data.admin != true)
+        )
       );
 
-      // Profile updates: Cannot elevate role to ADMIN or mutate admin flag
       allow update: if isOwner(userId) && (
-        (!('role' in request.resource.data) || (
-          (request.resource.data.role == resource.data.role || request.resource.data.role in ['USER', 'CLIENT', 'OWNER', 'AGENCY'])
-          && request.resource.data.role != 'ADMIN'
-        ) || isAdmin()) &&
-        (!('admin' in request.resource.data) || request.resource.data.admin == resource.data.admin || isAdmin())
+        isAdmin() || (
+          (!('role' in request.resource.data) || (
+            request.resource.data.role in ['USER', 'CLIENT', 'OWNER', 'AGENCY'] &&
+            request.resource.data.role != 'ADMIN'
+          )) &&
+          (!('admin' in request.resource.data) || request.resource.data.admin == resource.data.admin)
+        )
       );
 
       allow delete: if isOwner(userId) || isAdmin();
 
-      // ============================================================
-      // 3. USER FAVORITES SUBCOLLECTION (Strict Per-User Isolation)
-      // ============================================================
+      // Isolated per-user favorites referencing existing properties
       match /favorites/{propertyId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && exists(/databases/$(database)/documents/properties/$(propertyId));
+      }
+
+      // Per-user FCM device tokens
+      match /fcmTokens/{tokenId} {
         allow read, write: if isOwner(userId);
       }
     }
 
+    match /public_profiles/{userId} {
+      allow read: if true;
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'role', 'agencyName', 'city', 'photoUrl', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && (!('role' in request.resource.data) || request.resource.data.role in ['USER', 'CLIENT', 'OWNER', 'AGENCY']);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
     // ============================================================
-    // 4. AGENCIES COLLECTION (Verified Real-Estate Agencies)
+    // 3. AGENCIES COLLECTION (Verified Flag Protected)
     // ============================================================
     match /agencies/{agencyId} {
       allow read: if true;
@@ -131,8 +147,9 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
         isAdmin() || (
           resource.data.ownerUid == request.auth.uid &&
-          request.resource.data.ownerUid == resource.data.ownerUid &&
-          (!('verified' in request.resource.data) || request.resource.data.verified == resource.data.verified)
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name', 'description', 'city', 'governorate', 'phone', 'website', 'logoUrl', 'updatedAt'
+          ])
         )
       );
 
@@ -142,73 +159,100 @@ service cloud.firestore {
     }
 
     // ============================================================
-    // 5. CONTACT REQUESTS (Referential Integrity & Abuse Protection)
+    // 4. CONTACT REQUESTS (Authenticated, Verified Property & Owner)
     // ============================================================
     match /contact_requests/{requestId} {
-      allow create: if request.resource.data.keys().hasAll(['propertyId', 'message', 'senderEmail'])
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasAll(['propertyId', 'propertyOwnerId', 'senderId', 'senderName', 'senderEmail', 'message', 'status', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['id', 'propertyId', 'propertyTitle', 'propertyOwnerId', 'senderId', 'senderName', 'senderEmail', 'senderPhone', 'message', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.status == 'PENDING'
         && request.resource.data.propertyId is string
-        && exists(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
         && request.resource.data.message is string
-        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() >= 3
         && request.resource.data.message.size() <= 2000
         && request.resource.data.senderEmail is string
         && request.resource.data.senderEmail.matches('.+@.+\\..+')
-        && (!isAuthenticated() || !('senderId' in request.resource.data) || request.resource.data.senderId == request.auth.uid)
-        && (!('status' in request.resource.data) || request.resource.data.status == 'PENDING');
+        && exists(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
+        && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId)).data.listingStatus == 'PUBLISHED'
+        && request.resource.data.propertyOwnerId == get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId)).data.ownerId;
 
-      allow read, update: if isAuthenticated() && (
+      allow read: if isAuthenticated() && (
         isAdmin() ||
         resource.data.senderId == request.auth.uid ||
-        resource.data.propertyOwnerId == request.auth.uid ||
-        resource.data.ownerId == request.auth.uid
+        resource.data.propertyOwnerId == request.auth.uid
+      );
+
+      allow update: if isAuthenticated() && (
+        isAdmin() || (
+          resource.data.propertyOwnerId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) &&
+          request.resource.data.status in ['CONTACTED', 'ACCEPTED', 'REJECTED', 'ARCHIVED']
+        )
       );
 
       allow delete: if isAuthenticated() && (
         isAdmin() ||
         resource.data.propertyOwnerId == request.auth.uid ||
-        resource.data.ownerId == request.auth.uid
+        resource.data.senderId == request.auth.uid
       );
     }
 
     // ============================================================
-    // 6. PROPERTY IMAGES METADATA (Attribution & Permission Tracking)
+    // 5. PROPERTY IMAGES METADATA
     // ============================================================
     match /property_images/{imageId} {
       allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.uploaderUid == request.auth.uid;
+      allow create: if isAuthenticated()
+        && request.resource.data.uploaderUid == request.auth.uid
+        && request.resource.data.propertyId is string
+        && exists(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
+        && request.resource.data.sizeBytes is int
+        && request.resource.data.sizeBytes > 0
+        && request.resource.data.sizeBytes <= 5242880;
       allow update, delete: if isAuthenticated() && (
         isAdmin() || resource.data.uploaderUid == request.auth.uid
       );
     }
 
     // ============================================================
-    // 7. NOTIFICATIONS (Strict Recipient Access)
+    // 6. NOTIFICATIONS (Server/Admin Create Only; Recipient Read/Mark-Read)
     // ============================================================
     match /notifications/{notificationId} {
-      allow read, update, delete: if isAuthenticated() && (
+      allow read, delete: if isAuthenticated() && (
         isAdmin() || resource.data.recipientUid == request.auth.uid
       );
-      allow create: if isAuthenticated() && (
-        isAdmin() ||
-        request.resource.data.recipientUid == request.auth.uid ||
-        request.resource.data.senderUid == request.auth.uid
+
+      // Clients may NEVER create notifications for other users (trusted backend / admin only)
+      allow create: if isAdmin();
+
+      // Recipients may only mark their own notifications as read
+      allow update: if isAuthenticated() && (
+        isAdmin() || (
+          resource.data.recipientUid == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
+          request.resource.data.read is bool
+        )
       );
     }
 
     // ============================================================
-    // 8. MODERATION REPORTS
+    // 7. MODERATION REPORTS
     // ============================================================
     match /reports/{reportId} {
       allow create: if isAuthenticated()
         && request.resource.data.reporterUid == request.auth.uid
         && request.resource.data.propertyId is string
+        && exists(/databases/$(database)/documents/properties/$(request.resource.data.propertyId))
         && request.resource.data.reason is string
         && request.resource.data.reason.size() > 0
+        && request.resource.data.reason.size() <= 1000
         && (!('status' in request.resource.data) || request.resource.data.status == 'OPEN');
 
-      allow read, update, delete: if isAuthenticated() && (
+      allow read: if isAuthenticated() && (
         isAdmin() || resource.data.reporterUid == request.auth.uid
       );
+      allow update, delete: if isAdmin();
     }
   }
 }

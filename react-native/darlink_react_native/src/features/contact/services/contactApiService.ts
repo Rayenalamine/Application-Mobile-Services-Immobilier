@@ -52,6 +52,9 @@ class ContactApiService {
     }
 
     const user = authService.getCurrentUser();
+    if (!user) {
+      throw new Error('Connexion requise pour envoyer une demande de contact.');
+    }
     const docId = `cr_${Date.now()}`;
     const nowIso = new Date().toISOString();
 
@@ -60,7 +63,7 @@ class ContactApiService {
       propertyId: String(payload.propertyId),
       propertyTitle: payload.propertyTitle,
       propertyOwnerId: payload.propertyOwnerId,
-      senderId: user?.id || payload.senderId,
+      senderId: user.id,
       senderName: payload.senderName.trim(),
       senderEmail: cleanEmail,
       senderPhone: payload.senderPhone?.trim(),
@@ -72,6 +75,7 @@ class ContactApiService {
     const firestorePayload: Record<string, unknown> = {
       id: docId,
       propertyId: requestData.propertyId,
+      senderId: user.id,
       senderName: requestData.senderName,
       senderEmail: requestData.senderEmail,
       message: requestData.message,
@@ -80,27 +84,11 @@ class ContactApiService {
     };
     if (requestData.propertyTitle) firestorePayload.propertyTitle = requestData.propertyTitle;
     if (requestData.propertyOwnerId) firestorePayload.propertyOwnerId = requestData.propertyOwnerId;
-    if (requestData.senderId) firestorePayload.senderId = requestData.senderId;
     if (requestData.senderPhone) firestorePayload.senderPhone = requestData.senderPhone;
 
     const ok = await firestoreEngine.setDocument('contact_requests', docId, firestorePayload);
     if (!ok) {
       throw new Error('Demande refusée : vérifiez que le bien existe et que les champs sont valides.');
-    }
-
-    if (user && payload.propertyOwnerId) {
-      const notifId = `notif_${Date.now()}`;
-      await firestoreEngine.setDocument('notifications', notifId, {
-        id: notifId,
-        recipientUid: payload.propertyOwnerId,
-        senderUid: user.id,
-        title: 'Nouvelle demande de visite',
-        body: `${requestData.senderName} souhaite des informations sur ${payload.propertyTitle || 'votre bien'}.`,
-        type: 'CONTACT_REQUEST',
-        relatedEntityId: docId,
-        read: false,
-        createdAt: nowIso,
-      });
     }
 
     return requestData;

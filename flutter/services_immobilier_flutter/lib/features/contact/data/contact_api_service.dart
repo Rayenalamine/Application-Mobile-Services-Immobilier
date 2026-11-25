@@ -89,7 +89,10 @@ class ContactApiService {
     }
 
     final currentUser = AuthState.instance.currentUser;
-    final senderUid = currentUser?.effectiveUid;
+    if (currentUser == null) {
+      return null;
+    }
+    final senderUid = currentUser.effectiveUid;
     final docId = 'cr_${DateTime.now().millisecondsSinceEpoch}';
     final nowIso = DateTime.now().toIso8601String();
 
@@ -108,22 +111,7 @@ class ContactApiService {
     );
 
     final ok = await _firestore.setDocument('contact_requests', docId, request.toJson());
-    if (ok && currentUser != null && propertyOwnerId.isNotEmpty) {
-      final notifId = 'notif_${DateTime.now().millisecondsSinceEpoch}';
-      await _firestore.setDocument('notifications', notifId, {
-        'id': notifId,
-        'recipientUid': propertyOwnerId,
-        'senderUid': currentUser.effectiveUid,
-        'title': 'Nouvelle demande de visite',
-        'body': '${senderName.trim()} s’intéresse à ${propertyTitle.isNotEmpty ? propertyTitle : "votre bien"}.',
-        'type': 'CONTACT_REQUEST',
-        'relatedEntityId': docId,
-        'read': false,
-        'createdAt': nowIso,
-      });
-    }
-
-    return request;
+    return ok ? request : null;
   }
 
   Future<List<ContactRequestModel>> getReceivedRequests() async {
