@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — NAVIGATION FLOTTANTE PAR ONGLETS (React Native Screen 1 & 2)
-// Dock flottant translucide adaptatif Clair / Sombre type Glassmorphism
+// DARLINK — NAVIGATION FLOTTANTE PAR ONGLETS (React Native)
+// Design System cohérent avec icônes Lucide (zéro emoji).
 // ============================================================
 
 import React, { useState } from 'react';
@@ -14,6 +14,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { LayoutGrid, Search, Heart, User } from 'lucide-react-native';
 import { HomeScreen } from '../../../properties/presentation/screens/HomeScreen';
 import { SearchScreen } from './SearchScreen';
 import { FavoritesScreen } from './FavoritesScreen';
@@ -23,22 +24,37 @@ import { LocalizationProvider, useTranslation } from '../../../../core/localizat
 
 type TabKey = 'home' | 'search' | 'favorites' | 'profile';
 
-interface TabItem {
-  readonly key: TabKey;
-  readonly label: string;
-  readonly icon: string;
-}
-
 const MainNavigationContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const { isDark, colors } = useTheme();
   const { t } = useTranslation();
 
-  const tabs: readonly TabItem[] = [
-    { key: 'home', label: t('nav_home'), icon: '⊞' },
-    { key: 'search', label: t('nav_search'), icon: '🔍' },
-    { key: 'favorites', label: t('nav_favorites'), icon: '♡' },
-    { key: 'profile', label: t('nav_profile'), icon: '👤' },
+  const renderIcon = (key: TabKey, isActive: boolean) => {
+    const iconColor = isActive ? '#FFFFFF' : colors.textSecondary;
+    switch (key) {
+      case 'home':
+        return <LayoutGrid size={18} color={iconColor} strokeWidth={2} />;
+      case 'search':
+        return <Search size={18} color={iconColor} strokeWidth={2} />;
+      case 'favorites':
+        return (
+          <Heart
+            size={18}
+            color={iconColor}
+            fill={isActive ? '#FFFFFF' : 'transparent'}
+            strokeWidth={2}
+          />
+        );
+      case 'profile':
+        return <User size={18} color={iconColor} strokeWidth={2} />;
+    }
+  };
+
+  const tabs: readonly { key: TabKey; label: string }[] = [
+    { key: 'home', label: t('nav_home') },
+    { key: 'search', label: t('nav_search') },
+    { key: 'favorites', label: t('nav_favorites') },
+    { key: 'profile', label: t('nav_profile') },
   ];
 
   const renderActiveScreen = () => {
@@ -69,13 +85,12 @@ const MainNavigationContent: React.FC = () => {
       <ExpoStatusBar style={isDark ? 'light' : 'dark'} />
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
-      {/* Dock de navigation flottant centré type Glassmorphism adaptatif */}
       <View style={styles.dockWrapper}>
         <View
           style={[
             styles.floatingDock,
             {
-              backgroundColor: isDark ? 'rgba(22, 23, 32, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+              backgroundColor: isDark ? 'rgba(22, 23, 32, 0.94)' : 'rgba(255, 255, 255, 0.96)',
               borderColor: colors.border,
               shadowOpacity: isDark ? 0.45 : 0.08,
             },
@@ -96,32 +111,16 @@ const MainNavigationContent: React.FC = () => {
                 <View
                   style={[
                     styles.iconPill,
-                    isActive && {
-                      backgroundColor: colors.accentBlue,
-                    },
+                    isActive && { backgroundColor: colors.accentBlue },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.tabIcon,
-                      { color: colors.textSecondary },
-                      isActive && {
-                        color: '#FFFFFF',
-                        fontWeight: '800',
-                      },
-                    ]}
-                  >
-                    {isActive && tab.key === 'favorites' ? '❤️' : tab.icon}
-                  </Text>
+                  {renderIcon(tab.key, isActive)}
                 </View>
                 <Text
                   style={[
                     styles.tabLabel,
                     { color: colors.textTertiary },
-                    isActive && {
-                      color: colors.textPrimary,
-                      fontWeight: '700',
-                    },
+                    isActive && { color: colors.textPrimary, fontWeight: '700' },
                   ]}
                 >
                   {tab.label}
@@ -146,18 +145,9 @@ export const MainNavigationScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  screenContainer: {
-    flex: 1,
-  },
-  dockWrapper: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
-  },
+  safeArea: { flex: 1 },
+  screenContainer: { flex: 1 },
+  dockWrapper: { position: 'absolute', bottom: 16, left: 16, right: 16 },
   floatingDock: {
     height: 68,
     flexDirection: 'row',
@@ -170,11 +160,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
   },
-  tabButton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   iconPill: {
     width: 44,
     height: 28,
@@ -183,11 +169,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  tabIcon: {
-    fontSize: 16,
-  },
-  tabLabel: {
-    fontSize: 10,
-    marginTop: 2,
-  },
+  tabLabel: { fontSize: 10, marginTop: 2 },
 });

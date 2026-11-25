@@ -142,7 +142,7 @@ class AppLocale extends ChangeNotifier {
       'btn_refresh': 'Actualiser',
 
       // En-têtes & Bannières
-      'greeting': 'Bonjour ! 👋',
+      'greeting': 'Bonjour !',
       'welcome_banner_title': 'Bienvenue sur Services Immobilier',
       'welcome_banner_sub': 'Trouvez le bien immobilier de vos rêves en Tunisie.',
       'welcome_guest': 'Bienvenue !',
@@ -282,7 +282,7 @@ class AppLocale extends ChangeNotifier {
       'btn_refresh': 'تحديث',
 
       // En-têtes & Bannières
-      'greeting': 'مرحباً بك ! 👋',
+      'greeting': 'مرحباً بك !',
       'welcome_banner_title': 'مرحباً بكم في دار اللينك للعقارات',
       'welcome_banner_sub': 'اعثر على عقار أحلامك في تونس بأسهل الطرق.',
       'welcome_guest': 'أهلاً وسهلاً !',
@@ -422,7 +422,7 @@ class AppLocale extends ChangeNotifier {
       'btn_refresh': 'Refresh',
 
       // En-têtes & Bannières
-      'greeting': 'Hello ! 👋',
+      'greeting': 'Hello!',
       'welcome_banner_title': 'Welcome to Real Estate Services',
       'welcome_banner_sub': 'Find your dream property in Tunisia with ease.',
       'welcome_guest': 'Welcome !',

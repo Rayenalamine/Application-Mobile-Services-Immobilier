@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DES FAVORIS LUXE GLASSMORPHISM (React Native)
-// Synchronisation réelle avec Spring Boot & PostgreSQL (V8)
+// DARLINK — ÉCRAN DES FAVORIS (React Native)
+// Synchronisation Cloud Firestore, icônes Lucide, zéro emoji.
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -14,6 +14,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { RefreshCw, Heart, BookmarkCheck } from 'lucide-react-native';
+import { AppColors } from '../../../../core/constants/colors';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
@@ -74,21 +76,21 @@ export const FavoritesScreen: React.FC = () => {
           onPress={onRefresh}
           style={styles.refreshButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel={t('btn_refresh')}
         >
-          <Text style={{ fontSize: 18 }}>🔄</Text>
+          <RefreshCw size={18} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color={colors.accentBlue} />
         </View>
       ) : favorites.length === 0 ? (
         <ScrollView
           contentContainerStyle={styles.container}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Cercle d'icône avec lueur discrète */}
           <View
             style={[
               styles.iconCircle,
@@ -98,7 +100,7 @@ export const FavoritesScreen: React.FC = () => {
               },
             ]}
           >
-            <Text style={styles.heartIcon}>❤️</Text>
+            <Heart size={40} color={AppColors.accentRed} fill={AppColors.accentRed} />
           </View>
 
           <Text style={[styles.title, { color: colors.textPrimary }]}>
@@ -108,17 +110,13 @@ export const FavoritesScreen: React.FC = () => {
             {t('empty_favorites_hint')}
           </Text>
 
-          {/* Carte note de statut */}
           <View
             style={[
               styles.noticeCard,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              },
+              { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Text style={styles.noticeIcon}>🔖</Text>
+            <BookmarkCheck size={17} color={colors.accentBlue} />
             <Text style={[styles.noticeText, { color: colors.textSecondary }]}>
               {t('empty_favorites_sub')}
             </Text>
@@ -144,9 +142,7 @@ export const FavoritesScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
+  safeArea: { flex: 1 },
   header: {
     height: 56,
     flexDirection: 'row',
@@ -155,20 +151,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingHorizontal: 16,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  refreshButton: {
-    position: 'absolute',
-    right: 16,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  refreshButton: { position: 'absolute', right: 16 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -177,13 +162,8 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 116,
   },
-  listContainer: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 116,
-  },
+  listContainer: { flex: 1 },
+  listContent: { padding: 16, paddingBottom: 116 },
   iconCircle: {
     width: 96,
     height: 96,
@@ -193,9 +173,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1.5,
   },
-  heartIcon: {
-    fontSize: 42,
-  },
   title: {
     fontSize: 22,
     fontWeight: '800',
@@ -203,26 +180,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -0.3,
   },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
+  subtitle: { fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 32 },
   noticeCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
   },
-  noticeIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  noticeText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
+  noticeText: { fontSize: 12, fontWeight: '500' },
 });

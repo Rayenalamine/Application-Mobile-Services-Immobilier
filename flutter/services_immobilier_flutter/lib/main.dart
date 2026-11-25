@@ -1,21 +1,22 @@
 // ============================================================
-// DARLINK — POINT D'ENTRÉE PRINCIPAL DE L'APPLICATION (V2-T02 & V2-T04)
-// Configure MaterialApp avec NavigationBar Material 3 et thèmes dynamiques
+// DARLINK — POINT D'ENTRÉE PRINCIPAL DE L'APPLICATION (Flutter)
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_locale.dart';
+import 'core/firebase/firestore_client.dart';
+import 'features/auth/data/auth_service.dart';
 import 'features/navigation/presentation/screens/main_navigation_screen.dart';
 
-/// Point d'entrée standard de l'application Flutter DarLink.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppLocale.instance.init();
+  await FirestoreClient.instance.init();
+  await AuthService.instance.init();
   runApp(const ServicesImmobilierApp());
 }
 
-/// Widget racine configurant MaterialApp, le titre global, la localisation bilingue et le thème réactif Material 3.
 class ServicesImmobilierApp extends StatelessWidget {
   const ServicesImmobilierApp({super.key});
 

@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — CARTE DE BIEN IMMOBILIER LUXE GLASSMORPHISM (V2)
-// Design adaptatif Dark & Light (Blanc par défaut) avec dock flottant
+// DARLINK — CARTE DE BIEN IMMOBILIER LUXE GLASSMORPHISM (Flutter)
+// Design adaptatif Dark & Light, attribution source & repli sobre sans image inventée.
 // ============================================================
 
 import 'dart:ui' show ImageFilter;
@@ -11,7 +11,6 @@ import '../../../favorites/data/favorites_api_service.dart';
 import '../../domain/models/property.dart';
 import '../screens/property_details_screen.dart';
 
-/// Carte immobilière avec arrière-plan immersif et dock flottant translucide.
 class CartePropriete extends StatefulWidget {
   final Propriete propriete;
 
@@ -51,12 +50,14 @@ class _CarteProprieteState extends State<CartePropriete> {
 
   void _basculerFavori() {
     FavoritesApiService.instance.toggleFavorite(widget.propriete.id);
-    setState(() {
-      _isFavorite = !_isFavorite;
-    });
+    setState(() => _isFavorite = !_isFavorite);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isFavorite ? AppLocale.instance.tr('added_to_favorites') : AppLocale.instance.tr('removed_from_favorites')),
+        content: Text(
+          _isFavorite
+              ? AppLocale.instance.tr('added_to_favorites')
+              : AppLocale.instance.tr('removed_from_favorites'),
+        ),
         duration: const Duration(seconds: 1),
         backgroundColor: _isFavorite ? AppColors.accentBlue : AppColors.accentRed,
       ),
@@ -86,6 +87,10 @@ class _CarteProprieteState extends State<CartePropriete> {
     final topPillBg = isDark ? const Color(0x8A181920) : const Color(0xE6FFFFFF);
     final topPillBorder = isDark ? const Color(0x33FFFFFF) : const Color(0x18000000);
 
+    final priceDisplay = p.priceOnRequest || p.prix <= 0
+        ? 'Prix sur demande'
+        : AppLocale.instance.formatCurrency(p.prix, isRental: p.estLocation);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 22),
       decoration: BoxDecoration(
@@ -103,64 +108,29 @@ class _CarteProprieteState extends State<CartePropriete> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(25),
         child: SizedBox(
-          height: 390,
+          height: 380,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // ------------------------------------------------------------
-              // 1. IMAGE PRINCIPALE HAUTE DÉFINITION
-              // ------------------------------------------------------------
-              p.imageUrl.isNotEmpty
-                  ? Image.network(
-                      p.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
-                        child: Center(
-                          child: Icon(
-                            Icons.apartment_rounded,
-                            size: 64,
-                            color: textSec.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ),
-                    )
-                  : Container(
-                      color: isDark ? const Color(0xFF1E1F26) : const Color(0xFFF1F3F6),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.home_work_outlined,
-                              size: 56,
-                              color: textSec.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Aucune photo fournie',
-                              style: TextStyle(
-                                color: textSec.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+              if (p.imageUrl.isNotEmpty)
+                Image.network(
+                  p.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark, textSec, p),
+                )
+              else
+                _buildPlaceholder(isDark, textSec, p),
 
-              // Gradient supérieur pour lisibilité des badges
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 90,
+                height: 84,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.black.withValues(alpha: isDark ? 0.6 : 0.25),
+                        Colors.black.withValues(alpha: isDark ? 0.55 : 0.18),
                         Colors.transparent,
                       ],
                       begin: Alignment.topCenter,
@@ -170,9 +140,6 @@ class _CarteProprieteState extends State<CartePropriete> {
                 ),
               ),
 
-              // ------------------------------------------------------------
-              // 2. BADGES FLOTTANTS SUPÉRIEURS (STATUT & FAVORI)
-              // ------------------------------------------------------------
               Positioned(
                 top: 16,
                 left: 16,
@@ -196,23 +163,17 @@ class _CarteProprieteState extends State<CartePropriete> {
                             decoration: const BoxDecoration(
                               color: AppColors.accentGreen,
                               shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.accentGreen,
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
-                                ),
-                              ],
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            p.estLocation ? AppLocale.instance.tr('for_rent') : AppLocale.instance.tr('for_sale'),
+                            p.estLocation
+                                ? AppLocale.instance.tr('for_rent')
+                                : AppLocale.instance.tr('for_sale'),
                             style: TextStyle(
                               color: isDark ? Colors.white : const Color(0xFF111827),
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.2,
                             ),
                           ),
                         ],
@@ -222,7 +183,6 @@ class _CarteProprieteState extends State<CartePropriete> {
                 ),
               ),
 
-              // Bouton favori flottant en haut à droite
               Positioned(
                 top: 16,
                 right: 16,
@@ -242,7 +202,9 @@ class _CarteProprieteState extends State<CartePropriete> {
                         ),
                         child: Icon(
                           _isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: _isFavorite ? AppColors.accentRed : (isDark ? Colors.white : const Color(0xFF111827)),
+                          color: _isFavorite
+                              ? AppColors.accentRed
+                              : (isDark ? Colors.white : const Color(0xFF111827)),
                           size: 20,
                         ),
                       ),
@@ -251,9 +213,6 @@ class _CarteProprieteState extends State<CartePropriete> {
                 ),
               ),
 
-              // ------------------------------------------------------------
-              // 3. CONTENEUR GLASSMORPHISME INFÉRIEUR (PRIX, ADRESSE, SPECS)
-              // ------------------------------------------------------------
               Positioned(
                 bottom: 12,
                 left: 12,
@@ -268,19 +227,11 @@ class _CarteProprieteState extends State<CartePropriete> {
                         color: glassDockBg,
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(color: dockBorder, width: 1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Titre & Prix avec Bouton Flèche CTA
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -290,12 +241,12 @@ class _CarteProprieteState extends State<CartePropriete> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      AppLocale.instance.formatCurrency(p.prix, isRental: p.estLocation),
+                                      priceDisplay,
                                       style: TextStyle(
                                         color: textPrim,
-                                        fontSize: 22,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.w800,
-                                        letterSpacing: -0.5,
+                                        letterSpacing: -0.4,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -305,7 +256,7 @@ class _CarteProprieteState extends State<CartePropriete> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: isDark ? const Color(0xFFE0E0E6) : const Color(0xFF374151),
-                                        fontSize: 14,
+                                        fontSize: 13.5,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -313,17 +264,13 @@ class _CarteProprieteState extends State<CartePropriete> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-
-                              // Bouton d'action interactif stylisé (ElevatedButton pour validation test)
                               ElevatedButton(
                                 onPressed: () => _ouvrirDetails(context),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: isDark ? Colors.white : AppColors.accentBlue,
                                   foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
-                                  elevation: isDark ? 0 : 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                 ),
                                 child: Row(
@@ -331,10 +278,7 @@ class _CarteProprieteState extends State<CartePropriete> {
                                   children: [
                                     Text(
                                       AppLocale.instance.tr('btn_details'),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                      ),
+                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                                     ),
                                     const SizedBox(width: 4),
                                     const Icon(Icons.arrow_forward_rounded, size: 16),
@@ -343,55 +287,29 @@ class _CarteProprieteState extends State<CartePropriete> {
                               ),
                             ],
                           ),
-
                           const SizedBox(height: 8),
-
-                          // Localisation avec icône
                           Row(
                             children: [
-                              Icon(
-                                Icons.location_on_rounded,
-                                size: 15,
-                                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                              ),
+                              Icon(Icons.location_on_rounded, size: 15, color: textSec),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   p.localisation,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  style: TextStyle(color: textSec, fontSize: 13, fontWeight: FontWeight.w500),
                                 ),
                               ),
                             ],
                           ),
-
-                          const SizedBox(height: 12),
-
-                          // Ligne de caractéristiques (Chambres, Salles de bain, Surface)
+                          const SizedBox(height: 10),
                           Row(
                             children: [
-                              _PillCarac(
-                                icone: Icons.bed_outlined,
-                                valeur: '${p.nombreChambres} Bd',
-                                isDark: isDark,
-                              ),
+                              _PillCarac(icone: Icons.bed_outlined, valeur: '${p.nombreChambres} Ch', isDark: isDark),
                               const SizedBox(width: 8),
-                              _PillCarac(
-                                icone: Icons.bathtub_outlined,
-                                valeur: '${p.nombreSallesDeBain} Ba',
-                                isDark: isDark,
-                              ),
+                              _PillCarac(icone: Icons.bathtub_outlined, valeur: '${p.nombreSallesDeBain} Sdb', isDark: isDark),
                               const SizedBox(width: 8),
-                              _PillCarac(
-                                icone: Icons.crop_square_rounded,
-                                valeur: '${p.surfaceM2} m²',
-                                isDark: isDark,
-                              ),
+                              _PillCarac(icone: Icons.crop_square_rounded, valeur: '${p.surfaceM2} m²', isDark: isDark),
                             ],
                           ),
                         ],
@@ -402,6 +320,37 @@ class _CarteProprieteState extends State<CartePropriete> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(bool isDark, Color textSec, Propriete p) {
+    return Container(
+      color: isDark ? const Color(0xFF181B24) : const Color(0xFFEEF2F7),
+      padding: const EdgeInsets.only(bottom: 130, left: 24, right: 24),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.apartment_rounded,
+              size: 48,
+              color: AppColors.accentBlue.withValues(alpha: 0.75),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              p.sourceName != null && p.sourceName!.isNotEmpty
+                  ? 'Référence officielle • ${p.sourceName}'
+                  : AppLocale.instance.tr('no_photo'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: textSec,
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -434,11 +383,7 @@ class _PillCarac extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icone,
-            size: 14,
-            color: isDark ? const Color(0xFFCAC4D0) : const Color(0xFF4B5563),
-          ),
+          Icon(icone, size: 14, color: isDark ? const Color(0xFFCAC4D0) : const Color(0xFF4B5563)),
           const SizedBox(width: 4),
           Text(
             valeur,

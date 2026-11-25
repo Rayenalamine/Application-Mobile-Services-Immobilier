@@ -1,10 +1,13 @@
 // ============================================================
-// DARLINK — ÉCRAN DE DÉPÔT D'ANNONCE IMMOBILIÈRE (Flutter V7)
-// Formulaire de publication avec sélection de photos et validation
+// DARLINK — ÉCRAN DE DÉPÔT D'ANNONCE (Flutter)
+// 24 Gouvernorats, statut d'annonce, validation HTTPS photo (aucun stock preset fictif).
 // ============================================================
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/tunisia_locations.dart';
+import '../../../../core/firebase/storage_service.dart';
+import '../../../auth/domain/models/auth_state.dart';
 import '../../domain/models/property.dart';
 import '../../data/property_api_service.dart';
 
@@ -24,42 +27,28 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
   final _prixCtrl = TextEditingController();
   final _surfaceCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  final _adresseCtrl = TextEditingController();
+  final _quartierCtrl = TextEditingController();
   final _imageUrlCtrl = TextEditingController();
 
   String _typeSelectionne = 'Appartement';
-  String _villeSelectionnee = 'Tunis';
+  String _gouvernoratSelectionne = 'Tunis';
+  String _statutSelectionne = 'PUBLISHED';
   int _nbChambres = 3;
-  final int _nbSallesDeBain = 2;
+  int _nbSallesDeBain = 2;
   bool _isLocation = false;
   bool _isSubmitting = false;
-  String? _imageSelectionnee;
 
-  final List<String> _types = const ['Appartement', 'Villa', 'Maison'];
-  final List<String> _villes = const ['Tunis', 'Sousse', 'Hammamet', 'Djerba', 'Monastir', 'Sfax'];
+  final List<String> _types = const ['Appartement', 'Villa', 'Maison', 'Studio', 'Terrain', 'Commercial'];
   final List<String> _commoditesDisponibles = const [
-    'Piscine', 'Vue mer', 'Climatisation', 'Garage', 'Jardin', 'Ascenseur', 'Sécurité 24/7'
+    'Piscine',
+    'Vue mer',
+    'Climatisation',
+    'Garage',
+    'Jardin',
+    'Ascenseur',
+    'Sécurité 24/7',
   ];
-  final Set<String> _commoditesChoisies = {'Climatisation', 'Ascenseur'};
-
-  final List<({String label, String url})> _photosPredefinies = const [
-    (
-      label: 'Villa avec piscine',
-      url: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800',
-    ),
-    (
-      label: 'Appartement moderne',
-      url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
-    ),
-    (
-      label: 'Maison traditionnelle',
-      url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
-    ),
-    (
-      label: 'Résidence bord de mer',
-      url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
-    ),
-  ];
+  final Set<String> _commoditesChoisies = {'Climatisation'};
 
   @override
   void initState() {
@@ -67,14 +56,17 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
     if (widget.proprieteAEditer != null) {
       final p = widget.proprieteAEditer!;
       _titreCtrl.text = p.titre;
-      _prixCtrl.text = p.prix.toInt().toString();
+      _prixCtrl.text = p.prix > 0 ? p.prix.toInt().toString() : '';
       _surfaceCtrl.text = p.surfaceM2.toString();
       _descCtrl.text = p.description;
-      _adresseCtrl.text = p.localisation;
+      _quartierCtrl.text = p.neighborhood.isNotEmpty ? p.neighborhood : p.ville;
       _imageUrlCtrl.text = p.imageUrl;
-      _imageSelectionnee = p.imageUrl.isNotEmpty ? p.imageUrl : null;
       if (_types.contains(p.type)) _typeSelectionne = p.type;
+      if (tunisiaGovernorates.any((g) => g.nameFr == p.governorate)) {
+        _gouvernoratSelectionne = p.governorate;
+      }
       _nbChambres = p.nombreChambres;
+      _nbSallesDeBain = p.nombreSallesDeBain;
       _isLocation = p.estLocation;
       _commoditesChoisies.addAll(p.commodites);
     }
@@ -86,25 +78,36 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
     _prixCtrl.dispose();
     _surfaceCtrl.dispose();
     _descCtrl.dispose();
-    _adresseCtrl.dispose();
+    _quartierCtrl.dispose();
     _imageUrlCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _soumettreAnnonce() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!AuthState.instance.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez vous connecter dans votre Profil avant de publier.')),
+      );
+      return;
+    }
+
+    final photo = _imageUrlCtrl.text.trim();
+    if (photo.isNotEmpty && !StorageService.isValidImageUrl(photo)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('URL image invalide : utilisez un lien HTTPS sécurisé.')),
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
-    final prix = double.tryParse(_prixCtrl.text.replaceAll(' ', '')) ?? 300000;
-    final surface = double.tryParse(_surfaceCtrl.text) ?? 120;
-    final localisation = _adresseCtrl.text.isNotEmpty
-        ? '${_adresseCtrl.text}, $_villeSelectionnee'
-        : 'Centre-ville, $_villeSelectionnee';
-    final photoFinale = _imageSelectionnee?.trim() ?? _imageUrlCtrl.text.trim();
+    final prix = double.tryParse(_prixCtrl.text.replaceAll(' ', '')) ?? 0;
+    final surface = double.tryParse(_surfaceCtrl.text.replaceAll(' ', '')) ?? 0;
+    final quartier = _quartierCtrl.text.trim().isNotEmpty ? _quartierCtrl.text.trim() : _gouvernoratSelectionne;
+    final localisation = '$quartier, $_gouvernoratSelectionne';
 
     Propriete? resultProp;
-
     if (widget.proprieteAEditer != null) {
       resultProp = await PropertyApiService.instance.updateProperty(
         widget.proprieteAEditer!.id,
@@ -112,14 +115,17 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
           'title': _titreCtrl.text.trim(),
           'description': _descCtrl.text.trim(),
           'location': localisation,
-          'city': _villeSelectionnee,
+          'governorate': _gouvernoratSelectionne,
+          'city': quartier,
+          'neighborhood': quartier,
           'price': prix,
           'type': _typeSelectionne,
-          'imageUrl': photoFinale,
+          'imageUrl': photo,
           'bedrooms': _nbChambres,
           'bathrooms': _nbSallesDeBain,
           'surfaceM2': surface,
           'isRental': _isLocation,
+          'listingStatus': _statutSelectionne,
           'amenities': _commoditesChoisies.toList(),
         },
       );
@@ -128,26 +134,26 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
         title: _titreCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         location: localisation,
-        city: _villeSelectionnee,
+        governorate: _gouvernoratSelectionne,
+        city: quartier,
+        neighborhood: quartier,
         price: prix,
         type: _typeSelectionne,
-        imageUrl: photoFinale,
+        imageUrl: photo,
         bedrooms: _nbChambres,
         bathrooms: _nbSallesDeBain,
         surfaceM2: surface,
         isRental: _isLocation,
+        listingStatus: _statutSelectionne,
         amenities: _commoditesChoisies.toList(),
       );
     }
 
     setState(() => _isSubmitting = false);
-
     if (mounted && resultProp != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.proprieteAEditer != null
-              ? 'Annonce modifiée avec succès !'
-              : 'Annonce "${resultProp.titre}" publiée avec succès !'),
+          content: Text('Annonce "${resultProp.titre}" enregistrée dans Cloud Firestore !'),
           backgroundColor: AppColors.accentGreen,
         ),
       );
@@ -187,177 +193,56 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // SECTION PHOTO SÉLECTIONNÉE PAR L'UTILISATEUR
-                _buildLabel('Photo de l\'annonce (Sélection manuelle)', textPrim),
-                if (_imageSelectionnee != null && _imageSelectionnee!.isNotEmpty) ...[
-                  Container(
-                    height: 190,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      image: DecorationImage(
-                        image: NetworkImage(_imageSelectionnee!),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: LinearGradient(
-                          colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      alignment: Alignment.bottomRight,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.delete_outline, size: 16),
-                        label: const Text('Retirer la photo'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.withValues(alpha: 0.85),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _imageSelectionnee = null;
-                            _imageUrlCtrl.clear();
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  Container(
-                    height: 120,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: borderColor, style: BorderStyle.solid),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_photo_alternate_outlined, size: 36, color: textSec),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Aucune photo sélectionnée (Annonce sans photo)',
-                            style: TextStyle(color: textSec, fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 10),
-
-                // Sélecteur de photos prédéfinies ou saisie URL
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _photosPredefinies.map((preset) {
-                    final isSel = _imageSelectionnee == preset.url;
-                    return ActionChip(
-                      label: Text(preset.label),
-                      backgroundColor: isSel ? AppColors.accentBlue : cardBg,
-                      labelStyle: TextStyle(
-                        color: isSel ? Colors.white : textPrim,
-                        fontSize: 12,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                      ),
-                      side: BorderSide(color: isSel ? AppColors.accentBlue : borderColor),
-                      onPressed: () {
-                        setState(() {
-                          _imageSelectionnee = preset.url;
-                          _imageUrlCtrl.text = preset.url;
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-
-                const SizedBox(height: 8),
-
+                _buildLabel('URL Photo réelle du bien (HTTPS, optionnel)', textPrim),
                 TextFormField(
                   controller: _imageUrlCtrl,
                   style: TextStyle(color: textPrim, fontSize: 13),
-                  decoration: _inputDeco('Ou collez l\'URL directe d\'une image...', cardBg, borderColor, textSec),
-                  onChanged: (val) {
-                    setState(() {
-                      _imageSelectionnee = val.trim().isNotEmpty ? val.trim() : null;
-                    });
-                  },
+                  decoration: _inputDeco('https://firebasestorage.googleapis.com/...', cardBg, borderColor, textSec),
                 ),
 
-                const SizedBox(height: 20),
-
-                // Type d'opération (Vente / Location)
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _isLocation = false),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: !_isLocation ? (isDark ? Colors.white : const Color(0xFF0F1015)) : cardBg,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: !_isLocation ? Colors.transparent : borderColor),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'À Vendre',
-                            style: TextStyle(
-                              color: !_isLocation ? (isDark ? const Color(0xFF0F1015) : Colors.white) : textSec,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
+                      child: ChoiceChip(
+                        label: const Text('À Vendre'),
+                        selected: !_isLocation,
+                        onSelected: (_) => setState(() => _isLocation = false),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _isLocation = true),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _isLocation ? (isDark ? Colors.white : const Color(0xFF0F1015)) : cardBg,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: _isLocation ? Colors.transparent : borderColor),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'À Louer',
-                            style: TextStyle(
-                              color: _isLocation ? (isDark ? const Color(0xFF0F1015) : Colors.white) : textSec,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
+                      child: ChoiceChip(
+                        label: const Text('À Louer'),
+                        selected: _isLocation,
+                        onSelected: (_) => setState(() => _isLocation = true),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButton<String>(
+                        value: _statutSelectionne,
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: 'PUBLISHED', child: Text('Publié')),
+                          DropdownMenuItem(value: 'DRAFT', child: Text('Brouillon')),
+                        ],
+                        onChanged: (v) => setState(() => _statutSelectionne = v!),
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 20),
-
-                // Titre
+                const SizedBox(height: 16),
                 _buildLabel('Titre de l\'annonce *', textPrim),
                 TextFormField(
                   controller: _titreCtrl,
                   style: TextStyle(color: textPrim),
-                  decoration: _inputDeco('ex: Magnifique villa moderne avec jardin', cardBg, borderColor, textSec),
+                  decoration: _inputDeco('ex: Appartement S+3 lumineux', cardBg, borderColor, textSec),
                   validator: (val) => val == null || val.trim().isEmpty ? 'Veuillez saisir un titre' : null,
                 ),
 
                 const SizedBox(height: 16),
-
-                // Type de bien & Ville
                 Row(
                   children: [
                     Expanded(
@@ -365,23 +250,10 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildLabel('Type de bien', textPrim),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            decoration: BoxDecoration(
-                              color: cardBg,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _typeSelectionne,
-                                isExpanded: true,
-                                dropdownColor: cardBg,
-                                style: TextStyle(color: textPrim, fontWeight: FontWeight.w600),
-                                items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                                onChanged: (val) => setState(() => _typeSelectionne = val!),
-                              ),
-                            ),
+                          DropdownButtonFormField<String>(
+                            initialValue: _typeSelectionne,
+                            items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                            onChanged: (val) => setState(() => _typeSelectionne = val!),
                           ),
                         ],
                       ),
@@ -391,24 +263,13 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildLabel('Ville', textPrim),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            decoration: BoxDecoration(
-                              color: cardBg,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _villeSelectionnee,
-                                isExpanded: true,
-                                dropdownColor: cardBg,
-                                style: TextStyle(color: textPrim, fontWeight: FontWeight.w600),
-                                items: _villes.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-                                onChanged: (val) => setState(() => _villeSelectionnee = val!),
-                              ),
-                            ),
+                          _buildLabel('Gouvernorat', textPrim),
+                          DropdownButtonFormField<String>(
+                            initialValue: _gouvernoratSelectionne,
+                            items: tunisiaGovernorates
+                                .map((g) => DropdownMenuItem(value: g.nameFr, child: Text(g.nameFr)))
+                                .toList(),
+                            onChanged: (val) => setState(() => _gouvernoratSelectionne = val!),
                           ),
                         ],
                       ),
@@ -416,9 +277,15 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
+                _buildLabel('Délégation / Quartier', textPrim),
+                TextFormField(
+                  controller: _quartierCtrl,
+                  style: TextStyle(color: textPrim),
+                  decoration: _inputDeco('ex: Ennasr 2, Sahloul, Houmt Souk', cardBg, borderColor, textSec),
+                ),
 
-                // Prix & Surface
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
@@ -430,7 +297,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                             controller: _prixCtrl,
                             keyboardType: TextInputType.number,
                             style: TextStyle(color: textPrim),
-                            decoration: _inputDeco('ex: 450000', cardBg, borderColor, textSec),
+                            decoration: _inputDeco('ex: 250000', cardBg, borderColor, textSec),
                             validator: (val) => val == null || val.trim().isEmpty ? 'Prix requis' : null,
                           ),
                         ],
@@ -446,7 +313,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                             controller: _surfaceCtrl,
                             keyboardType: TextInputType.number,
                             style: TextStyle(color: textPrim),
-                            decoration: _inputDeco('ex: 180', cardBg, borderColor, textSec),
+                            decoration: _inputDeco('ex: 135', cardBg, borderColor, textSec),
                             validator: (val) => val == null || val.trim().isEmpty ? 'Surface requise' : null,
                           ),
                         ],
@@ -456,30 +323,20 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                 ),
 
                 const SizedBox(height: 16),
-
-                // Nombre de pièces
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Chambres : $_nbChambres', style: TextStyle(color: textPrim, fontWeight: FontWeight.w700)),
                     Row(
                       children: [
-                        IconButton(
-                          onPressed: () => setState(() { if (_nbChambres > 1) _nbChambres--; }),
-                          icon: Icon(Icons.remove_circle_outline, color: textSec),
-                        ),
-                        IconButton(
-                          onPressed: () => setState(() => _nbChambres++),
-                          icon: const Icon(Icons.add_circle_outline, color: AppColors.accentBlue),
-                        ),
+                        IconButton(onPressed: () => setState(() => _nbChambres = _nbChambres > 0 ? _nbChambres - 1 : 0), icon: const Icon(Icons.remove_circle_outline)),
+                        IconButton(onPressed: () => setState(() => _nbChambres++), icon: const Icon(Icons.add_circle_outline, color: AppColors.accentBlue)),
                       ],
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 16),
-
-                // Commodités
+                const SizedBox(height: 12),
                 _buildLabel('Atouts & Commodités', textPrim),
                 Wrap(
                   spacing: 8,
@@ -489,52 +346,39 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                     return FilterChip(
                       label: Text(item),
                       selected: isSel,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _commoditesChoisies.add(item);
-                          } else {
-                            _commoditesChoisies.remove(item);
-                          }
-                        });
-                      },
-                      selectedColor: isDark ? Colors.white : const Color(0xFF0F1015),
-                      labelStyle: TextStyle(
-                        color: isSel ? (isDark ? const Color(0xFF0F1015) : Colors.white) : textSec,
-                        fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                      backgroundColor: cardBg,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      onSelected: (s) => setState(() {
+                        if (s) {
+                          _commoditesChoisies.add(item);
+                        } else {
+                          _commoditesChoisies.remove(item);
+                        }
+                      }),
                     );
                   }).toList(),
                 ),
 
-                const SizedBox(height: 20),
-
-                // Description
+                const SizedBox(height: 16),
                 _buildLabel('Description du bien', textPrim),
                 TextFormField(
                   controller: _descCtrl,
                   maxLines: 3,
                   style: TextStyle(color: textPrim),
-                  decoration: _inputDeco('Description de votre annonce (facultatif)...', cardBg, borderColor, textSec),
+                  decoration: _inputDeco('Description détaillée...', cardBg, borderColor, textSec),
                 ),
 
-                const SizedBox(height: 30),
-
-                // Bouton Publier
+                const SizedBox(height: 28),
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _soumettreAnnonce,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? Colors.white : const Color(0xFF0F1015),
+                      backgroundColor: isDark ? Colors.white : AppColors.accentBlue,
                       foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     ),
                     child: _isSubmitting
-                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const CircularProgressIndicator()
                         : Text(
                             widget.proprieteAEditer != null ? 'Enregistrer les modifications' : 'Publier l\'annonce sur DarLink',
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
@@ -549,24 +393,17 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
     );
   }
 
-  Widget _buildLabel(String text, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w700)),
-    );
-  }
+  Widget _buildLabel(String text, Color color) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(text, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w700)),
+      );
 
-  InputDecoration _inputDeco(String hint, Color bg, Color border, Color hintColor) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: hintColor, fontSize: 13),
-      filled: true,
-      fillColor: bg,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: border)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: border)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.accentBlue, width: 1.5)),
-    );
-  }
+  InputDecoration _inputDeco(String hint, Color bg, Color border, Color hintColor) => InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: hintColor, fontSize: 13),
+        filled: true,
+        fillColor: bg,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: border)),
+      );
 }
-

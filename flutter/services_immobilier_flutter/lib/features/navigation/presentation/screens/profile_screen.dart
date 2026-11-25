@@ -1,7 +1,5 @@
 // ============================================================
-// DARLINK — ÉCRAN DE PROFIL ET GESTION DE COMPTE (Flutter V4)
-// Authentification JWT réelle, modification profil, mot de passe,
-// visites programmées, annonces publiées et thèmes
+// DARLINK — ÉCRAN COMPTE, PROFIL, DEMANDES, NOTIFICATIONS & PARAMÈTRES (Flutter)
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -10,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_locale.dart';
 import '../../../auth/data/auth_service.dart';
 import '../../../auth/domain/models/auth_state.dart';
+import '../../../contact/data/contact_api_service.dart';
 import '../../../properties/presentation/screens/add_property_screen.dart';
 import '../../../properties/domain/models/property.dart';
 import '../../../properties/data/property_api_service.dart';
@@ -22,25 +21,31 @@ class EcranProfil extends StatefulWidget {
 }
 
 class _EcranProfilState extends State<EcranProfil> {
-  // Contrôleurs pour l'authentification
-  final _emailCtrl = TextEditingController(text: 'mohamed@darlink.tn');
-  final _passCtrl = TextEditingController(text: 'P@ssword2026!');
-  final _nameCtrl = TextEditingController(text: 'Mohamed Ben Ali');
-  final _phoneCtrl = TextEditingController(text: '+216 98 111 222');
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
 
   bool _isRegisterMode = false;
+  String _selectedRole = 'USER';
   bool _isLoading = false;
   String? _authError;
 
   List<Propriete> _myProperties = [];
-  bool _loadingMyProperties = false;
+  List<ContactRequestModel> _receivedRequests = [];
+  List<Map<String, dynamic>> _notifications = [];
+  bool _loadingDashboard = false;
 
   @override
   void initState() {
     super.initState();
     AuthState.instance.addListener(_onAuthChanged);
+    _passCtrl.addListener(() {
+      if (_isRegisterMode && mounted) setState(() {});
+    });
     if (AuthState.instance.isAuthenticated) {
-      _loadMyProperties();
+      _loadDashboard();
     }
   }
 
@@ -49,6 +54,7 @@ class _EcranProfilState extends State<EcranProfil> {
     AuthState.instance.removeListener(_onAuthChanged);
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
@@ -58,18 +64,22 @@ class _EcranProfilState extends State<EcranProfil> {
     if (mounted) {
       setState(() {});
       if (AuthState.instance.isAuthenticated) {
-        _loadMyProperties();
+        _loadDashboard();
       }
     }
   }
 
-  Future<void> _loadMyProperties() async {
-    setState(() => _loadingMyProperties = true);
-    final list = await PropertyApiService.instance.getMyProperties();
+  Future<void> _loadDashboard() async {
+    setState(() => _loadingDashboard = true);
+    final props = await PropertyApiService.instance.getMyProperties();
+    final reqs = await ContactApiService.instance.getReceivedRequests();
+    final notifs = await ContactApiService.instance.getMyNotifications();
     if (mounted) {
       setState(() {
-        _myProperties = list;
-        _loadingMyProperties = false;
+        _myProperties = props;
+        _receivedRequests = reqs;
+        _notifications = notifs;
+        _loadingDashboard = false;
       });
     }
   }
@@ -80,29 +90,17 @@ class _EcranProfilState extends State<EcranProfil> {
       _authError = null;
     });
 
-    String? error;
+    final String? error;
     if (_isRegisterMode) {
-      if (_nameCtrl.text.trim().isEmpty || _emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
-        setState(() {
-          _isLoading = false;
-          _authError = 'Veuillez remplir tous les champs obligatoires.';
-        });
-        return;
-      }
       error = await AuthService.instance.register(
         fullName: _nameCtrl.text,
         email: _emailCtrl.text,
         password: _passCtrl.text,
+        confirmPassword: _confirmPassCtrl.text,
         phone: _phoneCtrl.text,
+        requestedRole: _selectedRole,
       );
     } else {
-      if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
-        setState(() {
-          _isLoading = false;
-          _authError = 'Veuillez renseigner votre email et mot de passe.';
-        });
-        return;
-      }
       error = await AuthService.instance.login(
         email: _emailCtrl.text,
         password: _passCtrl.text,
@@ -117,146 +115,165 @@ class _EcranProfilState extends State<EcranProfil> {
     }
   }
 
+  void _showForgotPasswordDialog() {
+    final resetCtrl = TextEditingController(text: _emailCtrl.text);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mot de passe oublié'),
+        content: TextField(
+          controller: resetCtrl,
+          decoration: const InputDecoration(labelText: 'Adresse e-mail'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final err = await AuthService.instance.sendPasswordResetEmail(resetCtrl.text);
+              if (ctx.mounted) Navigator.pop(ctx);
+              messenger.showSnackBar(
+                SnackBar(content: Text(err ?? 'E-mail de réinitialisation envoyé.')),
+              );
+            },
+            child: const Text('Envoyer'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showEditProfileDialog() {
     final user = AuthState.instance.currentUser;
     if (user == null) return;
-
-    final nameController = TextEditingController(text: user.fullName);
-    final phoneController = TextEditingController(text: user.phone ?? '');
+    final nameCtrl = TextEditingController(text: user.fullName);
+    final phoneCtrl = TextEditingController(text: user.phone ?? '');
+    final photoCtrl = TextEditingController(text: user.photoUrl ?? '');
 
     showDialog(
       context: context,
-      builder: (ctx) {
-        final cardBg = AppColors.surfaceOf(ctx);
-        final textPrim = AppColors.textPrimaryOf(ctx);
-        final borderColor = AppColors.borderOf(ctx);
-
-        return AlertDialog(
-          backgroundColor: cardBg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: borderColor),
-          ),
-          title: Text('Modifier mon profil', style: TextStyle(color: textPrim, fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nom complet',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Téléphone',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accentBlue,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final success = await AuthService.instance.updateProfile(
-                  fullName: nameController.text,
-                  phone: phoneController.text,
-                );
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(success ? 'Profil mis à jour avec succès.' : 'Erreur de mise à jour.'),
-                    ),
-                  );
-                }
-              },
-              child: const Text('Enregistrer'),
-            ),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Modifier mon profil'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nom complet')),
+            const SizedBox(height: 10),
+            TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Téléphone')),
+            const SizedBox(height: 10),
+            TextField(controller: photoCtrl, decoration: const InputDecoration(labelText: 'URL Photo (HTTPS)')),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final ok = await AuthService.instance.updateProfile(
+                fullName: nameCtrl.text,
+                phone: phoneCtrl.text,
+                photoUrl: photoCtrl.text.trim().isNotEmpty ? photoCtrl.text.trim() : null,
+              );
+              if (ctx.mounted) Navigator.pop(ctx);
+              messenger.showSnackBar(SnackBar(content: Text(ok ? 'Profil mis à jour.' : 'Erreur de mise à jour.')));
+            },
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
     );
   }
 
   void _showChangePasswordDialog() {
-    final currentPassController = TextEditingController();
-    final newPassController = TextEditingController();
-
+    final curCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
     showDialog(
       context: context,
-      builder: (ctx) {
-        final cardBg = AppColors.surfaceOf(ctx);
-        final textPrim = AppColors.textPrimaryOf(ctx);
-
-        return AlertDialog(
-          backgroundColor: cardBg,
-          title: Text('Changer mon mot de passe', style: TextStyle(color: textPrim, fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: currentPassController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Mot de passe actuel',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: newPassController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Nouveau mot de passe (min 6 car.)',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accentBlue,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final err = await AuthService.instance.changePassword(
-                  currentPassword: currentPassController.text,
-                  newPassword: newPassController.text,
-                );
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(err ?? 'Mot de passe modifié avec succès !'),
-                      backgroundColor: err != null ? Colors.red : Colors.green,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Valider'),
-            ),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Changer mon mot de passe'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: curCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Mot de passe actuel')),
+            const SizedBox(height: 10),
+            TextField(controller: newCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Nouveau mot de passe (min 8 car.)')),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final err = await AuthService.instance.changePassword(currentPassword: curCtrl.text, newPassword: newCtrl.text);
+              if (ctx.mounted) Navigator.pop(ctx);
+              messenger.showSnackBar(SnackBar(content: Text(err ?? 'Mot de passe modifié.')));
+            },
+            child: const Text('Valider'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangeEmailDialog() {
+    final curCtrl = TextEditingController();
+    final newEmailCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Changer mon e-mail'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: curCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Mot de passe actuel')),
+            const SizedBox(height: 10),
+            TextField(controller: newEmailCtrl, decoration: const InputDecoration(labelText: 'Nouvelle adresse e-mail')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final err = await AuthService.instance.changeEmail(currentPassword: curCtrl.text, newEmail: newEmailCtrl.text);
+              if (ctx.mounted) Navigator.pop(ctx);
+              messenger.showSnackBar(SnackBar(content: Text(err ?? 'E-mail mis à jour. Vérifiez votre nouvelle boîte mail.')));
+            },
+            child: const Text('Valider'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog() {
+    final passCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer mon compte', style: TextStyle(color: Colors.red)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Vos annonces seront archivées et vos favoris supprimés. Action irréversible.'),
+            const SizedBox(height: 12),
+            TextField(controller: passCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'Mot de passe actuel')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final err = await AuthService.instance.deleteAccount(currentPassword: passCtrl.text);
+              if (ctx.mounted) Navigator.pop(ctx);
+              messenger.showSnackBar(SnackBar(content: Text(err ?? 'Compte supprimé avec succès.')));
+            },
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -271,6 +288,7 @@ class _EcranProfilState extends State<EcranProfil> {
 
     final isAuthenticated = AuthState.instance.isAuthenticated;
     final user = AuthState.instance.currentUser;
+    final strength = AuthService.evaluatePasswordStrength(_passCtrl.text);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -280,567 +298,308 @@ class _EcranProfilState extends State<EcranProfil> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ========================================================
-              // VUE 1 : NON AUTHENTIFIÉ (FORMULAIRE DE CONNEXION / INSCRIPTION)
-              // ========================================================
               if (!isAuthenticated) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Center(
                   child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.accentBlue.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.accentBlue.withValues(alpha: 0.3)),
-                    ),
-                    child: const Icon(Icons.lock_outline, size: 36, color: AppColors.accentBlue),
+                    width: 68,
+                    height: 68,
+                    decoration: BoxDecoration(color: AppColors.accentBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.lock_outline, size: 32, color: AppColors.accentBlue),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Bienvenue sur DarLink',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: textPrim,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                const SizedBox(height: 14),
+                Text('Bienvenue sur DarLink', textAlign: TextAlign.center, style: TextStyle(color: textPrim, fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
-                Text(
-                  'Connectez-vous pour gérer vos annonces, favoris et visites immobilières.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: textSec, fontSize: 13),
-                ),
-                const SizedBox(height: 24),
+                Text('Authentification sécurisée Firebase pour gérer vos biens, favoris et demandes.', textAlign: TextAlign.center, style: TextStyle(color: textSec, fontSize: 13)),
+                const SizedBox(height: 20),
 
-                // Sélecteur Onglet Connexion / Inscription
                 Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2028) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: borderColor),
-                  ),
+                  decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: borderColor)),
                   child: Row(
                     children: [
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _isRegisterMode = false),
+                          onTap: () => setState(() {
+                            _isRegisterMode = false;
+                            _authError = null;
+                          }),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: !_isRegisterMode ? AppColors.accentBlue : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            decoration: BoxDecoration(color: !_isRegisterMode ? AppColors.accentBlue : Colors.transparent, borderRadius: BorderRadius.circular(10)),
                             alignment: Alignment.center,
-                            child: Text(
-                              'Se connecter',
-                              style: TextStyle(
-                                color: !_isRegisterMode ? Colors.white : textSec,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
+                            child: Text('Se connecter', style: TextStyle(color: !_isRegisterMode ? Colors.white : textSec, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _isRegisterMode = true),
+                          onTap: () => setState(() {
+                            _isRegisterMode = true;
+                            _authError = null;
+                          }),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: _isRegisterMode ? AppColors.accentBlue : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            decoration: BoxDecoration(color: _isRegisterMode ? AppColors.accentBlue : Colors.transparent, borderRadius: BorderRadius.circular(10)),
                             alignment: Alignment.center,
-                            child: Text(
-                              'Créer un compte',
-                              style: TextStyle(
-                                color: _isRegisterMode ? Colors.white : textSec,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
+                            child: Text('Créer un compte', style: TextStyle(color: _isRegisterMode ? Colors.white : textSec, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
-
-                // Bannière d'erreur
-                if (_authError != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _authError!,
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Formulaire
-                if (_isRegisterMode) ...[
-                  TextField(
-                    controller: _nameCtrl,
-                    style: TextStyle(color: textPrim),
-                    decoration: InputDecoration(
-                      labelText: 'Nom et prénom',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _phoneCtrl,
-                    style: TextStyle(color: textPrim),
-                    decoration: InputDecoration(
-                      labelText: 'Numéro de téléphone (+216)',
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                TextField(
-                  controller: _emailCtrl,
-                  style: TextStyle(color: textPrim),
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Adresse email',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: _passCtrl,
-                  style: TextStyle(color: textPrim),
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Mot de passe',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Bouton d'action principal
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleAuthSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : Text(
-                          _isRegisterMode ? 'Créer mon compte' : 'Se connecter',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
                 ),
                 const SizedBox(height: 16),
 
-                // Bouton de remplissage rapide démo
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isRegisterMode = false;
-                      _emailCtrl.text = 'mohamed@darlink.tn';
-                      _passCtrl.text = 'P@ssword2026!';
-                    });
-                  },
-                  child: const Text('Remplir avec le compte test (Mohamed Ben Ali)'),
+                if (_authError != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                    child: Text(_authError!, style: const TextStyle(color: Colors.red, fontSize: 12.5)),
+                  ),
+
+                if (_isRegisterMode) ...[
+                  TextField(controller: _nameCtrl, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Nom complet', border: OutlineInputBorder())),
+                  const SizedBox(height: 10),
+                  TextField(controller: _phoneCtrl, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Téléphone (+216)', border: OutlineInputBorder())),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedRole,
+                    decoration: const InputDecoration(labelText: 'Type de compte', border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'USER', child: Text('Particulier')),
+                      DropdownMenuItem(value: 'OWNER', child: Text('Propriétaire')),
+                      DropdownMenuItem(value: 'AGENCY', child: Text('Agence immobilière')),
+                    ],
+                    onChanged: (v) => setState(() => _selectedRole = v ?? 'USER'),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+
+                TextField(controller: _emailCtrl, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Adresse email', border: OutlineInputBorder())),
+                const SizedBox(height: 10),
+                TextField(controller: _passCtrl, obscureText: true, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Mot de passe', border: OutlineInputBorder())),
+
+                if (_isRegisterMode) ...[
+                  if (_passCtrl.text.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Robustesse : ${strength.label}${strength.issues.isNotEmpty ? " (${strength.issues.join(", ")})" : ""}',
+                        style: TextStyle(fontSize: 11.5, color: strength.valid ? Colors.green : Colors.orange),
+                      ),
+                    ),
+                  const SizedBox(height: 10),
+                  TextField(controller: _confirmPassCtrl, obscureText: true, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Confirmer le mot de passe', border: OutlineInputBorder())),
+                ],
+
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _handleAuthSubmit,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
+                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(_isRegisterMode ? 'Créer mon compte' : 'Se connecter'),
                 ),
+
+                if (!_isRegisterMode)
+                  TextButton(onPressed: _showForgotPasswordDialog, child: const Text('Mot de passe oublié ?')),
               ],
 
-              // ========================================================
-              // VUE 2 : AUTHENTIFIÉ (PROFIL COMPLET ET GESTION)
-              // ========================================================
               if (isAuthenticated && user != null) ...[
-                // Carte En-tête Profil
                 Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: borderColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
                   child: Row(
                     children: [
-                      // Avatar avec Initiales
                       CircleAvatar(
-                        radius: 30,
+                        radius: 28,
                         backgroundColor: AppColors.accentBlue,
-                        child: Text(
-                          user.fullName.isNotEmpty
-                              ? user.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
-                              : 'U',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        backgroundImage: (user.photoUrl != null && user.photoUrl!.isNotEmpty) ? NetworkImage(user.photoUrl!) : null,
+                        child: (user.photoUrl == null || user.photoUrl!.isEmpty)
+                            ? Text(
+                                user.fullName.isNotEmpty ? user.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase() : 'U',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              )
+                            : null,
                       ),
-                      const SizedBox(width: 16),
-                      // Infos
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    user.fullName,
-                                    style: TextStyle(
-                                      color: textPrim,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                                Expanded(child: Text(user.fullName, style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 16))),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accentBlue.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: AppColors.accentBlue.withValues(alpha: 0.3)),
-                                  ),
-                                  child: Text(
-                                    user.role,
-                                    style: const TextStyle(
-                                      color: AppColors.accentBlue,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                    ),
-                                  ),
+                                  decoration: BoxDecoration(color: AppColors.accentBlue.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(8)),
+                                  child: Text(user.role, style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold, fontSize: 10)),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
                             Text(user.email, style: TextStyle(color: textSec, fontSize: 12)),
-                            if (user.phone != null && user.phone!.isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(user.phone!, style: TextStyle(color: textSec, fontSize: 12)),
-                            ],
+                            if (user.phone != null && user.phone!.isNotEmpty) Text(user.phone!, style: TextStyle(color: textSec, fontSize: 12)),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
 
-                // Actions rapides Profil
-                Row(
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: (user.emailVerified ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(user.emailVerified ? Icons.verified_user : Icons.mark_email_unread_outlined, size: 18, color: user.emailVerified ? Colors.green : Colors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(user.emailVerified ? 'E-mail vérifié' : 'E-mail non vérifié', style: TextStyle(color: textPrim, fontSize: 12.5, fontWeight: FontWeight.w600))),
+                      if (!user.emailVerified) ...[
+                        TextButton(
+                          onPressed: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final ok = await AuthService.instance.resendVerificationEmail();
+                            messenger.showSnackBar(SnackBar(content: Text(ok ? 'E-mail de vérification envoyé.' : 'Échec d’envoi.')));
+                          },
+                          child: const Text('Renvoyer', style: TextStyle(fontSize: 12)),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final ok = await AuthService.instance.refreshVerificationStatus();
+                            messenger.showSnackBar(SnackBar(content: Text(ok ? 'E-mail confirmé !' : 'Toujours en attente.')));
+                          },
+                          child: const Text('Vérifier', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.edit, size: 16),
-                        label: const Text('Modifier profil'),
-                        onPressed: _showEditProfileDialog,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.accentBlue,
-                          side: const BorderSide(color: AppColors.accentBlue),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.lock_reset, size: 16),
-                        label: const Text('Mot de passe'),
-                        onPressed: _showChangePasswordDialog,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: textPrim,
-                          side: BorderSide(color: borderColor),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                      ),
-                    ),
+                    OutlinedButton.icon(icon: const Icon(Icons.edit, size: 15), label: const Text('Modifier profil'), onPressed: _showEditProfileDialog),
+                    OutlinedButton.icon(icon: const Icon(Icons.email_outlined, size: 15), label: const Text('Changer e-mail'), onPressed: _showChangeEmailDialog),
+                    OutlinedButton.icon(icon: const Icon(Icons.lock_reset, size: 15), label: const Text('Mot de passe'), onPressed: _showChangePasswordDialog),
                   ],
                 ),
-                const SizedBox(height: 20),
 
-                // Bouton Déposer une annonce
+                const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.add_home_work, color: Colors.white),
-                  label: const Text('Publier une nouvelle annonce immobilière'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
+                  icon: const Icon(Icons.add_home_work),
+                  label: const Text('Publier une annonce'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
                   onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()),
-                    );
-                    _loadMyProperties();
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()));
+                    _loadDashboard();
                   },
                 ),
-                const SizedBox(height: 24),
 
-                // Mes annonces publiées
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Mes annonces publiées (${_myProperties.length})',
-                      style: TextStyle(
-                        color: textPrim,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.refresh, size: 20),
-                      onPressed: _loadMyProperties,
-                    ),
+                    Text('Mes annonces (${_myProperties.length})', style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 15)),
+                    IconButton(icon: const Icon(Icons.refresh, size: 18), onPressed: _loadDashboard),
                   ],
                 ),
-                const SizedBox(height: 8),
-
-                if (_loadingMyProperties)
-                  const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+                if (_loadingDashboard)
+                  const Center(child: CircularProgressIndicator())
                 else if (_myProperties.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Vous n\'avez publié aucune annonce pour le moment.',
-                        style: TextStyle(color: textSec, fontSize: 13),
-                      ),
-                    ),
-                  )
+                  Text('Aucune annonce publiée.', style: TextStyle(color: textSec, fontSize: 12.5))
                 else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _myProperties.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 10),
-                    itemBuilder: (ctx, idx) {
-                      final prop = _myProperties[idx];
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: borderColor),
+                  ..._myProperties.map((p) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(p.titre, style: TextStyle(color: textPrim, fontSize: 13.5, fontWeight: FontWeight.w600)),
+                        subtitle: Text('${p.prixAffiche} • ${p.listingStatus.value}', style: const TextStyle(color: AppColors.accentBlue, fontSize: 12)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () async {
+                            await PropertyApiService.instance.deleteProperty(p.id);
+                            _loadDashboard();
+                          },
                         ),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                prop.imageUrl,
-                                width: 70,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  width: 70,
-                                  height: 60,
-                                  color: Colors.grey.withValues(alpha: 0.2),
-                                  child: const Icon(Icons.image_not_supported),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    prop.titre,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: textPrim, fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    '${prop.prix.toStringAsFixed(0)} DT • ${prop.ville}',
-                                    style: const TextStyle(color: AppColors.accentBlue, fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
-                              onPressed: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (dCtx) => AlertDialog(
-                                    title: const Text('Confirmer la suppression'),
-                                    content: Text('Voulez-vous supprimer l\'annonce "${prop.titre}" ?'),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(dCtx, false), child: const Text('Annuler')),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                                        onPressed: () => Navigator.pop(dCtx, true),
-                                        child: const Text('Supprimer'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  await PropertyApiService.instance.deleteProperty(prop.id);
-                                  _loadMyProperties();
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                const SizedBox(height: 24),
+                      )),
+
+                const SizedBox(height: 12),
+                Text('Demandes reçues (${_receivedRequests.length}) & Notifications (${_notifications.length})',
+                    style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 14)),
+                ..._receivedRequests.take(3).map((r) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.mail_outline, color: AppColors.accentBlue),
+                      title: Text('${r.senderName} (${r.status})', style: TextStyle(color: textPrim, fontSize: 13)),
+                      subtitle: Text(r.message, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: textSec, fontSize: 12)),
+                    )),
+                ..._notifications.take(3).map((n) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.notifications_none, color: AppColors.accentBlue),
+                      title: Text(n['title']?.toString() ?? '', style: TextStyle(color: textPrim, fontSize: 13)),
+                      subtitle: Text(n['body']?.toString() ?? '', style: TextStyle(color: textSec, fontSize: 12)),
+                    )),
               ],
 
-              // ========================================================
-              // PRÉFÉRENCES : THÈMES ET LANGUES (DISPONIBLE POUR TOUS)
-              // ========================================================
-              Text(
-                'Paramètres de l\'application',
-                style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+              const SizedBox(height: 20),
+              Text('Paramètres', style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 10),
-
-              // Thème Clair / Sombre
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderColor),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: borderColor)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: AppColors.accentBlue),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Text('Mode sombre', style: TextStyle(color: textPrim, fontWeight: FontWeight.w600)),
                       ],
                     ),
-                    Switch(
-                      value: isDark,
-                      activeTrackColor: AppColors.accentBlue,
-                      onChanged: (val) {
-                        AppTheme.basculerTheme();
-                      },
-                    ),
+                    Switch(value: isDark, onChanged: (_) => AppTheme.basculerTheme()),
                   ],
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Sélecteur de langue interactif Français / Arabe (RTL) / English
               InkWell(
                 key: const Key('profile_language_selector'),
-                onTap: () {
-                  AppLocale.instance.toggleLanguage();
-                  final current = AppLocale.instance.currentLang.toUpperCase();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Langue active : $current'),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
+                onTap: () => AppLocale.instance.toggleLanguage(),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: borderColor),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: borderColor)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.language, color: AppColors.accentBlue),
-                          const SizedBox(width: 12),
-                          Text('Langue (Français / العربية / EN)', style: TextStyle(color: textPrim, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.accentBlue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          AppLocale.instance.currentLang.toUpperCase(),
-                          style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ),
+                      Row(children: [
+                        const Icon(Icons.language, color: AppColors.accentBlue),
+                        const SizedBox(width: 10),
+                        Text('Langue (FR / AR / EN)', style: TextStyle(color: textPrim, fontWeight: FontWeight.w600)),
+                      ]),
+                      Text(AppLocale.instance.currentLang.toUpperCase(), style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
               ),
 
-              // Bouton Déconnexion
               if (isAuthenticated) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.logout, color: Colors.red),
                   label: const Text('Se déconnecter', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: () {
-                    AuthService.instance.logout();
-                  },
+                  style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red), padding: const EdgeInsets.symmetric(vertical: 14)),
+                  onPressed: () => AuthService.instance.logout(),
+                ),
+                TextButton(
+                  onPressed: _showDeleteAccountDialog,
+                  child: const Text('Supprimer définitivement mon compte', style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ),
               ],
-              const SizedBox(height: 32),
             ],
           ),
         ),

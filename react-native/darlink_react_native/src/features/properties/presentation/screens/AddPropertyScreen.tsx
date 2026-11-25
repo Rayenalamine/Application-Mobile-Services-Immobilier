@@ -1,6 +1,7 @@
 // ============================================================
-// DARLINK — ÉCRAN DE DÉPÔT D'ANNONCE (React Native V7)
-// Formulaire de création de bien immobilier haut standing
+// DARLINK — ÉCRAN DE DÉPÔT D'ANNONCE (React Native)
+// Authentification requise, 24 gouvernorats, statut d'annonce,
+// validation URL photo HTTPS, zéro emoji.
 // ============================================================
 
 import React, { useState } from 'react';
@@ -14,9 +15,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { ArrowLeft, Check, Plus, ShieldAlert } from 'lucide-react-native';
+import { TUNISIA_GOVERNORATES } from '../../../../core/constants/tunisiaLocations';
+import { isValidImageUrl } from '../../../../core/firebase/storageService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { authService } from '../../../auth/services/authService';
 import { propertyApiService } from '../../services/propertyApiService';
-import { Property } from '../../domain/models/property';
+import { ListingStatus, Property, PropertyType } from '../../domain/models/property';
 
 interface AddPropertyScreenProps {
   onBack: () => void;
@@ -25,56 +30,54 @@ interface AddPropertyScreenProps {
 
 export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, onPropertyCreated }) => {
   const { colors, isDark } = useTheme();
+  const isAuthenticated = authService.isAuthenticated();
 
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [surface, setSurface] = useState('');
-  const [location, setLocation] = useState('');
+  const [governorate, setGovernorate] = useState('Tunis');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState<'Appartement' | 'Villa' | 'Maison'>('Appartement');
-  const [city, setCity] = useState('Tunis');
-  const [bedrooms, setBedrooms] = useState(3);
-  const [bathrooms, setBathrooms] = useState(2);
+  const [type, setType] = useState<PropertyType>('Appartement');
+  const [bedrooms, setBedrooms] = useState(2);
+  const [bathrooms, setBathrooms] = useState(1);
   const [isRental, setIsRental] = useState(false);
+  const [listingStatus, setListingStatus] = useState<ListingStatus>('PUBLISHED');
   const [submitting, setSubmitting] = useState(false);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(['Climatisation']);
 
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([
-    'Climatisation',
-    'Ascenseur',
-  ]);
-
-  const amenitiesList = [
-    'Piscine',
-    'Vue mer',
-    'Climatisation',
-    'Garage',
-    'Jardin',
-    'Ascenseur',
-    'Sécurité 24/7',
-  ];
-
-  const types: ('Appartement' | 'Villa' | 'Maison')[] = ['Appartement', 'Villa', 'Maison'];
-  const cities = ['Tunis', 'Sousse', 'Hammamet', 'Djerba', 'Monastir', 'Sfax'];
+  const amenitiesList = ['Piscine', 'Vue mer', 'Climatisation', 'Garage', 'Jardin', 'Ascenseur', 'Sécurité 24/7'];
+  const types: PropertyType[] = ['Appartement', 'Villa', 'Maison', 'Studio', 'Terrain', 'Commercial'];
 
   const toggleAmenity = (item: string) => {
-    if (selectedAmenities.includes(item)) {
-      setSelectedAmenities(selectedAmenities.filter((a) => a !== item));
-    } else {
-      setSelectedAmenities([...selectedAmenities, item]);
-    }
+    setSelectedAmenities((prev) =>
+      prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]
+    );
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !price.trim() || !surface.trim() || !location.trim()) {
-      Alert.alert('Champs obligatoires', 'Veuillez remplir le titre, le prix, la surface et la localisation.');
+    if (!authService.isAuthenticated()) {
+      Alert.alert('Connexion requise', 'Veuillez vous connecter depuis l’onglet Profil avant de publier.');
+      return;
+    }
+    if (!title.trim() || !price.trim() || !surface.trim() || !neighborhood.trim()) {
+      Alert.alert('Champs obligatoires', 'Veuillez remplir le titre, le prix, la surface et la délégation/quartier.');
       return;
     }
 
-    const numPrice = parseFloat(price);
-    const numSurface = parseInt(surface, 10);
-
+    const numPrice = parseFloat(price.replace(/\s+/g, ''));
+    const numSurface = parseInt(surface.replace(/\s+/g, ''), 10);
     if (isNaN(numPrice) || numPrice <= 0) {
-      Alert.alert('Prix invalide', 'Le prix doit être un nombre strictement positif.');
+      Alert.alert('Prix invalide', 'Le prix doit être strictement positif.');
+      return;
+    }
+    if (isNaN(numSurface) || numSurface <= 0) {
+      Alert.alert('Surface invalide', 'La surface doit être strictement positive.');
+      return;
+    }
+    if (imageUrl.trim() && !isValidImageUrl(imageUrl)) {
+      Alert.alert('URL photo invalide', 'Seules les URL HTTPS sécurisées sont acceptées.');
       return;
     }
 
@@ -82,20 +85,23 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
     try {
       const created = await propertyApiService.createProperty({
         title: title.trim(),
-        description: description.trim() || 'Superbe propriété haut standing idéalement située.',
+        description: description.trim() || `${type} situé à ${neighborhood.trim()}, ${governorate}.`,
         type,
         price: numPrice,
-        location: `${location.trim()}, ${city}`,
-        city,
+        location: `${neighborhood.trim()}, ${governorate}`,
+        governorate,
+        city: neighborhood.trim(),
+        neighborhood: neighborhood.trim(),
         bedrooms,
         bathrooms,
-        surfaceM2: numSurface || 120,
+        surfaceM2: numSurface,
         isRental,
         amenities: selectedAmenities,
-        standing: 'Haut Standing',
+        imageUrl: imageUrl.trim(),
+        listingStatus,
       });
 
-      Alert.alert('Succès', 'Votre annonce a été publiée avec succès !', [
+      Alert.alert('Annonce enregistrée', `Votre annonce (${listingStatus}) a été publiée dans Cloud Firestore.`, [
         {
           text: 'OK',
           onPress: () => {
@@ -104,8 +110,8 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
           },
         },
       ]);
-    } catch {
-      Alert.alert('Erreur', 'Impossible de publier votre annonce pour le moment.');
+    } catch (err: unknown) {
+      Alert.alert('Erreur', err instanceof Error ? err.message : 'Publication impossible.');
     } finally {
       setSubmitting(false);
     }
@@ -113,138 +119,115 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* HEADER */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]} onPress={onBack}>
-          <Text style={[styles.backIcon, { color: colors.textPrimary }]}>‹</Text>
+          <ArrowLeft size={19} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Déposer une annonce</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* TYPE DE TRANSACTION */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Type de transaction</Text>
+        {!isAuthenticated && (
+          <View style={[styles.authWarning, { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.1)' }]}>
+            <ShieldAlert size={18} color="#D97706" />
+            <Text style={{ flex: 1, fontSize: 12.5, color: isDark ? '#FDE68A' : '#92400E' }}>
+              Connectez-vous dans votre Profil pour lier cette annonce à votre compte Firebase vérifié.
+            </Text>
+          </View>
+        )}
+
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Transaction & Statut</Text>
         <View style={styles.toggleRow}>
           <TouchableOpacity
-            style={[
-              styles.toggleBtn,
-              !isRental
-                ? { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }
-                : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-            ]}
+            style={[styles.toggleBtn, !isRental ? { backgroundColor: colors.accentBlue } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
             onPress={() => setIsRental(false)}
           >
-            <Text
-              style={[
-                styles.toggleText,
-                { color: !isRental ? (isDark ? '#0F1015' : '#FFFFFF') : colors.textSecondary },
-              ]}
-            >
-              Vente
-            </Text>
+            <Text style={[styles.toggleText, { color: !isRental ? '#FFFFFF' : colors.textSecondary }]}>Vente</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.toggleBtn,
-              isRental
-                ? { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }
-                : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-            ]}
+            style={[styles.toggleBtn, isRental ? { backgroundColor: colors.accentBlue } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
             onPress={() => setIsRental(true)}
           >
-            <Text
-              style={[
-                styles.toggleText,
-                { color: isRental ? (isDark ? '#0F1015' : '#FFFFFF') : colors.textSecondary },
-              ]}
-            >
-              Location
-            </Text>
+            <Text style={[styles.toggleText, { color: isRental ? '#FFFFFF' : colors.textSecondary }]}>Location</Text>
           </TouchableOpacity>
         </View>
 
-        {/* TYPE DE BIEN */}
+        <View style={[styles.toggleRow, { marginTop: 10 }]}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, listingStatus === 'PUBLISHED' ? { backgroundColor: '#10B981' } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={() => setListingStatus('PUBLISHED')}
+          >
+            <Text style={[styles.toggleText, { color: listingStatus === 'PUBLISHED' ? '#FFFFFF' : colors.textSecondary }]}>Publier</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, listingStatus === 'DRAFT' ? { backgroundColor: '#64748B' } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={() => setListingStatus('DRAFT')}
+          >
+            <Text style={[styles.toggleText, { color: listingStatus === 'DRAFT' ? '#FFFFFF' : colors.textSecondary }]}>Brouillon</Text>
+          </TouchableOpacity>
+        </View>
+
         <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Type de bien</Text>
-        <View style={styles.chipRow}>
+        <View style={styles.chipWrap}>
           {types.map((t) => {
             const active = type === t;
             return (
               <TouchableOpacity
                 key={t}
-                style={[
-                  styles.chip,
-                  active
-                    ? { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }
-                    : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-                ]}
+                style={[styles.chip, active ? { backgroundColor: colors.accentBlue } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
                 onPress={() => setType(t)}
               >
-                <Text
-                  style={[
-                    styles.chipText,
-                    { color: active ? (isDark ? '#0F1015' : '#FFFFFF') : colors.textSecondary },
-                  ]}
-                >
-                  {t}
-                </Text>
+                <Text style={[styles.chipText, { color: active ? '#FFFFFF' : colors.textSecondary }]}>{t}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* TITRE */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Titre de l'annonce</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Titre de l’annonce</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-          placeholder="Ex: Villa contemporaine avec piscine"
+          placeholder="Ex: Appartement S+3 Ennasr 2"
           placeholderTextColor={colors.textSecondary}
           value={title}
           onChangeText={setTitle}
         />
 
-        {/* VILLE & ADRESSE */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Gouvernorat / Ville</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Gouvernorat</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cityScroll}>
-          {cities.map((c) => {
-            const active = city === c;
+          {TUNISIA_GOVERNORATES.map((g) => {
+            const active = governorate === g.nameFr;
             return (
               <TouchableOpacity
-                key={c}
-                style={[
-                  styles.cityChip,
-                  active
-                    ? { backgroundColor: colors.accentBlue }
-                    : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-                ]}
-                onPress={() => setCity(c)}
+                key={g.code}
+                style={[styles.cityChip, active ? { backgroundColor: colors.accentBlue } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
+                onPress={() => setGovernorate(g.nameFr)}
               >
                 <Text style={{ color: active ? '#FFFFFF' : colors.textSecondary, fontWeight: '600', fontSize: 13 }}>
-                  {c}
+                  {g.nameFr}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Quartier ou Adresse</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>Délégation / Quartier</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-          placeholder="Ex: Les Berges du Lac 2"
+          placeholder="Ex: Ennasr 2, Sahloul, Centre-ville..."
           placeholderTextColor={colors.textSecondary}
-          value={location}
-          onChangeText={setLocation}
+          value={neighborhood}
+          onChangeText={setNeighborhood}
         />
 
-        {/* PRIX ET SURFACE */}
         <View style={styles.twoCols}>
           <View style={{ flex: 1, marginRight: 8 }}>
-            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>
-              {isRental ? 'Loyer (DT / mois)' : 'Prix (DT)'}
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>
+              {isRental ? 'Loyer (DT/mois)' : 'Prix (DT)'}
             </Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="320 000"
+              placeholder="280000"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
               value={price}
@@ -252,10 +235,10 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
             />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
-            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Surface (m²)</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>Surface (m²)</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="180"
+              placeholder="135"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
               value={surface}
@@ -264,80 +247,64 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
           </View>
         </View>
 
-        {/* CHAMBRES & SDB */}
         <View style={styles.twoCols}>
           <View style={{ flex: 1, marginRight: 8 }}>
-            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Chambres</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>Chambres</Text>
             <View style={styles.counterRow}>
-              <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
-                onPress={() => setBedrooms(Math.max(1, bedrooms - 1))}
-              >
+              <TouchableOpacity style={[styles.counterBtn, { backgroundColor: colors.surface }]} onPress={() => setBedrooms(Math.max(0, bedrooms - 1))}>
                 <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>-</Text>
               </TouchableOpacity>
               <Text style={[styles.counterVal, { color: colors.textPrimary }]}>{bedrooms}</Text>
-              <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
-                onPress={() => setBedrooms(bedrooms + 1)}
-              >
+              <TouchableOpacity style={[styles.counterBtn, { backgroundColor: colors.surface }]} onPress={() => setBedrooms(bedrooms + 1)}>
                 <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
-
           <View style={{ flex: 1, marginLeft: 8 }}>
-            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Salles de bain</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>Salles de bain</Text>
             <View style={styles.counterRow}>
-              <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
-                onPress={() => setBathrooms(Math.max(1, bathrooms - 1))}
-              >
+              <TouchableOpacity style={[styles.counterBtn, { backgroundColor: colors.surface }]} onPress={() => setBathrooms(Math.max(0, bathrooms - 1))}>
                 <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>-</Text>
               </TouchableOpacity>
               <Text style={[styles.counterVal, { color: colors.textPrimary }]}>{bathrooms}</Text>
-              <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
-                onPress={() => setBathrooms(bathrooms + 1)}
-              >
+              <TouchableOpacity style={[styles.counterBtn, { backgroundColor: colors.surface }]} onPress={() => setBathrooms(bathrooms + 1)}>
                 <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        {/* COMMODITÉS */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Commodités & Atouts</Text>
-        <View style={styles.amenitiesWrap}>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>URL Photo authentique (HTTPS, optionnel)</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+          placeholder="https://firebasestorage.googleapis.com/..."
+          placeholderTextColor={colors.textSecondary}
+          autoCapitalize="none"
+          value={imageUrl}
+          onChangeText={setImageUrl}
+        />
+
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>Atouts & Équipements</Text>
+        <View style={styles.chipWrap}>
           {amenitiesList.map((a) => {
             const active = selectedAmenities.includes(a);
             return (
               <TouchableOpacity
                 key={a}
-                style={[
-                  styles.amenityChip,
-                  active
-                    ? { backgroundColor: colors.accentBlue }
-                    : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-                ]}
+                style={[styles.amenityChip, active ? { backgroundColor: colors.accentBlue } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
                 onPress={() => toggleAmenity(a)}
               >
-                <Text style={{ color: active ? '#FFFFFF' : colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
-                  {active ? '✓ ' : '+ '}
-                  {a}
-                </Text>
+                {active ? <Check size={12} color="#FFFFFF" /> : <Plus size={12} color={colors.textSecondary} />}
+                <Text style={{ color: active ? '#FFFFFF' : colors.textSecondary, fontSize: 12, fontWeight: '600' }}>{a}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* DESCRIPTION */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Description du bien</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 16 }]}>Description détaillée</Text>
         <TextInput
-          style={[
-            styles.textArea,
-            { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border },
-          ]}
-          placeholder="Décrivez les atouts, l'orientation, les finitions de votre bien..."
+          style={[styles.textArea, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+          placeholder="Décrivez précisément le bien..."
           placeholderTextColor={colors.textSecondary}
           multiline
           numberOfLines={4}
@@ -345,18 +312,15 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
           onChangeText={setDescription}
         />
 
-        {/* BOUTON DE SOUMISSION */}
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }]}
+          style={[styles.submitButton, { backgroundColor: colors.accentBlue }]}
           onPress={handleSubmit}
           disabled={submitting}
         >
           {submitting ? (
-            <ActivityIndicator color={isDark ? '#0F1015' : '#FFFFFF'} />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={[styles.submitButtonText, { color: isDark ? '#0F1015' : '#FFFFFF' }]}>
-              Publier l'annonce
-            </Text>
+            <Text style={styles.submitButtonText}>Enregistrer l’annonce</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -365,9 +329,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -377,135 +339,35 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backIcon: {
-    fontSize: 24,
-    fontWeight: '300',
-    marginTop: -2,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  toggleRow: {
+  iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '700' },
+  content: { padding: 20, paddingBottom: 40 },
+  authWarning: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  toggleBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toggleText: {
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  chipRow: {
-    flexDirection: 'row',
     gap: 10,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  chipText: {
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  cityScroll: {
-    gap: 8,
-    paddingBottom: 4,
-  },
-  cityChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
-  },
-  twoCols: {
-    flexDirection: 'row',
-  },
-  input: {
+    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
+    marginBottom: 16,
   },
-  textArea: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  counterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  counterBtnText: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  counterVal: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  amenitiesWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  amenityChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  submitButton: {
-    marginTop: 28,
-    paddingVertical: 16,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  submitButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
+  sectionLabel: { fontSize: 12.5, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.4 },
+  toggleRow: { flexDirection: 'row', gap: 10 },
+  toggleBtn: { flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  toggleText: { fontWeight: '700', fontSize: 13.5 },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
+  chipText: { fontWeight: '600', fontSize: 12.5 },
+  cityScroll: { gap: 8, paddingBottom: 4 },
+  cityChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
+  twoCols: { flexDirection: 'row' },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14 },
+  textArea: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, minHeight: 96, textAlignVertical: 'top' },
+  counterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
+  counterBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  counterBtnText: { fontSize: 18, fontWeight: '600' },
+  counterVal: { fontSize: 16, fontWeight: '700' },
+  amenityChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 },
+  submitButton: { marginTop: 26, paddingVertical: 15, borderRadius: 16, alignItems: 'center' },
+  submitButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });
-
