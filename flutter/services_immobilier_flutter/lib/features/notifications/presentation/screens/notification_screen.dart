@@ -1,16 +1,13 @@
 // ============================================================
-// DARLINK — ÉCRAN CENTRE DE NOTIFICATIONS (Flutter)
-// Chargement Cloud Firestore, synchronisation temps réel / actualisation,
-// marquage lu/non-lu, suppression, filtres, zéro emoji.
+// DARLINK — APPLE-STYLE NOTIFICATIONS CENTER (Flutter)
 // ============================================================
 
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/localization/app_locale.dart';
-import '../../../properties/domain/models/relationships.dart';
-import '../../../properties/domain/models/property.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/design_system/liquid_glass.dart';
 import '../../../properties/data/property_api_service.dart';
+import '../../../properties/domain/models/relationships.dart';
 import '../../../properties/presentation/screens/property_details_screen.dart';
 import '../../data/notification_service.dart';
 
@@ -27,12 +24,7 @@ class _EcranNotificationsState extends State<EcranNotifications> {
   bool _isLoading = true;
   String _categorieActive = 'Toutes';
 
-  final List<String> _categories = const [
-    'Toutes',
-    'Demandes',
-    'Biens',
-    'Sécurité',
-  ];
+  final List<String> _categories = const ['Toutes', 'Demandes', 'Biens', 'Sécurité'];
 
   @override
   void initState() {
@@ -97,25 +89,17 @@ class _EcranNotificationsState extends State<EcranNotifications> {
   Future<void> _supprimerNotification(String id) async {
     await _service.deleteNotification(id);
     if (mounted) {
-      setState(() {
-        _notifications.removeWhere((n) => n.id == id);
-      });
+      setState(() => _notifications.removeWhere((n) => n.id == id));
     }
   }
 
   Future<void> _surTapNotification(AppNotificationModel notif) async {
-    if (!notif.read) {
-      await _marquerCommeLu(notif);
-    }
-
+    if (!notif.read) await _marquerCommeLu(notif);
     if (notif.relatedEntityId != null && notif.relatedEntityId!.isNotEmpty) {
       try {
         final prop = await PropertyApiService.instance.getPropertyById(notif.relatedEntityId!);
         if (prop != null && mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => EcranDetails(propriete: prop)),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (_) => EcranDetails(propriete: prop)));
         }
       } catch (_) {}
     }
@@ -137,11 +121,9 @@ class _EcranNotificationsState extends State<EcranNotifications> {
         return Icons.mail_outline_rounded;
       case 'LISTING_STATUS':
       case 'PROPERTY_UPDATE':
-        return Icons.home_work_outlined;
+        return Icons.apartment_rounded;
       case 'ACCOUNT_SECURITY':
         return Icons.shield_outlined;
-      case 'SAVED_SEARCH':
-        return Icons.search_rounded;
       default:
         return Icons.notifications_none_rounded;
     }
@@ -153,245 +135,177 @@ class _EcranNotificationsState extends State<EcranNotifications> {
         return AppColors.accentBlue;
       case 'LISTING_STATUS':
       case 'PROPERTY_UPDATE':
-        return const Color(0xFFD97706);
+        return AppColors.accentChampagne;
       case 'ACCOUNT_SECURITY':
-        return Colors.redAccent;
-      case 'SAVED_SEARCH':
-        return AppColors.accentGreen;
+        return AppColors.accentRed;
       default:
-        return Colors.grey;
-    }
-  }
-
-  String _formaterDate(String isoString) {
-    try {
-      final date = DateTime.parse(isoString);
-      final jour = date.day.toString().padLeft(2, '0');
-      final mois = date.month.toString().padLeft(2, '0');
-      final heure = date.hour.toString().padLeft(2, '0');
-      final minute = date.minute.toString().padLeft(2, '0');
-      return '$jour/$mois à $heure:$minute';
-    } catch (_) {
-      return isoString;
+        return AppColors.accentGreen;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0F1015) : const Color(0xFFF8F9FA);
-    final cardBg = isDark ? const Color(0xFF161820) : Colors.white;
-    final textPrim = isDark ? Colors.white : const Color(0xFF0F1015);
-    final textSec = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF22242D) : const Color(0xFFE5E7EB);
-
-    final unreadTotal = _notifications.where((n) => !n.read).length;
-    final listeFiltree = _notificationsFiltrees;
+    final bgColor = AppColors.backgroundOf(context);
+    final cardBg = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final textSec = AppColors.textSecondaryOf(context);
+    final filtered = _notificationsFiltrees;
 
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: bg,
-        elevation: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: Column(
           children: [
-            Text(
-              'Notifications',
-              style: TextStyle(color: textPrim, fontWeight: FontWeight.w700, fontSize: 18),
-            ),
-            if (unreadTotal > 0) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.accentBlue,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$unreadTotal',
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          if (unreadTotal > 0)
-            IconButton(
-              icon: const Icon(Icons.done_all_rounded, color: AppColors.accentBlue),
-              tooltip: 'Tout marquer comme lu',
-              onPressed: _toutMarquerCommeLu,
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Sélecteur de catégories
-          Container(
-            height: 48,
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, idx) {
-                final cat = _categories[idx];
-                final isSel = _categorieActive == cat;
-                return ChoiceChip(
-                  label: Text(cat),
-                  selected: isSel,
-                  selectedColor: isDark ? Colors.white : const Color(0xFF0F1015),
-                  backgroundColor: cardBg,
-                  labelStyle: TextStyle(
-                    color: isSel ? (isDark ? const Color(0xFF0F1015) : Colors.white) : textSec,
-                    fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 13,
+            // Top bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+              child: Row(
+                children: [
+                  GlassOrbButton(
+                    icon: Icons.arrow_back_ios_new_rounded,
+                    size: 40,
+                    iconSize: 18,
+                    onTap: () => Navigator.pop(context),
                   ),
-                  side: BorderSide(color: isSel ? Colors.transparent : borderColor),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onSelected: (val) {
-                    if (val) setState(() => _categorieActive = cat);
-                  },
-                );
-              },
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ACTIVITÉ', style: AppTypography.micro(AppColors.accentChampagne)),
+                        Text('Notifications', style: AppTypography.pageTitle(textPrim).copyWith(fontSize: 22)),
+                      ],
+                    ),
+                  ),
+                  if (_notifications.any((n) => !n.read))
+                    GlassOrbButton(
+                      icon: Icons.done_all_rounded,
+                      size: 40,
+                      tooltip: 'Tout marquer comme lu',
+                      onTap: _toutMarquerCommeLu,
+                    ),
+                ],
+              ),
             ),
-          ),
 
-          // Liste ou état vide
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.accentBlue))
-                : listeFiltree.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1C1E26) : const Color(0xFFEEF2F6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(Icons.notifications_none_rounded, size: 32, color: textSec),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Aucune notification',
-                              style: TextStyle(color: textPrim, fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Vous êtes à jour ! Vos alertes apparaîtront ici.',
-                              style: TextStyle(color: textSec, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _chargerNotifications,
-                        color: AppColors.accentBlue,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: listeFiltree.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final notif = listeFiltree[index];
-                            final colorIcon = _getColorForType(notif.type);
-
-                            return InkWell(
-                              onTap: () => _surTapNotification(notif),
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: cardBg,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: notif.read ? borderColor : AppColors.accentBlue,
-                                    width: notif.read ? 1 : 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: colorIcon.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(_getIconForType(notif.type), size: 20, color: colorIcon),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  notif.title,
-                                                  style: TextStyle(
-                                                    color: textPrim,
-                                                    fontSize: 14,
-                                                    fontWeight: notif.read ? FontWeight.w600 : FontWeight.w800,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              if (!notif.read)
-                                                Container(
-                                                  width: 8,
-                                                  height: 8,
-                                                  decoration: const BoxDecoration(
-                                                    color: AppColors.accentBlue,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            notif.body,
-                                            style: TextStyle(color: textSec, fontSize: 13, height: 1.3),
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                _formaterDate(notif.createdAt),
-                                                style: TextStyle(color: textSec.withOpacity(0.8), fontSize: 11),
-                                              ),
-                                              IconButton(
-                                                icon: Icon(Icons.delete_outline_rounded, size: 18, color: textSec),
-                                                padding: EdgeInsets.zero,
-                                                constraints: const BoxConstraints(),
-                                                onPressed: () => _supprimerNotification(notif.id),
-                                                tooltip: 'Supprimer',
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+            // Category pills
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                itemCount: _categories.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, idx) {
+                  final cat = _categories[idx];
+                  final active = _categorieActive == cat;
+                  return GestureDetector(
+                    onTap: () => setState(() => _categorieActive = cat),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: active ? AppColors.primaryActionBgOf(context) : cardBg,
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                        border: Border.all(color: active ? Colors.transparent : borderColor, width: 0.9),
+                      ),
+                      child: Text(
+                        cat,
+                        style: TextStyle(
+                          color: active ? AppColors.primaryActionFgOf(context) : textSec,
+                          fontSize: 12.5,
+                          fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                         ),
                       ),
-          ),
-        ],
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                  : filtered.isEmpty
+                      ? const LuxuryEmptyState(
+                          icon: Icons.notifications_none_rounded,
+                          title: 'Tout est à jour',
+                          message: 'Vos alertes de visites, validations et comptes apparaîtront ici.',
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _chargerNotifications,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, _) => const SizedBox(height: 10),
+                            itemBuilder: (_, idx) {
+                              final notif = filtered[idx];
+                              final accent = _getColorForType(notif.type);
+                              return GestureDetector(
+                                onTap: () => _surTapNotification(notif),
+                                child: Container(
+                                  padding: const EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                    color: cardBg,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: notif.read ? borderColor : accent.withValues(alpha: 0.45),
+                                      width: notif.read ? 0.9 : 1.2,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: accent.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: Icon(_getIconForType(notif.type), size: 20, color: accent),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    notif.title,
+                                                    style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5),
+                                                  ),
+                                                ),
+                                                if (!notif.read)
+                                                  Container(
+                                                    width: 8,
+                                                    height: 8,
+                                                    decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                                                  ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(notif.body, style: AppTypography.body(textSec).copyWith(fontSize: 13.5)),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.close_rounded, size: 17, color: textSec),
+                                        onPressed: () => _supprimerNotification(notif.id),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }

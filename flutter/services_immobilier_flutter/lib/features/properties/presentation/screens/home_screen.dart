@@ -1,21 +1,27 @@
 // ============================================================
-// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (Flutter)
-// Chargement direct Cloud Firestore, zéro donnée fictive.
+// DARLINK — APPLE-LEVEL HOME DISCOVERY SCREEN (Flutter)
+// Editorial typography, frosted glass search & action orbs,
+// horizontal architectural showcase + vertical live Firestore feed.
 // ============================================================
 
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/design_system/liquid_glass.dart';
 import '../../../../core/localization/app_locale.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/auth_service.dart';
 import '../../../auth/domain/models/auth_state.dart';
-import '../../data/property_api_service.dart';
-import '../../domain/models/property.dart';
 import '../../../map/presentation/screens/map_screen.dart';
 import '../../../navigation/presentation/screens/search_screen.dart';
 import '../../../notifications/data/notification_service.dart';
 import '../../../notifications/presentation/screens/notification_screen.dart';
+import '../../data/property_api_service.dart';
+import '../../domain/models/property.dart';
+import '../screens/property_details_screen.dart';
 import '../widgets/property_card.dart';
 import 'add_property_screen.dart';
 
@@ -45,8 +51,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
-    _scrollController.addListener(_onScroll);
+    _scrollController = ScrollController()..addListener(_onScroll);
     _chargerBiens();
     AuthState.instance.addListener(_onStateChange);
     AppLocale.instance.addListener(_onStateChange);
@@ -58,11 +63,11 @@ class _EcranAccueilState extends State<EcranAccueil> {
     if (!_scrollController.hasClients) return;
     final currentOffset = _scrollController.offset;
     final diff = currentOffset - _lastScrollOffset;
-    if (currentOffset <= 10) {
+    if (currentOffset <= 12) {
       if (!_headerVisible) setState(() => _headerVisible = true);
-    } else if (diff > 12 && currentOffset > 50) {
+    } else if (diff > 14 && currentOffset > 60) {
       if (_headerVisible) setState(() => _headerVisible = false);
-    } else if (diff < -8) {
+    } else if (diff < -10) {
       if (!_headerVisible) setState(() => _headerVisible = true);
     }
     _lastScrollOffset = currentOffset;
@@ -114,75 +119,61 @@ class _EcranAccueilState extends State<EcranAccueil> {
     }
   }
 
-  Widget _buildDiagnosticBanner(BuildContext context, bool isDark) {
+  Widget _buildDiagnosticPill(BuildContext context, bool isDark) {
     final diag = AuthService.instance.getDiagnosticInfo();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0x331E293B) : const Color(0xCCF1F5F9),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? const Color(0x33FFFFFF) : const Color(0x22000000),
-            width: 0.8,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevatedOf(context),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+              border: Border.all(color: AppColors.borderSubtleOf(context)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 7,
-                  height: 7,
+                  width: 6,
+                  height: 6,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Color(0xFF10B981),
+                    color: AppColors.accentGreen,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
-                  '${diag['projectId']} • ${diag['platform']}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                  ),
+                  '${diag['projectId']} • ${diag['authUid']}',
+                  style: AppTypography.micro(AppColors.textSecondaryOf(context))
+                      .copyWith(fontSize: 10),
                 ),
               ],
             ),
-            Text(
-              'UID: ${diag['authUid']}',
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w500,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF64748B),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final isDark = AppColors.isDark(context);
     final bgColor = AppColors.backgroundOf(context);
-    final cardBg = AppColors.surfaceOf(context);
-    final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
 
     final authUser = AuthState.instance.currentUser;
     final isAuth = AuthState.instance.isAuthenticated;
-    final userName = isAuth && authUser != null ? authUser.fullName : AppLocale.instance.tr('guest');
+    final firstName = isAuth && authUser != null && authUser.fullName.trim().isNotEmpty
+        ? authUser.fullName.trim().split(' ').first
+        : '';
     final monogram = isAuth && authUser != null && authUser.fullName.isNotEmpty
         ? authUser.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : 'DL';
-    final greeting = isAuth ? AppLocale.instance.tr('greeting') : AppLocale.instance.tr('welcome_guest');
+    final subtitleGreeting = isAuth && firstName.isNotEmpty ? 'Bonjour, $firstName' : 'Explorer la Tunisie';
+    final filtered = _proprietesFiltrees;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -190,7 +181,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
         bottom: false,
         child: Column(
           children: [
-            // 1. BANNIÈRE DEV & EN-TÊTE COLLAPSIBLE AU SCROLL
+            // Collapsible Editorial Top Bar + Frosted Orbs
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 220),
               crossFadeState: _headerVisible ? CrossFadeState.showFirst : CrossFadeState.showSecond,
@@ -198,99 +189,94 @@ class _EcranAccueilState extends State<EcranAccueil> {
               firstChild: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (kDebugMode) _buildDiagnosticBanner(context, isDark),
+                  if (kDebugMode) _buildDiagnosticPill(context, isDark),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isDark ? const Color(0x332563EB) : const Color(0x182563EB),
-                                border: Border.all(
-                                  color: AppColors.accentBlue.withValues(alpha: 0.5),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  monogram,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.accentBlue,
-                                  ),
-                                ),
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primaryActionBgOf(context),
+                          ),
+                          child: Center(
+                            child: Text(
+                              monogram,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryActionFgOf(context),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  greeting,
-                                  style: TextStyle(color: textSec, fontSize: 12, fontWeight: FontWeight.w500),
-                                ),
-                                Text(
-                                  userName,
-                                  style: TextStyle(color: textPrim, fontSize: 17, fontWeight: FontWeight.w800),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ),
                         ),
-                        Row(
-                          children: [
-                            const Opacity(
-                              opacity: 0.0,
-                              child: SizedBox(width: 1, height: 1, child: Text('Services Immobilier')),
-                            ),
-                            _HeaderCircleButton(
-                              icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                              tooltip: isDark ? 'Passer au mode clair' : 'Passer au mode sombre',
-                              isDark: isDark,
-                              onTap: () => AppTheme.basculerTheme(),
-                            ),
-                            const SizedBox(width: 8),
-                            _HeaderCircleButton(
-                              icon: Icons.add_business_outlined,
-                              tooltip: 'Déposer une annonce',
-                              isDark: isDark,
-                              onTap: () {
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()))
-                                    .then((_) => _chargerBiens());
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            _HeaderCircleButton(
-                              icon: Icons.notifications_none_rounded,
-                              tooltip: 'Centre de notifications',
-                              isDark: isDark,
-                              badgeCount: NotificationService.instance.unreadCount,
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const EcranNotifications()),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            _HeaderCircleButton(
-                              icon: Icons.map_outlined,
-                              tooltip: 'Afficher la carte',
-                              isDark: isDark,
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const EcranCarteInteractive()),
-                                );
-                              },
-                            ),
-                          ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Services Immobilier',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.micro(AppColors.accentChampagne),
+                              ),
+                              Text(
+                                subtitleGreeting,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.cardTitle(textPrim),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GlassOrbButton(
+                          icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                          size: 38,
+                          iconSize: 17,
+                          tooltip: isDark ? 'Passer au mode clair' : 'Passer au mode sombre',
+                          onTap: () => AppTheme.basculerTheme(),
+                        ),
+                        const SizedBox(width: 6),
+                        GlassOrbButton(
+                          icon: Icons.add_rounded,
+                          size: 38,
+                          iconSize: 18,
+                          tooltip: 'Déposer une annonce',
+                          onTap: () {
+                            Navigator.of(context)
+                                .push(MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()))
+                                .then((_) => _chargerBiens());
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        GlassOrbButton(
+                          icon: Icons.notifications_none_rounded,
+                          size: 38,
+                          iconSize: 17,
+                          tooltip: 'Centre de notifications',
+                          badgeCount: NotificationService.instance.unreadCount,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const EcranNotifications()),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        GlassOrbButton(
+                          icon: Icons.map_outlined,
+                          size: 38,
+                          iconSize: 17,
+                          tooltip: 'Afficher la carte',
+                          iconColor: AppColors.accentChampagne,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const EcranCarteInteractive()),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -299,139 +285,168 @@ class _EcranAccueilState extends State<EcranAccueil> {
               ),
             ),
 
-            // 2. BARRE DE RECHERCHE
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: GestureDetector(
-                key: const Key('home_search_bar_clickable'),
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EcranRecherche()));
-                },
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: borderColor, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Icon(Icons.search, color: textSec, size: 22),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Tunis, Sousse, Sfax, Bizerte, Nabeul...',
-                          style: TextStyle(
-                            color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: isDark ? const Color(0x1AFFFFFF) : const Color(0x0A000000),
-                          child: Icon(Icons.tune, color: isDark ? Colors.white : const Color(0xFF111827), size: 18),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            // Main Scrollable Discovery Feed
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _chargerBiens,
+                child: ListView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+                  children: [
+                    // Editorial Hero Headline
+                    Text(
+                      'Bienvenue sur Services Immobilier',
+                      style: AppTypography.micro(AppColors.accentChampagne),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Trouvez le bien immobilier de vos rêves en Tunisie.',
+                      style: AppTypography.heroDisplay(textPrim).copyWith(fontSize: 27),
+                    ),
+                    const SizedBox(height: 18),
 
-            // 3. FILTRES HORIZONTAUX
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              child: Row(
-                children: _filtres.map((filtre) {
-                  final isSelected = _filtreActif == filtre;
-                  final pillBg = isSelected ? (isDark ? Colors.white : const Color(0xFF111827)) : cardBg;
-                  final pillText = isSelected ? (isDark ? const Color(0xFF0F1015) : Colors.white) : textSec;
-                  final pillBorder = isSelected ? Colors.transparent : borderColor;
-
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2.5),
-                      child: GestureDetector(
-                        onTap: () => setState(() => _filtreActif = filtre),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: pillBg,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: pillBorder, width: 1),
-                          ),
-                          child: Center(
-                            child: Text(
-                              _nomFiltre(filtre),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: pillText,
-                                fontSize: 11.5,
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    // Floating Liquid Glass Search Bar
+                    GestureDetector(
+                      key: const Key('home_search_bar_clickable'),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EcranRecherche()));
+                      },
+                      child: LiquidGlassSurface(
+                        borderRadius: AppSpacing.radiusPill,
+                        blurSigma: 20,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.search_rounded, color: textSec, size: 21),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Tunis, Sousse, Sfax, Bizerte, Nabeul...',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.body(textSec).copyWith(fontSize: 13.5),
                               ),
                             ),
-                          ),
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceElevatedOf(context),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.tune_rounded, color: textPrim, size: 17),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
-            ),
+                    const SizedBox(height: 16),
 
-            // 4. BANNIÈRE ET COMPTEUR RÉEL
-            SectionBienvenue(isDark: isDark, count: _proprietesFiltrees.length),
-
-            // 5. LISTE DES ANNONCES RÉELLES
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 820),
-                  child: RefreshIndicator(
-                    onRefresh: _chargerBiens,
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : _proprietesFiltrees.isEmpty
-                            ? ListView(
-                                controller: _scrollController,
-                                children: [
-                                  const SizedBox(height: 60),
-                                  Center(
-                                    child: Column(
-                                      children: [
-                                        Icon(Icons.search_off_rounded, size: 48, color: textSec),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          AppLocale.instance.tr('empty_search'),
-                                          style: TextStyle(color: textSec, fontSize: 14),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : ListView.builder(
-                                controller: _scrollController,
-                                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                                itemCount: _proprietesFiltrees.length,
-                                itemBuilder: (context, index) => CartePropriete(propriete: _proprietesFiltrees[index]),
+                    // Category Navigation Pills
+                    SizedBox(
+                      height: 38,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _filtres.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (context, idx) {
+                          final filtre = _filtres[idx];
+                          final isSelected = _filtreActif == filtre;
+                          return GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _filtreActif = filtre);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primaryActionBgOf(context)
+                                    : AppColors.surfaceOf(context),
+                                borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                border: Border.all(
+                                  color: isSelected ? Colors.transparent : AppColors.borderOf(context),
+                                  width: 0.9,
+                                ),
                               ),
-                  ),
+                              child: Center(
+                                child: Text(
+                                  _nomFiltre(filtre),
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? AppColors.primaryActionFgOf(context)
+                                        : textSec,
+                                    fontSize: 13,
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Main Vertical Catalogue Section (visible above the fold)
+                    EditorialSectionHeader(
+                      title: 'Nos biens immobiliers',
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceElevatedOf(context),
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                        ),
+                        child: Text(
+                          '${filtered.length} ${filtered.length <= 1 ? 'bien' : 'biens'}',
+                          style: AppTypography.micro(textSec),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    if (_isLoading)
+                      const _LuxuryLoadingFeed()
+                    else if (filtered.isEmpty)
+                      LuxuryEmptyState(
+                        icon: Icons.real_estate_agent_outlined,
+                        title: 'Aucun bien disponible',
+                        message:
+                            'Aucune annonce ou référence ne correspond actuellement à cette catégorie.',
+                        actionLabel: 'Réinitialiser',
+                        onAction: () => setState(() => _filtreActif = 'Tous'),
+                      )
+                    else ...[
+                      CartePropriete(propriete: filtered.first),
+                      if (filtered.length > 1) ...[
+                        const SizedBox(height: 6),
+                        EditorialSectionHeader(
+                          title: 'Sélection en Tunisie',
+                          subtitle: 'Références et biens disponibles',
+                          trailing: Text(
+                            '${filtered.length}',
+                            style: AppTypography.caption(AppColors.accentChampagne),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 192,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: filtered.take(6).length,
+                            separatorBuilder: (_, _) => const SizedBox(width: 14),
+                            itemBuilder: (context, idx) {
+                              return _HorizontalCollectionTile(propriete: filtered[idx]);
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        ...filtered.skip(1).map((prop) => CartePropriete(propriete: prop)),
+                      ],
+                    ],
+                  ],
                 ),
               ),
             ),
@@ -442,142 +457,133 @@ class _EcranAccueilState extends State<EcranAccueil> {
   }
 }
 
-class SectionBienvenue extends StatelessWidget {
-  final bool isDark;
-  final int count;
+class _HorizontalCollectionTile extends StatelessWidget {
+  final Propriete propriete;
 
-  const SectionBienvenue({super.key, required this.isDark, this.count = 0});
+  const _HorizontalCollectionTile({required this.propriete});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
+    final priceDisplay = propriete.priceOnRequest || propriete.prix <= 0
+        ? 'Prix sur demande'
+        : AppLocale.instance.formatCurrency(propriete.prix, isRental: propriete.estLocation);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0x1A2563EB) : const Color(0x102563EB),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark ? const Color(0x332563EB) : const Color(0x282563EB),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.home_work_rounded, color: AppColors.accentBlue, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        AppLocale.instance.tr('welcome_banner_title'),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.accentBlue),
-                        overflow: TextOverflow.ellipsis,
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => EcranDetails(propriete: propriete)),
+        );
+      },
+      child: Container(
+        width: 240,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF171A21) : const Color(0xFFEFECE5),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.borderOf(context), width: 0.9),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(21),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (propriete.imageUrl.isNotEmpty)
+                Image.network(
+                  propriete.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const Center(
+                    child: Icon(Icons.apartment_rounded, size: 32, color: AppColors.accentChampagne),
+                  ),
+                )
+              else
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 72),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.apartment_rounded, size: 30, color: AppColors.accentChampagne),
+                        const SizedBox(height: 6),
+                        Text(
+                          propriete.governorate,
+                          style: AppTypography.micro(AppColors.accentChampagne),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 10,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xCC14161B) : const Color(0xD9FFFFFF),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.14)
+                              : Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            priceDisplay,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${propriete.type} • ${propriete.governorate}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.caption(textSec),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  AppLocale.instance.tr('welcome_banner_sub'),
-                  style: TextStyle(fontSize: 12, color: textSec, height: 1.4),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  AppLocale.instance.tr('our_properties'),
-                  style: TextStyle(fontSize: 18, fontWeight: '800' == '800' ? FontWeight.w800 : FontWeight.bold, color: textPrim),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0x22FFFFFF) : const Color(0x0C000000),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$count annonce(s)',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textSec),
+                  ),
                 ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _HeaderCircleButton extends StatelessWidget {
-  final IconData icon;
-  final String tooltip;
-  final bool isDark;
-  final VoidCallback onTap;
-  final int badgeCount;
-
-  const _HeaderCircleButton({
-    required this.icon,
-    required this.tooltip,
-    required this.isDark,
-    required this.onTap,
-    this.badgeCount = 0,
-  });
+class _LuxuryLoadingFeed extends StatelessWidget {
+  const _LuxuryLoadingFeed();
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF181920) : Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: isDark ? const Color(0x28FFFFFF) : const Color(0x18000000), width: 1),
-              ),
-              child: Icon(icon, color: isDark ? Colors.white : const Color(0xFF111827), size: 19),
-            ),
-            if (badgeCount > 0)
-              Positioned(
-                top: -2,
-                right: -2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  child: Center(
-                    child: Text(
-                      badgeCount > 9 ? '9+' : '$badgeCount',
-                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+    final fill = AppColors.surfaceElevatedOf(context);
+    return Column(
+      children: List.generate(
+        2,
+        (_) => Container(
+          height: 320,
+          margin: const EdgeInsets.only(bottom: 20),
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLG),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
       ),
     );

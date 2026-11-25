@@ -1,11 +1,15 @@
 // ============================================================
-// DARLINK — ÉCRAN DE RECHERCHE & FILTRES AVANCÉS (Flutter)
-// 24 Gouvernorats, transaction, type, budget, surface, chambres, SDB, tri & pagination.
+// DARLINK — APPLE LIQUID GLASS SEARCH & FILTERS (Flutter)
+// 24 Gouvernorats, transaction segment, type, budget, area,
+// rooms/bath pills, sort, and frosted floating apply dock.
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/tunisia_locations.dart';
+import '../../../../core/design_system/liquid_glass.dart';
 import '../../../map/presentation/screens/map_screen.dart';
 import '../../../properties/data/property_api_service.dart';
 import '../../../properties/domain/models/property.dart';
@@ -93,6 +97,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
   }
 
   void _reinitialiserFiltres() {
+    HapticFeedback.lightImpact();
     _searchController.clear();
     _minAreaCtrl.clear();
     _maxAreaCtrl.clear();
@@ -111,47 +116,59 @@ class _EcranRechercheState extends State<EcranRecherche> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = AppColors.backgroundOf(context);
     final cardBg = AppColors.surfaceOf(context);
+    final elevatedBg = AppColors.surfaceElevatedOf(context);
     final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
-    final segmentedBg = isDark ? const Color(0xFF181920) : const Color(0xFFE9EBF0);
-    final bottomDockBg = isDark ? const Color(0xF00F1015) : const Color(0xF2FFFFFF);
+    final activeBg = AppColors.primaryActionBgOf(context);
+    final activeFg = AppColors.primaryActionFgOf(context);
 
     return Scaffold(
       backgroundColor: bgColor,
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [
             Column(
               children: [
+                // Editorial Top Bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _GlassCircleBtn(
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        isDark: isDark,
-                        onTap: () {
-                          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-                        },
+                      if (Navigator.of(context).canPop()) ...[
+                        GlassOrbButton(
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          size: 40,
+                          iconSize: 18,
+                          onTap: () => Navigator.of(context).pop(),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('EXPLORATION', style: AppTypography.micro(AppColors.accentChampagne)),
+                            Text('Recherche de biens', style: AppTypography.pageTitle(textPrim).copyWith(fontSize: 21)),
+                          ],
+                        ),
                       ),
-                      Text('Recherche de biens', style: TextStyle(color: textPrim, fontSize: 17, fontWeight: FontWeight.w700)),
-                      Row(
-                        children: [
-                          _GlassCircleBtn(
-                            icon: Icons.map_outlined,
-                            isDark: isDark,
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const EcranCarteInteractive()),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          _GlassCircleBtn(icon: Icons.restart_alt_rounded, isDark: isDark, onTap: _reinitialiserFiltres),
-                        ],
+                      GlassOrbButton(
+                        icon: Icons.map_outlined,
+                        size: 40,
+                        iconColor: AppColors.accentChampagne,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const EcranCarteInteractive()),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GlassOrbButton(
+                        icon: Icons.restart_alt_rounded,
+                        size: 40,
+                        onTap: _reinitialiserFiltres,
                       ),
                     ],
                   ),
@@ -159,24 +176,27 @@ class _EcranRechercheState extends State<EcranRecherche> {
 
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
+                    padding: EdgeInsets.fromLTRB(20, 6, 20, Navigator.of(context).canPop() ? 110 : 124),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: borderColor)),
+                        // Frosted Search Bar
+                        LiquidGlassSurface(
+                          borderRadius: AppSpacing.radiusPill,
+                          blurSigma: 18,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                           child: TextField(
                             key: const Key('search_text_input'),
                             controller: _searchController,
-                            style: TextStyle(color: textPrim, fontSize: 14),
+                            style: AppTypography.body(textPrim),
                             decoration: InputDecoration(
+                              filled: false,
                               hintText: 'Rechercher par ville, gouvernorat, mot-clé...',
-                              hintStyle: TextStyle(color: textSec, fontSize: 14),
-                              prefixIcon: const Icon(Icons.search, color: AppColors.accentBlue, size: 22),
+                              hintStyle: AppTypography.body(textSec).copyWith(fontSize: 13.5),
+                              prefixIcon: Icon(Icons.search_rounded, color: textSec, size: 20),
                               suffixIcon: _searchController.text.isNotEmpty
                                   ? IconButton(
-                                      icon: Icon(Icons.clear, size: 18, color: textSec),
+                                      icon: Icon(Icons.close_rounded, size: 18, color: textSec),
                                       onPressed: () {
                                         _searchController.clear();
                                         _appliquerRechercheBackend();
@@ -184,36 +204,57 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                     )
                                   : null,
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
                             ),
                             onSubmitted: (_) => _appliquerRechercheBackend(),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
+                        const SizedBox(height: 16),
 
-                        // SEGMENT TRANSACTION
+                        // Segmented Transaction Control
                         Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: segmentedBg, borderRadius: BorderRadius.circular(24), border: Border.all(color: borderColor)),
+                          decoration: BoxDecoration(
+                            color: elevatedBg,
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                            border: Border.all(color: borderColor, width: 0.8),
+                          ),
                           child: Row(
                             children: _segments.map((segment) {
                               final isSel = _segmentActif == segment;
                               return Expanded(
                                 child: GestureDetector(
                                   onTap: () {
+                                    HapticFeedback.selectionClick();
                                     setState(() => _segmentActif = segment);
                                     _appliquerRechercheBackend();
                                   },
-                                  child: Container(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
                                     padding: const EdgeInsets.symmetric(vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: isSel ? AppColors.accentBlue : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(20),
+                                      color: isSel ? cardBg : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                      boxShadow: isSel
+                                          ? [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.06),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : null,
                                     ),
                                     child: Center(
                                       child: Text(
                                         segment,
-                                        style: TextStyle(color: isSel ? Colors.white : textSec, fontWeight: FontWeight.w700, fontSize: 13),
+                                        style: TextStyle(
+                                          color: isSel ? textPrim : textSec,
+                                          fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -222,21 +263,69 @@ class _EcranRechercheState extends State<EcranRecherche> {
                             }).toList(),
                           ),
                         ),
+                        const SizedBox(height: 14),
 
-                        const SizedBox(height: 18),
-                        Text('Gouvernorats de Tunisie (24)', style: TextStyle(color: textPrim, fontSize: 15, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 8),
+                        if (!Navigator.of(context).canPop())
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 4,
+                                  child: OutlinedButton(
+                                    onPressed: _reinitialiserFiltres,
+                                    style: OutlinedButton.styleFrom(
+                                      shape: const StadiumBorder(),
+                                      side: BorderSide(color: borderColor),
+                                      minimumSize: const Size(0, 44),
+                                    ),
+                                    child: const Text('Réinitialiser'),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  flex: 6,
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      await _appliquerRechercheBackend();
+                                      if (!mounted || !context.mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                          content: Text('${_proprietesTrouvees.length} bien(s) trouvé(s) sur Cloud Firestore !'),
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: activeBg,
+                                      foregroundColor: activeFg,
+                                      elevation: 0,
+                                      minimumSize: const Size(0, 44),
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    child: const Text('Appliquer les filtres', style: TextStyle(fontWeight: FontWeight.w600)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        Text('Gouvernorats de Tunisie (24)', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
+                        const SizedBox(height: 10),
                         SizedBox(
                           height: 36,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: tunisiaGovernorates.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 8),
+                            separatorBuilder: (_, _) => const SizedBox(width: 8),
                             itemBuilder: (_, idx) {
                               final g = tunisiaGovernorates[idx];
                               final active = _gouvernoratSelectionne == g.nameFr;
                               return GestureDetector(
                                 onTap: () {
+                                  HapticFeedback.selectionClick();
                                   setState(() => _gouvernoratSelectionne = active ? '' : g.nameFr);
                                   _appliquerRechercheBackend();
                                 },
@@ -244,20 +333,27 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                   padding: const EdgeInsets.symmetric(horizontal: 14),
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    color: active ? AppColors.accentBlue : cardBg,
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(color: active ? AppColors.accentBlue : borderColor),
+                                    color: active ? activeBg : cardBg,
+                                    borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                    border: Border.all(color: active ? Colors.transparent : borderColor, width: 0.9),
                                   ),
-                                  child: Text(g.nameFr, style: TextStyle(color: active ? Colors.white : textSec, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                                  child: Text(
+                                    g.nameFr,
+                                    style: TextStyle(
+                                      color: active ? activeFg : textSec,
+                                      fontSize: 12.5,
+                                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
                               );
                             },
                           ),
                         ),
+                        const SizedBox(height: 20),
 
-                        const SizedBox(height: 18),
-                        Text('Type de bien', style: TextStyle(color: textPrim, fontSize: 15, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 8),
+                        Text('Type de bien', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
+                        const SizedBox(height: 10),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -265,75 +361,108 @@ class _EcranRechercheState extends State<EcranRecherche> {
                             final active = _typeBienSelectionne == type;
                             return GestureDetector(
                               onTap: () {
+                                HapticFeedback.selectionClick();
                                 setState(() => _typeBienSelectionne = type);
                                 _appliquerRechercheBackend();
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: active ? AppColors.accentBlue : cardBg,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: active ? AppColors.accentBlue : borderColor),
+                                  color: active ? activeBg : cardBg,
+                                  borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                  border: Border.all(color: active ? Colors.transparent : borderColor, width: 0.9),
                                 ),
-                                child: Text(type, style: TextStyle(color: active ? Colors.white : textSec, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                                child: Text(
+                                  type,
+                                  style: TextStyle(
+                                    color: active ? activeFg : textSec,
+                                    fontSize: 12.5,
+                                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                                  ),
+                                ),
                               ),
                             );
                           }).toList(),
                         ),
+                        const SizedBox(height: 20),
 
+                        // Budget & Surface Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: borderColor, width: 0.9),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Budget (DT)', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
+                                  Text(
+                                    '${_priceRange.start.toInt()} - ${_priceRange.end.toInt()} DT',
+                                    style: AppTypography.caption(AppColors.accentChampagne),
+                                  ),
+                                ],
+                              ),
+                              RangeSlider(
+                                values: _priceRange,
+                                min: 0,
+                                max: 1500000,
+                                divisions: 30,
+                                activeColor: AppColors.accentChampagne,
+                                onChanged: (v) => setState(() => _priceRange = v),
+                                onChangeEnd: (_) => _appliquerRechercheBackend(),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _minAreaCtrl,
+                                      keyboardType: TextInputType.number,
+                                      style: AppTypography.body(textPrim).copyWith(fontSize: 13.5),
+                                      decoration: InputDecoration(
+                                        labelText: 'Surface min (m²)',
+                                        filled: true,
+                                        fillColor: elevatedBg,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _maxAreaCtrl,
+                                      keyboardType: TextInputType.number,
+                                      style: AppTypography.body(textPrim).copyWith(fontSize: 13.5),
+                                      decoration: InputDecoration(
+                                        labelText: 'Surface max (m²)',
+                                        filled: true,
+                                        fillColor: elevatedBg,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(14),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 18),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Budget (DT)', style: TextStyle(color: textPrim, fontSize: 15, fontWeight: FontWeight.w700)),
-                            Text('${_priceRange.start.toInt()} - ${_priceRange.end.toInt()} DT',
-                                style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.w700, fontSize: 12.5)),
-                          ],
-                        ),
-                        RangeSlider(
-                          values: _priceRange,
-                          min: 0,
-                          max: 1500000,
-                          divisions: 30,
-                          activeColor: AppColors.accentBlue,
-                          onChanged: (v) => setState(() => _priceRange = v),
-                          onChangeEnd: (_) => _appliquerRechercheBackend(),
-                        ),
 
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _minAreaCtrl,
-                                keyboardType: TextInputType.number,
-                                style: TextStyle(color: textPrim, fontSize: 13),
-                                decoration: InputDecoration(
-                                  labelText: 'Surface min (m²)',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: TextField(
-                                controller: _maxAreaCtrl,
-                                keyboardType: TextInputType.number,
-                                style: TextStyle(color: textPrim, fontSize: 13),
-                                decoration: InputDecoration(
-                                  labelText: 'Surface max (m²)',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-                        Text('Chambres & Salles de bain', style: TextStyle(color: textPrim, fontSize: 14, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 8),
+                        Text('Chambres & Salles de bain', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
+                        const SizedBox(height: 10),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -362,8 +491,8 @@ class _EcranRechercheState extends State<EcranRecherche> {
                             }),
                           ],
                         ),
+                        const SizedBox(height: 14),
 
-                        const SizedBox(height: 16),
                         Wrap(
                           spacing: 8,
                           children: [
@@ -393,39 +522,26 @@ class _EcranRechercheState extends State<EcranRecherche> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 22),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Résultats (${_proprietesTrouvees.length})',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: textPrim),
-                            ),
-                            GestureDetector(
-                              onTap: _reinitialiserFiltres,
-                              child: const Text('Réinitialiser', style: TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.w700, fontSize: 13)),
-                            ),
-                          ],
+
+                        EditorialSectionHeader(
+                          title: 'Résultats (${_proprietesTrouvees.length})',
+                          trailing: GestureDetector(
+                            onTap: _reinitialiserFiltres,
+                            child: Text('Réinitialiser', style: AppTypography.caption(AppColors.accentChampagne)),
+                          ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
 
                         if (_isLoading)
-                          const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+                          const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(strokeWidth: 2)))
                         else if (_proprietesTrouvees.isEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(28),
-                            decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: borderColor)),
-                            child: Column(
-                              children: [
-                                const Icon(Icons.search_off_rounded, size: 42, color: AppColors.accentBlue),
-                                const SizedBox(height: 10),
-                                Text('Aucun bien ne correspond à ces critères', style: TextStyle(color: textPrim, fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 14),
-                                ElevatedButton(onPressed: _reinitialiserFiltres, child: const Text('Tout réinitialiser')),
-                              ],
-                            ),
+                          LuxuryEmptyState(
+                            icon: Icons.search_off_rounded,
+                            title: 'Aucun bien ne correspond à ces critères',
+                            message: 'Ajustez vos filtres ou réinitialisez la recherche.',
+                            actionLabel: 'Tout réinitialiser',
+                            onAction: _reinitialiserFiltres,
                           )
                         else ...[
                           ..._proprietesTrouvees.map((prop) => CartePropriete(propriete: prop)),
@@ -447,69 +563,62 @@ class _EcranRechercheState extends State<EcranRecherche> {
               ],
             ),
 
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(color: bottomDockBg, borderRadius: BorderRadius.circular(24), border: Border.all(color: borderColor)),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: OutlinedButton(onPressed: _reinitialiserFiltres, child: const Text('Réinitialiser')),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 5,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await _appliquerRechercheBackend();
-                          if (!mounted || !context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${_proprietesTrouvees.length} bien(s) trouvé(s) sur Cloud Firestore !'),
-                              duration: const Duration(seconds: 2),
-                              backgroundColor: AppColors.accentBlue,
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBlue, foregroundColor: Colors.white),
-                        child: const Text('Appliquer les filtres'),
+            // Floating Frosted Bottom Apply Bar ONLY when pushed standalone
+            if (Navigator.of(context).canPop())
+              Positioned(
+                left: 18,
+                right: 18,
+                bottom: 16,
+                child: LiquidGlassSurface(
+                  borderRadius: 28,
+                  blurSigma: 22,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: OutlinedButton(
+                          onPressed: _reinitialiserFiltres,
+                          style: OutlinedButton.styleFrom(
+                            shape: const StadiumBorder(),
+                            side: BorderSide(color: borderColor),
+                            minimumSize: const Size(0, 44),
+                          ),
+                          child: const Text('Réinitialiser'),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 6,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await _appliquerRechercheBackend();
+                            if (!mounted || !context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                content: Text('${_proprietesTrouvees.length} bien(s) trouvé(s) sur Cloud Firestore !'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: activeBg,
+                            foregroundColor: activeFg,
+                            elevation: 0,
+                            minimumSize: const Size(0, 44),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: const Text('Appliquer les filtres', style: TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _GlassCircleBtn extends StatelessWidget {
-  final IconData icon;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _GlassCircleBtn({required this.icon, required this.isDark, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF181920) : Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: isDark ? const Color(0x28FFFFFF) : const Color(0x18000000)),
-        ),
-        child: Icon(icon, color: isDark ? Colors.white : const Color(0xFF111827), size: 18),
       ),
     );
   }

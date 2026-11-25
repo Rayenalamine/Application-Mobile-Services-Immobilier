@@ -1,11 +1,16 @@
 // ============================================================
-// DARLINK — CARTE DE BIEN IMMOBILIER LUXE GLASSMORPHISM (Flutter)
-// Design adaptatif Dark & Light, attribution source & repli sobre sans image inventée.
+// DARLINK — ARCHITECTURAL LIQUID GLASS PROPERTY CARD (Flutter)
+// Editorial 410px tall visual showcase, frosted glass bottom sheet,
+// architectural blueprint fallback when photo rights unavailable,
+// tactile scale & heart animations.
 // ============================================================
 
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/design_system/liquid_glass.dart';
 import '../../../../core/localization/app_locale.dart';
 import '../../../favorites/data/favorites_api_service.dart';
 import '../../domain/models/property.dart';
@@ -25,6 +30,7 @@ class CartePropriete extends StatefulWidget {
 
 class _CarteProprieteState extends State<CartePropriete> {
   late bool _isFavorite;
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -49,22 +55,25 @@ class _CarteProprieteState extends State<CartePropriete> {
   }
 
   void _basculerFavori() {
+    HapticFeedback.lightImpact();
     FavoritesApiService.instance.toggleFavorite(widget.propriete.id);
     setState(() => _isFavorite = !_isFavorite);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         content: Text(
           _isFavorite
               ? AppLocale.instance.tr('added_to_favorites')
               : AppLocale.instance.tr('removed_from_favorites'),
         ),
         duration: const Duration(seconds: 1),
-        backgroundColor: _isFavorite ? AppColors.accentBlue : AppColors.accentRed,
       ),
     );
   }
 
   void _ouvrirDetails(BuildContext context) {
+    HapticFeedback.selectionClick();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -76,327 +85,398 @@ class _CarteProprieteState extends State<CartePropriete> {
   @override
   Widget build(BuildContext context) {
     final p = widget.propriete;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final cardBg = AppColors.surfaceOf(context);
+    final isDark = AppColors.isDark(context);
     final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
-    final glassDockBg = isDark ? const Color(0xCC13141C) : const Color(0xF2FFFFFF);
-    final dockBorder = isDark ? const Color(0x28FFFFFF) : const Color(0x18000000);
-    final topPillBg = isDark ? const Color(0x8A181920) : const Color(0xE6FFFFFF);
-    final topPillBorder = isDark ? const Color(0x33FFFFFF) : const Color(0x18000000);
+    final primaryBg = AppColors.primaryActionBgOf(context);
+    final primaryFg = AppColors.primaryActionFgOf(context);
 
     final priceDisplay = p.priceOnRequest || p.prix <= 0
         ? 'Prix sur demande'
         : AppLocale.instance.formatCurrency(p.prix, isRental: p.estLocation);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 22),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: SizedBox(
-          height: 380,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (p.imageUrl.isNotEmpty)
-                Image.network(
-                  p.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => _buildPlaceholder(isDark, textSec, p),
-                )
-              else
-                _buildPlaceholder(isDark, textSec, p),
+    final statusLabel = p.isInstitutionalReference
+        ? 'Référence programme'
+        : (p.estLocation
+            ? AppLocale.instance.tr('for_rent')
+            : AppLocale.instance.tr('for_sale'));
 
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 84,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.black.withValues(alpha: isDark ? 0.55 : 0.18),
-                        Colors.transparent,
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                top: 16,
-                left: 16,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: topPillBg,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: topPillBorder, width: 1),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppColors.accentGreen,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            p.isInstitutionalReference
-                                ? 'Référence programme'
-                                : (p.estLocation
-                                    ? AppLocale.instance.tr('for_rent')
-                                    : AppLocale.instance.tr('for_sale')),
-                            style: TextStyle(
-                              color: isDark ? Colors.white : const Color(0xFF111827),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                top: 16,
-                right: 16,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: GestureDetector(
-                      onTap: _basculerFavori,
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: topPillBg,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: topPillBorder, width: 1),
-                        ),
-                        child: Icon(
-                          _isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: _isFavorite
-                              ? AppColors.accentRed
-                              : (isDark ? Colors.white : const Color(0xFF111827)),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                bottom: 12,
-                left: 12,
-                right: 12,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: glassDockBg,
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: dockBorder, width: 1),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      priceDisplay,
-                                      style: TextStyle(
-                                        color: textPrim,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: -0.4,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      p.titre,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: isDark ? const Color(0xFFE0E0E6) : const Color(0xFF374151),
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () => _ouvrirDetails(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? Colors.white : AppColors.accentBlue,
-                                  foregroundColor: isDark ? const Color(0xFF0F1015) : Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      AppLocale.instance.tr('btn_details'),
-                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.arrow_forward_rounded, size: 16),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(Icons.location_on_rounded, size: 15, color: textSec),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  p.localisation,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: textSec, fontSize: 13, fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _PillCarac(icone: Icons.bed_outlined, valeur: '${p.nombreChambres} Ch', isDark: isDark),
-                              const SizedBox(width: 8),
-                              _PillCarac(icone: Icons.bathtub_outlined, valeur: '${p.nombreSallesDeBain} Sdb', isDark: isDark),
-                              const SizedBox(width: 8),
-                              _PillCarac(icone: Icons.crop_square_rounded, valeur: '${p.surfaceM2} m²', isDark: isDark),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTap: () => _ouvrirDetails(context),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.985 : 1.0,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 22),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceOf(context),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLG),
+            border: Border.all(color: borderColor, width: 0.9),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.36 : 0.06),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLG - 1),
+            child: SizedBox(
+              height: 396,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (p.imageUrl.isNotEmpty)
+                    Image.network(
+                      p.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _ArchitecturalBlueprintFallback(propriete: p),
+                    )
+                  else
+                    _ArchitecturalBlueprintFallback(propriete: p),
 
-  Widget _buildPlaceholder(bool isDark, Color textSec, Propriete p) {
-    return Container(
-      color: isDark ? const Color(0xFF181B24) : const Color(0xFFEEF2F7),
-      padding: const EdgeInsets.only(bottom: 130, left: 24, right: 24),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.apartment_rounded,
-              size: 48,
-              color: AppColors.accentBlue.withValues(alpha: 0.75),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              p.sourceName != null && p.sourceName!.isNotEmpty
-                  ? 'Référence officielle • ${p.sourceName}'
-                  : AppLocale.instance.tr('no_photo'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: textSec,
-                fontWeight: FontWeight.w600,
-                fontSize: 12.5,
+                  // Subtle cinematic gradient scrim for contrast without obscuring photography
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: isDark ? 0.35 : 0.14),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: isDark ? 0.55 : 0.28),
+                          ],
+                          stops: const [0.0, 0.42, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Top Row: Liquid Glass Status Pill + Tactile Heart Orb
+                  Positioned(
+                    top: 14,
+                    left: 14,
+                    right: 14,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        LiquidGlassSurface(
+                          borderRadius: AppSpacing.radiusPill,
+                          blurSigma: 16,
+                          elevatedShadow: false,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  color: p.isInstitutionalReference
+                                      ? AppColors.accentChampagne
+                                      : AppColors.accentGreen,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  color: textPrim,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _basculerFavori,
+                          child: LiquidGlassSurface(
+                            borderRadius: 21,
+                            blurSigma: 16,
+                            elevatedShadow: false,
+                            child: SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                child: Icon(
+                                  _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                  key: ValueKey(_isFavorite),
+                                  color: _isFavorite ? AppColors.accentRed : textPrim,
+                                  size: 19,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Bottom Frosted Liquid Glass Info Sheet
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 12,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xCC14161B)
+                                : const Color(0xD9FFFFFF),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.16)
+                                  : Colors.white.withValues(alpha: 0.9),
+                              width: 0.9,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          priceDisplay,
+                                          style: AppTypography.priceDisplay(textPrim),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          p.titre,
+                                          style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  ElevatedButton(
+                                    onPressed: () => _ouvrirDetails(context),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryBg,
+                                      foregroundColor: primaryFg,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                      minimumSize: const Size(0, 38),
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    child: const Text(
+                                      'Voir détails',
+                                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.location_on_outlined, size: 14, color: AppColors.accentChampagne),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      p.localisation,
+                                      style: AppTypography.caption(textSec),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  _SpecPill(icon: Icons.bed_outlined, label: '${p.nombreChambres} ch'),
+                                  const SizedBox(width: 6),
+                                  _SpecPill(icon: Icons.bathtub_outlined, label: '${p.nombreSallesDeBain} sdb'),
+                                  const SizedBox(width: 6),
+                                  _SpecPill(icon: Icons.square_foot_rounded, label: '${p.surfaceM2} m²'),
+                                  if (p.sourceName != null && p.sourceName!.isNotEmpty) ...[
+                                    const Spacer(),
+                                    Text(
+                                      p.sourceName!.split(' ').first,
+                                      style: AppTypography.micro(AppColors.accentChampagne),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _PillCarac extends StatelessWidget {
-  final IconData icone;
-  final String valeur;
-  final bool isDark;
+class _SpecPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
 
-  const _PillCarac({
-    required this.icone,
-    required this.valeur,
-    required this.isDark,
-  });
+  const _SpecPill({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
+    final textSec = AppColors.textSecondaryOf(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0x1AFFFFFF) : const Color(0x0C000000),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? const Color(0x22FFFFFF) : const Color(0x10000000),
-          width: 0.8,
-        ),
+        color: isDark ? Colors.white.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icone, size: 14, color: isDark ? const Color(0xFFCAC4D0) : const Color(0xFF4B5563)),
+          Icon(icon, size: 13, color: textSec),
           const SizedBox(width: 4),
           Text(
-            valeur,
-            style: TextStyle(
-              color: isDark ? const Color(0xFFCAC4D0) : const Color(0xFF4B5563),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+            label,
+            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: textSec),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArchitecturalBlueprintFallback extends StatelessWidget {
+  final Propriete propriete;
+
+  const _ArchitecturalBlueprintFallback({required this.propriete});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
+    final bgTop = isDark ? const Color(0xFF171A21) : const Color(0xFFF3F1EC);
+    final bgBottom = isDark ? const Color(0xFF0E1015) : const Color(0xFFE7E2D8);
+    final textPrim = AppColors.textPrimaryOf(context);
+    final textSec = AppColors.textSecondaryOf(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [bgTop, bgBottom],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _ArchitecturalGridPainter(
+                lineColor: isDark
+                    ? Colors.white.withValues(alpha: 0.035)
+                    : Colors.black.withValues(alpha: 0.04),
+              ),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 108, left: 28, right: 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.white.withValues(alpha: 0.72),
+                      border: Border.all(
+                        color: AppColors.accentChampagne.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.apartment_rounded,
+                      size: 28,
+                      color: AppColors.accentChampagne,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    propriete.sourceName != null && propriete.sourceName!.isNotEmpty
+                        ? propriete.sourceName!.toUpperCase()
+                        : propriete.type.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.micro(AppColors.accentChampagne),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    propriete.governorate,
+                    style: AppTypography.cardTitle(textPrim),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Visuels disponibles sur portail officiel',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.caption(textSec).copyWith(fontSize: 11.5),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _ArchitecturalGridPainter extends CustomPainter {
+  final Color lineColor;
+  const _ArchitecturalGridPainter({required this.lineColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 0.8;
+    const step = 28.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArchitecturalGridPainter oldDelegate) =>
+      oldDelegate.lineColor != lineColor;
 }

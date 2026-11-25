@@ -1,17 +1,21 @@
 // ============================================================
-// DARLINK — ÉCRAN COMPTE, PROFIL, DEMANDES, NOTIFICATIONS & PARAMÈTRES (Flutter)
+// DARLINK — ÉCRAN COMPTE, PROFIL, DEMANDES & PARAMÈTRES (Flutter • Liquid Glass)
+// Auth Firebase réelle, tableau de bord propriétaire & réglages regroupés style Apple.
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/design_system/liquid_glass.dart';
 import '../../../../core/localization/app_locale.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/data/auth_service.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../../contact/data/contact_api_service.dart';
-import '../../../properties/presentation/screens/add_property_screen.dart';
-import '../../../properties/domain/models/property.dart';
 import '../../../properties/data/property_api_service.dart';
+import '../../../properties/domain/models/property.dart';
+import '../../../properties/presentation/screens/add_property_screen.dart';
 
 class EcranProfil extends StatefulWidget {
   const EcranProfil({super.key});
@@ -120,6 +124,7 @@ class _EcranProfilState extends State<EcranProfil> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Mot de passe oublié'),
         content: TextField(
           controller: resetCtrl,
@@ -153,6 +158,7 @@ class _EcranProfilState extends State<EcranProfil> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Modifier mon profil'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -190,6 +196,7 @@ class _EcranProfilState extends State<EcranProfil> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Changer mon mot de passe'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -221,6 +228,7 @@ class _EcranProfilState extends State<EcranProfil> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Changer mon e-mail'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -251,7 +259,8 @@ class _EcranProfilState extends State<EcranProfil> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer mon compte', style: TextStyle(color: Colors.red)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Supprimer mon compte', style: TextStyle(color: AppColors.accentRed)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -263,7 +272,7 @@ class _EcranProfilState extends State<EcranProfil> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentRed, foregroundColor: Colors.white),
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               final err = await AuthService.instance.deleteAccount(currentPassword: passCtrl.text);
@@ -279,10 +288,8 @@ class _EcranProfilState extends State<EcranProfil> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = AppColors.isDark(context);
     final bgColor = AppColors.backgroundOf(context);
-    final cardBg = AppColors.surfaceOf(context);
-    final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
 
@@ -293,311 +300,588 @@ class _EcranProfilState extends State<EcranProfil> {
     return Scaffold(
       backgroundColor: bgColor,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Editorial header
+              Text('ESPACE PERSONNEL', style: AppTypography.micro(AppColors.accentChampagne)),
+              const SizedBox(height: 4),
+              Text(
+                isAuthenticated && user != null ? 'Tableau de bord' : 'Mon Profil',
+                style: AppTypography.pageTitle(textPrim),
+              ),
+              const SizedBox(height: 18),
+
+              // ============================================================
+              // MODE NON AUTHENTIFIÉ : CONNEXION / INSCRIPTION LIQUID GLASS
+              // ============================================================
               if (!isAuthenticated) ...[
-                const SizedBox(height: 12),
-                Center(
-                  child: Container(
-                    width: 68,
-                    height: 68,
-                    decoration: BoxDecoration(color: AppColors.accentBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
-                    child: const Icon(Icons.lock_outline, size: 32, color: AppColors.accentBlue),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text('Bienvenue sur DarLink', textAlign: TextAlign.center, style: TextStyle(color: textPrim, fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text('Authentification sécurisée Firebase pour gérer vos biens, favoris et demandes.', textAlign: TextAlign.center, style: TextStyle(color: textSec, fontSize: 13)),
-                const SizedBox(height: 20),
-
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: borderColor)),
-                  child: Row(
+                LiquidGlassSurface(
+                  borderRadius: AppSpacing.radiusXL,
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() {
-                            _isRegisterMode = false;
-                            _authError = null;
-                          }),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(color: !_isRegisterMode ? AppColors.accentBlue : Colors.transparent, borderRadius: BorderRadius.circular(10)),
-                            alignment: Alignment.center,
-                            child: Text('Se connecter', style: TextStyle(color: !_isRegisterMode ? Colors.white : textSec, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() {
-                            _isRegisterMode = true;
-                            _authError = null;
-                          }),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(color: _isRegisterMode ? AppColors.accentBlue : Colors.transparent, borderRadius: BorderRadius.circular(10)),
-                            alignment: Alignment.center,
-                            child: Text('Créer un compte', style: TextStyle(color: _isRegisterMode ? Colors.white : textSec, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                if (_authError != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                    child: Text(_authError!, style: const TextStyle(color: Colors.red, fontSize: 12.5)),
-                  ),
-
-                if (_isRegisterMode) ...[
-                  TextField(controller: _nameCtrl, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Nom complet', border: OutlineInputBorder())),
-                  const SizedBox(height: 10),
-                  TextField(controller: _phoneCtrl, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Téléphone (+216)', border: OutlineInputBorder())),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedRole,
-                    decoration: const InputDecoration(labelText: 'Type de compte', border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: 'USER', child: Text('Particulier')),
-                      DropdownMenuItem(value: 'OWNER', child: Text('Propriétaire')),
-                      DropdownMenuItem(value: 'AGENCY', child: Text('Agence immobilière')),
-                    ],
-                    onChanged: (v) => setState(() => _selectedRole = v ?? 'USER'),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-
-                TextField(controller: _emailCtrl, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Adresse email', border: OutlineInputBorder())),
-                const SizedBox(height: 10),
-                TextField(controller: _passCtrl, obscureText: true, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Mot de passe', border: OutlineInputBorder())),
-
-                if (_isRegisterMode) ...[
-                  if (_passCtrl.text.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        'Robustesse : ${strength.label}${strength.issues.isNotEmpty ? " (${strength.issues.join(", ")})" : ""}',
-                        style: TextStyle(fontSize: 11.5, color: strength.valid ? Colors.green : Colors.orange),
-                      ),
-                    ),
-                  const SizedBox(height: 10),
-                  TextField(controller: _confirmPassCtrl, obscureText: true, style: TextStyle(color: textPrim), decoration: const InputDecoration(labelText: 'Confirmer le mot de passe', border: OutlineInputBorder())),
-                ],
-
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleAuthSubmit,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(_isRegisterMode ? 'Créer mon compte' : 'Se connecter'),
-                ),
-
-                if (!_isRegisterMode)
-                  TextButton(onPressed: _showForgotPasswordDialog, child: const Text('Mot de passe oublié ?')),
-              ],
-
-              if (isAuthenticated && user != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: AppColors.accentBlue,
-                        backgroundImage: (user.photoUrl != null && user.photoUrl!.isNotEmpty) ? NetworkImage(user.photoUrl!) : null,
-                        child: (user.photoUrl == null || user.photoUrl!.isEmpty)
-                            ? Text(
-                                user.fullName.isNotEmpty ? user.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase() : 'U',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(child: Text(user.fullName, style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 16))),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(color: AppColors.accentBlue.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(8)),
-                                  child: Text(user.role, style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold, fontSize: 10)),
-                                ),
-                              ],
+                      Center(
+                        child: Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: AppColors.accentChampagne.withValues(alpha: 0.14),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.accentChampagne.withValues(alpha: 0.35),
                             ),
-                            Text(user.email, style: TextStyle(color: textSec, fontSize: 12)),
-                            if (user.phone != null && user.phone!.isNotEmpty) Text(user.phone!, style: TextStyle(color: textSec, fontSize: 12)),
+                          ),
+                          child: const Icon(Icons.lock_outline_rounded, size: 28, color: AppColors.accentChampagne),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Bienvenue sur DarLink',
+                        textAlign: TextAlign.center,
+                        style: AppTypography.pageTitle(textPrim),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Authentification sécurisée Firebase pour gérer vos biens, favoris et demandes.',
+                        textAlign: TextAlign.center,
+                        style: AppTypography.body(textSec).copyWith(fontSize: 13.5),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Segmented control Connexion / Inscription
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1A1C22) : const Color(0xFFF2F2F7),
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _isRegisterMode = false;
+                                    _authError = null;
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: !_isRegisterMode ? AppColors.primaryActionBgOf(context) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Se connecter',
+                                    style: TextStyle(
+                                      color: !_isRegisterMode ? AppColors.primaryActionFgOf(context) : textSec,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _isRegisterMode = true;
+                                    _authError = null;
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: _isRegisterMode ? AppColors.primaryActionBgOf(context) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Créer un compte',
+                                    style: TextStyle(
+                                      color: _isRegisterMode ? AppColors.primaryActionFgOf(context) : textSec,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                      const SizedBox(height: 18),
 
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: (user.emailVerified ? Colors.green : Colors.orange).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(user.emailVerified ? Icons.verified_user : Icons.mark_email_unread_outlined, size: 18, color: user.emailVerified ? Colors.green : Colors.orange),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(user.emailVerified ? 'E-mail vérifié' : 'E-mail non vérifié', style: TextStyle(color: textPrim, fontSize: 12.5, fontWeight: FontWeight.w600))),
-                      if (!user.emailVerified) ...[
-                        TextButton(
-                          onPressed: () async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            final ok = await AuthService.instance.resendVerificationEmail();
-                            messenger.showSnackBar(SnackBar(content: Text(ok ? 'E-mail de vérification envoyé.' : 'Échec d’envoi.')));
-                          },
-                          child: const Text('Renvoyer', style: TextStyle(fontSize: 12)),
+                      if (_authError != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentRed.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.accentRed.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(_authError!, style: const TextStyle(color: AppColors.accentRed, fontSize: 12.5)),
                         ),
+
+                      if (_isRegisterMode) ...[
+                        TextField(
+                          controller: _nameCtrl,
+                          style: TextStyle(color: textPrim),
+                          decoration: const InputDecoration(labelText: 'Nom complet'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _phoneCtrl,
+                          style: TextStyle(color: textPrim),
+                          decoration: const InputDecoration(labelText: 'Téléphone (+216)'),
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedRole,
+                          dropdownColor: AppColors.surfaceOf(context),
+                          style: TextStyle(color: textPrim),
+                          decoration: const InputDecoration(labelText: 'Type de compte'),
+                          items: const [
+                            DropdownMenuItem(value: 'USER', child: Text('Particulier')),
+                            DropdownMenuItem(value: 'OWNER', child: Text('Propriétaire')),
+                            DropdownMenuItem(value: 'AGENCY', child: Text('Agence immobilière')),
+                          ],
+                          onChanged: (v) => setState(() => _selectedRole = v ?? 'USER'),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+
+                      TextField(
+                        controller: _emailCtrl,
+                        style: TextStyle(color: textPrim),
+                        decoration: const InputDecoration(labelText: 'Adresse email'),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _passCtrl,
+                        obscureText: true,
+                        style: TextStyle(color: textPrim),
+                        decoration: const InputDecoration(labelText: 'Mot de passe'),
+                      ),
+
+                      if (_isRegisterMode) ...[
+                        if (_passCtrl.text.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              'Robustesse : ${strength.label}${strength.issues.isNotEmpty ? " (${strength.issues.join(", ")})" : ""}',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: strength.valid ? AppColors.accentGreen : AppColors.accentAmber,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _confirmPassCtrl,
+                          obscureText: true,
+                          style: TextStyle(color: textPrim),
+                          decoration: const InputDecoration(labelText: 'Confirmer le mot de passe'),
+                        ),
+                      ],
+
+                      const SizedBox(height: 18),
+                      LuxuryPillButton(
+                        label: _isRegisterMode ? 'Créer mon compte' : 'Se connecter',
+                        isLoading: _isLoading,
+                        onPressed: _isLoading ? null : _handleAuthSubmit,
+                      ),
+
+                      if (!_isRegisterMode) ...[
+                        const SizedBox(height: 6),
                         TextButton(
-                          onPressed: () async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            final ok = await AuthService.instance.refreshVerificationStatus();
-                            messenger.showSnackBar(SnackBar(content: Text(ok ? 'E-mail confirmé !' : 'Toujours en attente.')));
-                          },
-                          child: const Text('Vérifier', style: TextStyle(fontSize: 12)),
+                          onPressed: _showForgotPasswordDialog,
+                          child: Text(
+                            'Mot de passe oublié ?',
+                            style: AppTypography.caption(AppColors.accentChampagne).copyWith(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ],
                     ],
                   ),
                 ),
+              ],
 
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(icon: const Icon(Icons.edit, size: 15), label: const Text('Modifier profil'), onPressed: _showEditProfileDialog),
-                    OutlinedButton.icon(icon: const Icon(Icons.email_outlined, size: 15), label: const Text('Changer e-mail'), onPressed: _showChangeEmailDialog),
-                    OutlinedButton.icon(icon: const Icon(Icons.lock_reset, size: 15), label: const Text('Mot de passe'), onPressed: _showChangePasswordDialog),
-                  ],
+              // ============================================================
+              // MODE AUTHENTIFIÉ : IDENTITÉ, ACTIONS & TABLEAU DE BORD
+              // ============================================================
+              if (isAuthenticated && user != null) ...[
+                LiquidGlassSurface(
+                  borderRadius: AppSpacing.radiusXL,
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.accentChampagne, width: 1.5),
+                            ),
+                            child: CircleAvatar(
+                              radius: 28,
+                              backgroundColor: AppColors.primaryActionBgOf(context),
+                              backgroundImage: (user.photoUrl != null && user.photoUrl!.isNotEmpty)
+                                  ? NetworkImage(user.photoUrl!)
+                                  : null,
+                              child: (user.photoUrl == null || user.photoUrl!.isEmpty)
+                                  ? Text(
+                                      user.fullName.isNotEmpty
+                                          ? user.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+                                          : 'U',
+                                      style: TextStyle(
+                                        color: AppColors.primaryActionFgOf(context),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 17,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(user.fullName, style: AppTypography.sectionTitle(textPrim)),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accentChampagne.withValues(alpha: 0.14),
+                                        borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                      ),
+                                      child: Text(
+                                        user.role,
+                                        style: AppTypography.micro(AppColors.accentChampagne),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(user.email, style: AppTypography.caption(textSec)),
+                                if (user.phone != null && user.phone!.isNotEmpty)
+                                  Text(user.phone!, style: AppTypography.caption(textSec)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: (user.emailVerified ? AppColors.accentGreen : AppColors.accentAmber).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: (user.emailVerified ? AppColors.accentGreen : AppColors.accentAmber).withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              user.emailVerified ? Icons.verified_rounded : Icons.mark_email_unread_outlined,
+                              size: 18,
+                              color: user.emailVerified ? AppColors.accentGreen : AppColors.accentAmber,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                user.emailVerified ? 'E-mail vérifié' : 'E-mail non vérifié',
+                                style: AppTypography.caption(textPrim).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            if (!user.emailVerified) ...[
+                              TextButton(
+                                onPressed: () async {
+                                  final messenger = ScaffoldMessenger.of(context);
+                                  final ok = await AuthService.instance.resendVerificationEmail();
+                                  messenger.showSnackBar(
+                                    SnackBar(content: Text(ok ? 'E-mail de vérification envoyé.' : 'Échec d’envoi.')),
+                                  );
+                                },
+                                child: const Text('Renvoyer', style: TextStyle(fontSize: 12)),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  final messenger = ScaffoldMessenger.of(context);
+                                  final ok = await AuthService.instance.refreshVerificationStatus();
+                                  messenger.showSnackBar(
+                                    SnackBar(content: Text(ok ? 'E-mail confirmé !' : 'Toujours en attente.')),
+                                  );
+                                },
+                                child: const Text('Vérifier', style: TextStyle(fontSize: 12)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.edit_outlined, size: 15),
+                            label: const Text('Modifier profil'),
+                            onPressed: _showEditProfileDialog,
+                          ),
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.mail_outline_rounded, size: 15),
+                            label: const Text('Changer e-mail'),
+                            onPressed: _showChangeEmailDialog,
+                          ),
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.lock_reset_rounded, size: 15),
+                            label: const Text('Mot de passe'),
+                            onPressed: _showChangePasswordDialog,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add_home_work),
-                  label: const Text('Publier une annonce'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
+                LuxuryPillButton(
+                  label: 'Publier une annonce',
+                  icon: Icons.add_home_work_outlined,
                   onPressed: () async {
                     await Navigator.push(context, MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()));
                     _loadDashboard();
                   },
                 ),
 
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Mes annonces (${_myProperties.length})', style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 15)),
-                    IconButton(icon: const Icon(Icons.refresh, size: 18), onPressed: _loadDashboard),
-                  ],
+                const SizedBox(height: 24),
+                EditorialSectionHeader(
+                  title: 'Mes annonces (${_myProperties.length})',
+                  subtitle: 'Vos biens publiés ou en attente',
+                  trailing: GlassOrbButton(
+                    icon: Icons.refresh_rounded,
+                    size: 36,
+                    iconSize: 17,
+                    onTap: _loadDashboard,
+                  ),
                 ),
-                if (_loadingDashboard)
-                  const Center(child: CircularProgressIndicator())
-                else if (_myProperties.isEmpty)
-                  Text('Aucune annonce publiée.', style: TextStyle(color: textSec, fontSize: 12.5))
-                else
-                  ..._myProperties.map((p) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(p.titre, style: TextStyle(color: textPrim, fontSize: 13.5, fontWeight: FontWeight.w600)),
-                        subtitle: Text('${p.prixAffiche} • ${p.listingStatus.value}', style: const TextStyle(color: AppColors.accentBlue, fontSize: 12)),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                          onPressed: () async {
-                            await PropertyApiService.instance.deleteProperty(p.id);
-                            _loadDashboard();
-                          },
-                        ),
-                      )),
-
                 const SizedBox(height: 12),
-                Text('Demandes reçues (${_receivedRequests.length}) & Notifications (${_notifications.length})',
-                    style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 14)),
-                ..._receivedRequests.take(3).map((r) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.mail_outline, color: AppColors.accentBlue),
-                      title: Text('${r.senderName} (${r.status})', style: TextStyle(color: textPrim, fontSize: 13)),
-                      subtitle: Text(r.message, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: textSec, fontSize: 12)),
-                    )),
-                ..._notifications.take(3).map((n) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.notifications_none, color: AppColors.accentBlue),
-                      title: Text(n['title']?.toString() ?? '', style: TextStyle(color: textPrim, fontSize: 13)),
-                      subtitle: Text(n['body']?.toString() ?? '', style: TextStyle(color: textSec, fontSize: 12)),
-                    )),
-              ],
 
-              const SizedBox(height: 20),
-              Text('Paramètres', style: TextStyle(color: textPrim, fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: borderColor)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+                if (_loadingDashboard)
+                  const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
+                else if (_myProperties.isEmpty)
+                  LiquidGlassSurface(
+                    borderRadius: AppSpacing.radiusMD,
+                    padding: const EdgeInsets.all(16),
+                    elevatedShadow: false,
+                    child: Text('Aucune annonce publiée.', style: AppTypography.body(textSec)),
+                  )
+                else
+                  ..._myProperties.map(
+                    (p) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: LiquidGlassSurface(
+                        borderRadius: AppSpacing.radiusMD,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        elevatedShadow: false,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(p.titre, style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${p.prixAffiche} • ${p.listingStatus.value}',
+                                    style: AppTypography.caption(AppColors.accentChampagne).copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.accentRed, size: 20),
+                              onPressed: () async {
+                                await PropertyApiService.instance.deleteProperty(p.id);
+                                _loadDashboard();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
+                EditorialSectionHeader(
+                  title: 'Activité & Demandes',
+                  subtitle: '${_receivedRequests.length} demandes • ${_notifications.length} notifications',
+                ),
+                const SizedBox(height: 10),
+                if (_receivedRequests.isEmpty && _notifications.isEmpty)
+                  LiquidGlassSurface(
+                    borderRadius: AppSpacing.radiusMD,
+                    padding: const EdgeInsets.all(16),
+                    elevatedShadow: false,
+                    child: Text('Aucune demande ou alerte récente.', style: AppTypography.body(textSec)),
+                  )
+                else
+                  LiquidGlassSurface(
+                    borderRadius: AppSpacing.radiusLG,
+                    padding: const EdgeInsets.all(14),
+                    elevatedShadow: false,
+                    child: Column(
                       children: [
-                        Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: AppColors.accentBlue),
-                        const SizedBox(width: 10),
-                        Text('Mode sombre', style: TextStyle(color: textPrim, fontWeight: FontWeight.w600)),
+                        ..._receivedRequests.take(3).map(
+                              (r) => ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.mail_outline_rounded, color: AppColors.accentChampagne),
+                                title: Text('${r.senderName} (${r.status})', style: AppTypography.caption(textPrim).copyWith(fontWeight: FontWeight.w700)),
+                                subtitle: Text(r.message, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTypography.caption(textSec)),
+                              ),
+                            ),
+                        ..._notifications.take(3).map(
+                              (n) => ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.notifications_none_rounded, color: AppColors.accentChampagne),
+                                title: Text(n['title']?.toString() ?? '', style: AppTypography.caption(textPrim).copyWith(fontWeight: FontWeight.w700)),
+                                subtitle: Text(n['body']?.toString() ?? '', style: AppTypography.caption(textSec)),
+                              ),
+                            ),
                       ],
                     ),
-                    Switch(value: isDark, onChanged: (_) => AppTheme.basculerTheme()),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              InkWell(
-                key: const Key('profile_language_selector'),
-                onTap: () => AppLocale.instance.toggleLanguage(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(14), border: Border.all(color: borderColor)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: [
-                        const Icon(Icons.language, color: AppColors.accentBlue),
-                        const SizedBox(width: 10),
-                        Text('Langue (FR / AR / EN)', style: TextStyle(color: textPrim, fontWeight: FontWeight.w600)),
-                      ]),
-                      Text(AppLocale.instance.currentLang.toUpperCase(), style: const TextStyle(color: AppColors.accentBlue, fontWeight: FontWeight.bold)),
-                    ],
                   ),
+              ],
+
+              // ============================================================
+              // PRÉFÉRENCES & PARAMÈTRES GROUPÉS STYLE APPLE
+              // ============================================================
+              const SizedBox(height: 24),
+              Text('PRÉFÉRENCES', style: AppTypography.micro(textSec)),
+              const SizedBox(height: 10),
+              LiquidGlassSurface(
+                borderRadius: AppSpacing.radiusLG,
+                padding: EdgeInsets.zero,
+                elevatedShadow: false,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: AppColors.accentChampagne.withValues(alpha: 0.14),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                                  size: 18,
+                                  color: AppColors.accentChampagne,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text('Mode sombre', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
+                            ],
+                          ),
+                          Switch(
+                            value: isDark,
+                            onChanged: (_) {
+                              HapticFeedback.selectionClick();
+                              AppTheme.basculerTheme();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(height: 1, indent: 62, color: AppColors.borderSubtleOf(context)),
+                    InkWell(
+                      key: const Key('profile_language_selector'),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        AppLocale.instance.toggleLanguage();
+                      },
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppSpacing.radiusLG)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accentChampagne.withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.language_rounded, size: 18, color: AppColors.accentChampagne),
+                                ),
+                                const SizedBox(width: 12),
+                                Text('Langue (FR / AR / EN)', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceElevatedOf(context),
+                                borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                              ),
+                              child: Text(
+                                AppLocale.instance.currentLang.toUpperCase(),
+                                style: AppTypography.caption(textPrim).copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               if (isAuthenticated) ...[
                 const SizedBox(height: 18),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text('Se déconnecter', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red), padding: const EdgeInsets.symmetric(vertical: 14)),
+                LuxuryPillButton(
+                  label: 'Se déconnecter',
+                  icon: Icons.logout_rounded,
+                  isSecondary: true,
+                  foregroundColor: AppColors.accentRed,
                   onPressed: () => AuthService.instance.logout(),
                 ),
+                const SizedBox(height: 8),
                 TextButton(
                   onPressed: _showDeleteAccountDialog,
-                  child: const Text('Supprimer définitivement mon compte', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  child: Text(
+                    'Supprimer définitivement mon compte',
+                    style: AppTypography.caption(textSec),
+                  ),
                 ),
               ],
             ],

@@ -1,16 +1,18 @@
 // ============================================================
-// DARLINK — CARTOGRAPHIE INTERACTIVE PRODUCTION (Flutter Map + Geolocator)
-// Tuiles haute disponibilité CARTO Voyager / Dark Matter (OSM)
-// Zoom, panoramique, sélection de marqueurs, repli gouvernorat,
-// cercles de confidentialité et gestion complète des permissions GPS.
+// DARLINK — APPLE LIQUID GLASS INTERACTIVE MAP (Flutter)
+// CARTO Voyager / Dark Matter OSM tiles, privacy circles,
+// frosted floating overlays, obsidian/champagne markers & preview.
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/tunisia_locations.dart';
+import '../../../../core/design_system/liquid_glass.dart';
 import '../../../properties/data/property_api_service.dart';
 import '../../../properties/domain/models/property.dart';
 import '../../../properties/presentation/screens/property_details_screen.dart';
@@ -65,6 +67,7 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
   }
 
   void _centrerSurGouvernorat(String gov) {
+    HapticFeedback.selectionClick();
     setState(() {
       _gouvernoratFiltre = gov;
       if (gov == 'Tous') {
@@ -88,9 +91,10 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
     final proceed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Row(
           children: [
-            Icon(Icons.my_location_rounded, color: AppColors.accentBlue, size: 22),
+            Icon(Icons.my_location_rounded, color: AppColors.accentChampagne, size: 22),
             SizedBox(width: 8),
             Expanded(child: Text('Accès à votre position GPS', style: TextStyle(fontSize: 16))),
           ],
@@ -107,8 +111,9 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accentBlue,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.primaryActionBgOf(ctx),
+              foregroundColor: AppColors.primaryActionFgOf(ctx),
+              shape: const StadiumBorder(),
             ),
             child: const Text('Autoriser'),
           ),
@@ -207,250 +212,224 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = AppColors.isDark(context);
     final cardBg = AppColors.surfaceOf(context);
     final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
+    final activeBg = AppColors.primaryActionBgOf(context);
+    final activeFg = AppColors.primaryActionFgOf(context);
 
-    final quickGovernorates = ['Tous', 'Tunis', 'Ariana', 'Ben Arous', 'Nabeul', 'Bizerte', 'Sousse', 'Sfax', 'Médenine', 'Kairouan'];
+    final quickGovernorates = const ['Tous', 'Tunis', 'Ariana', 'Ben Arous', 'Nabeul', 'Bizerte', 'Sousse', 'Sfax', 'Médenine', 'Kairouan'];
 
     final tileUrl = isDark
         ? 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
         : 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
 
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // 1. MOTEUR FLUTTER_MAP INTERACTIF (WEB / ANDROID / IOS)
-            FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _center,
-                initialZoom: _zoom,
-                minZoom: 5.0,
-                maxZoom: 18.0,
-                onPositionChanged: (camera, hasGesture) {
-                  _center = camera.center;
-                  _zoom = camera.zoom;
-                },
+      body: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _center,
+              initialZoom: _zoom,
+              minZoom: 5.0,
+              maxZoom: 18.0,
+              onPositionChanged: (camera, hasGesture) {
+                _center = camera.center;
+                _zoom = camera.zoom;
+              },
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: tileUrl,
+                userAgentPackageName: 'tn.darlink.app',
+                maxZoom: 19,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: tileUrl,
-                  userAgentPackageName: 'tn.darlink.app',
-                  maxZoom: 19,
-                ),
-                // Cercles de confidentialité pour adresses non exactes
-                CircleLayer(
-                  circles: _proprietes
-                      .where((p) => p.coordinatePrecision != 'VERIFIED')
-                      .map(
-                        (p) => CircleMarker(
-                          point: LatLng(p.latitude, p.longitude),
-                          radius: 1100,
-                          useRadiusInMeter: true,
-                          color: AppColors.accentBlue.withValues(alpha: 0.12),
-                          borderColor: AppColors.accentBlue.withValues(alpha: 0.45),
-                          borderStrokeWidth: 1.5,
+              CircleLayer(
+                circles: _proprietes
+                    .where((p) => p.coordinatePrecision != 'VERIFIED')
+                    .map(
+                      (p) => CircleMarker(
+                        point: LatLng(p.latitude, p.longitude),
+                        radius: 1100,
+                        useRadiusInMeter: true,
+                        color: AppColors.accentChampagne.withValues(alpha: 0.12),
+                        borderColor: AppColors.accentChampagne.withValues(alpha: 0.45),
+                        borderStrokeWidth: 1.5,
+                      ),
+                    )
+                    .toList(),
+              ),
+              MarkerLayer(
+                markers: [
+                  if (_userGpsLocation != null)
+                    Marker(
+                      point: _userGpsLocation!,
+                      width: 24,
+                      height: 24,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.accentBlue.withValues(alpha: 0.25),
+                          shape: BoxShape.circle,
                         ),
-                      )
-                      .toList(),
-                ),
-                MarkerLayer(
-                  markers: [
-                    if (_userGpsLocation != null)
-                      Marker(
-                        point: _userGpsLocation!,
-                        width: 24,
-                        height: 24,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.accentBlue.withValues(alpha: 0.25),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: AppColors.accentBlue,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
+                        child: Center(
+                          child: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: AppColors.accentBlue,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
                           ),
                         ),
                       ),
-                    ..._proprietes.map((prop) {
-                      final isSelected = _proprieteSelectionnee?.id == prop.id;
-                      final priceLabel = prop.priceOnRequest || prop.prix <= 0
-                          ? 'Sur demande'
-                          : '${(prop.prix / 1000).toStringAsFixed(0)}k DT';
+                    ),
+                  ..._proprietes.map((prop) {
+                    final isSelected = _proprieteSelectionnee?.id == prop.id;
+                    final priceLabel = prop.priceOnRequest || prop.prix <= 0
+                        ? 'Sur demande'
+                        : '${(prop.prix / 1000).toStringAsFixed(0)}k DT';
 
-                      return Marker(
-                        point: LatLng(prop.latitude, prop.longitude),
-                        width: 110,
-                        height: 56,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _proprieteSelectionnee = prop;
-                              _center = LatLng(prop.latitude, prop.longitude);
-                            });
-                            try {
-                              _mapController.move(_center, _zoom < 12 ? 12.5 : _zoom);
-                            } catch (_) {}
-                          },
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.accentBlue
-                                      : (isDark ? cardBg : Colors.white),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: isSelected ? Colors.white : AppColors.accentBlue,
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                    return Marker(
+                      point: LatLng(prop.latitude, prop.longitude),
+                      width: 114,
+                      height: 54,
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _proprieteSelectionnee = prop;
+                            _center = LatLng(prop.latitude, prop.longitude);
+                          });
+                          try {
+                            _mapController.move(_center, _zoom < 12 ? 12.5 : _zoom);
+                          } catch (_) {}
+                        },
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isSelected ? activeBg : cardBg,
+                                borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                                border: Border.all(
+                                  color: isSelected ? AppColors.accentChampagne : borderColor,
+                                  width: isSelected ? 1.5 : 1,
                                 ),
-                                child: Text(
-                                  priceLabel,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : (isDark ? Colors.white : AppColors.accentBlue),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 10.5,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.16),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
                                   ),
+                                ],
+                              ),
+                              child: Text(
+                                priceLabel,
+                                style: TextStyle(
+                                  color: isSelected ? activeFg : textPrim,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 10.5,
                                 ),
                               ),
-                              Icon(
-                                Icons.location_on_rounded,
-                                size: 22,
-                                color: isSelected
-                                    ? AppColors.accentBlue
-                                    : (isDark ? Colors.white70 : const Color(0xFF1E293B)),
-                              ),
-                            ],
-                          ),
+                            ),
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 20,
+                              color: isSelected ? AppColors.accentChampagne : textPrim,
+                            ),
+                          ],
                         ),
-                      );
-                    }),
-                  ],
-                ),
-              ],
-            ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ],
+          ),
 
-            // 2. EN-TÊTE : RETOUR, ACCUEIL & FILTRES GOUVERNORATS
-            Positioned(
-              top: 12,
-              left: 16,
-              right: 16,
+          // Top Frosted Header + Governorate Pills
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: cardBg.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                  LiquidGlassSurface(
+                    borderRadius: 24,
+                    blurSigma: 22,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     child: Row(
                       children: [
-                        IconButton(
+                        GlassOrbButton(
                           key: const Key('map_back_button'),
-                          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textPrim, size: 18),
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          size: 38,
+                          iconSize: 17,
                           tooltip: 'Retour',
-                          onPressed: () {
+                          onTap: () {
                             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
                           },
                         ),
-                        IconButton(
+                        const SizedBox(width: 6),
+                        GlassOrbButton(
                           key: const Key('map_home_button'),
-                          icon: const Icon(Icons.home_rounded, color: AppColors.accentBlue, size: 22),
+                          icon: Icons.home_outlined,
+                          size: 38,
+                          iconSize: 18,
                           tooltip: 'Accueil',
-                          onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                          onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                'Carte Immobilière Tunisie',
-                                style: TextStyle(
-                                  color: textPrim,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                '${_proprietes.length} bien(s) actif(s) • $_gouvernoratFiltre',
-                                style: TextStyle(color: textSec, fontSize: 11),
-                              ),
+                              Text('Carte Immobilière Tunisie', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
+                              Text('${_proprietes.length} bien(s) • $_gouvernoratFiltre', style: AppTypography.caption(textSec).copyWith(fontSize: 11.5)),
                             ],
                           ),
                         ),
                         if (_isLoading)
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                          const Padding(
+                            padding: EdgeInsets.only(right: 6),
+                            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                           ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   SizedBox(
                     height: 36,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: quickGovernorates.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, index) {
                         final g = quickGovernorates[index];
                         final isSelected = _gouvernoratFiltre == g;
-                        return InkWell(
+                        return GestureDetector(
                           onTap: () => _centrerSurGouvernorat(g),
-                          borderRadius: BorderRadius.circular(18),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.accentBlue
-                                  : cardBg.withValues(alpha: 0.95),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: isSelected ? AppColors.accentBlue : borderColor,
-                              ),
+                              color: isSelected ? activeBg : cardBg.withValues(alpha: 0.92),
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                              border: Border.all(color: isSelected ? Colors.transparent : borderColor),
                             ),
                             child: Text(
                               g,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : textPrim,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                color: isSelected ? activeFg : textPrim,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                                 fontSize: 12,
                               ),
                             ),
@@ -462,103 +441,81 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                 ],
               ),
             ),
+          ),
 
-            // 3. CONTRÔLES FLOTTANTS : ZOOM & GPS
-            Positioned(
-              right: 16,
-              top: 132,
+          // Right Floating Liquid Glass Controls Capsule (Zoom + GPS)
+          Positioned(
+            right: 16,
+            top: 148,
+            child: LiquidGlassSurface(
+              borderRadius: 24,
+              blurSigma: 20,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 5),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  FloatingActionButton.small(
-                    heroTag: 'map_zoom_in',
-                    onPressed: _zoomIn,
-                    backgroundColor: cardBg,
-                    foregroundColor: textPrim,
-                    child: const Icon(Icons.add),
-                  ),
-                  const SizedBox(height: 8),
-                  FloatingActionButton.small(
-                    heroTag: 'map_zoom_out',
-                    onPressed: _zoomOut,
-                    backgroundColor: cardBg,
-                    foregroundColor: textPrim,
-                    child: const Icon(Icons.remove),
-                  ),
-                  const SizedBox(height: 8),
-                  FloatingActionButton.small(
-                    heroTag: 'map_my_location',
+                  IconButton(onPressed: _zoomIn, icon: Icon(Icons.add, color: textPrim, size: 20)),
+                  Divider(height: 1, thickness: 0.8, color: borderColor),
+                  IconButton(onPressed: _zoomOut, icon: Icon(Icons.remove, color: textPrim, size: 20)),
+                  Divider(height: 1, thickness: 0.8, color: borderColor),
+                  IconButton(
                     onPressed: _locatingUser ? null : _demanderEtCentrerPosition,
-                    backgroundColor: cardBg,
-                    foregroundColor: AppColors.accentBlue,
-                    child: _locatingUser
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.my_location),
+                    icon: _locatingUser
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.my_location, color: AppColors.accentChampagne, size: 20),
                   ),
                 ],
               ),
             ),
+          ),
 
-            // 4. ATTRIBUTION LÉGALE CARTO / OPENSTREETMAP
-            Positioned(
-              right: 10,
-              bottom: _proprieteSelectionnee != null ? 142 : 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  '© OpenStreetMap contributors © CARTO',
-                  style: TextStyle(color: Colors.white, fontSize: 9.5),
-                ),
+          // CARTO / OSM Attribution
+          Positioned(
+            right: 12,
+            bottom: _proprieteSelectionnee != null ? 154 : 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.62),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                '© OpenStreetMap contributors © CARTO',
+                style: TextStyle(color: Colors.white, fontSize: 9.5),
               ),
             ),
+          ),
 
-            // 5. APERÇU DU BIEN SÉLECTIONNÉ
-            if (_proprieteSelectionnee != null)
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
+          // Bottom Liquid Glass Property Preview Card
+          if (_proprieteSelectionnee != null)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 18,
+              child: SafeArea(
+                top: false,
                 child: GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => EcranDetails(propriete: _proprieteSelectionnee!),
-                      ),
+                      MaterialPageRoute(builder: (_) => EcranDetails(propriete: _proprieteSelectionnee!)),
                     );
                   },
-                  child: Container(
+                  child: LiquidGlassSurface(
+                    borderRadius: 24,
+                    blurSigma: 24,
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: borderColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.14),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
                     child: Row(
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                           child: _proprieteSelectionnee!.imageUrl.isNotEmpty
                               ? Image.network(
                                   _proprieteSelectionnee!.imageUrl,
-                                  width: 86,
-                                  height: 78,
+                                  width: 84,
+                                  height: 80,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => _emptyThumb(isDark),
+                                  errorBuilder: (_, _, _) => _emptyThumb(isDark),
                                 )
                               : _emptyThumb(isDark),
                         ),
@@ -572,23 +529,19 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                                 _proprieteSelectionnee!.titre,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: textPrim,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13.5,
-                                ),
+                                style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14),
                               ),
                               const SizedBox(height: 3),
                               Row(
                                 children: [
-                                  const Icon(Icons.place_outlined, size: 13, color: AppColors.accentBlue),
+                                  const Icon(Icons.location_on_outlined, size: 13, color: AppColors.accentChampagne),
                                   const SizedBox(width: 3),
                                   Expanded(
                                     child: Text(
                                       _proprieteSelectionnee!.localisation,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: textSec, fontSize: 11),
+                                      style: AppTypography.caption(textSec).copyWith(fontSize: 11.5),
                                     ),
                                   ),
                                 ],
@@ -596,39 +549,31 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                               const SizedBox(height: 2),
                               Text(
                                 _precisionLabel(_proprieteSelectionnee!.coordinatePrecision),
-                                style: TextStyle(color: textSec, fontSize: 10),
+                                style: AppTypography.micro(textSec).copyWith(fontSize: 10),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 7),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     _proprieteSelectionnee!.prixAffiche,
-                                    style: const TextStyle(
-                                      color: AppColors.accentBlue,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13.5,
-                                    ),
+                                    style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                                     decoration: BoxDecoration(
-                                      color: AppColors.accentBlue,
-                                      borderRadius: BorderRadius.circular(10),
+                                      color: activeBg,
+                                      borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
                                           'Consulter',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                          style: TextStyle(color: activeFg, fontSize: 11, fontWeight: FontWeight.w600),
                                         ),
-                                        SizedBox(width: 2),
-                                        Icon(Icons.chevron_right, size: 14, color: Colors.white),
+                                        const SizedBox(width: 2),
+                                        Icon(Icons.chevron_right_rounded, size: 14, color: activeFg),
                                       ],
                                     ),
                                   ),
@@ -642,18 +587,18 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
 
   Widget _emptyThumb(bool isDark) {
     return Container(
-      width: 86,
-      height: 78,
-      color: isDark ? const Color(0xFF1E222B) : const Color(0xFFF1F5F9),
-      child: const Icon(Icons.apartment_rounded, color: AppColors.accentBlue, size: 28),
+      width: 84,
+      height: 80,
+      color: isDark ? const Color(0xFF1A1D24) : const Color(0xFFEFECE5),
+      child: const Icon(Icons.apartment_rounded, color: AppColors.accentChampagne, size: 28),
     );
   }
 }

@@ -1,125 +1,106 @@
 // ============================================================
-// DARLINK — SYSTÈME OFFICIEL DE THÈMES ET TYPOGRAPHIE (V2-T02)
-// Implémentation conforme à docs/THEME_SPECIFICATION.md (Membre 2)
+// DARLINK — APPLE LIQUID GLASS THEME SYSTEM (Flutter)
 // ============================================================
 
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
-/// Gestionnaire officiel des thèmes clair et sombre pour l'application DarLink.
-/// Respecte strictement les ratios d'accessibilité WCAG 2.1 AA définis par le Membre 1.
 class AppTheme {
   AppTheme._();
 
-  // ------------------------------------------------------------
-  // PALETTE SÉMANTIQUE — MODE CLAIR (LIGHT MODE)
-  // ------------------------------------------------------------
-  static const Color lightPrimary = Color(0xFF1E88E5);
-  static const Color lightPrimaryDark = Color(0xFF1565C0);
-  static const Color lightSecondary = Color(0xFF26A69A);
-  static const Color lightBackground = Color(0xFFF5F5F7);
-  static const Color lightSurface = Color(0xFFFFFFFF);
+  // Semantic palette tokens (preserved public static surface for compatibility)
+  static const Color lightPrimary = AppColors.accentObsidian;
+  static const Color lightPrimaryDark = Color(0xFF000000);
+  static const Color lightSecondary = AppColors.accentChampagne;
+  static const Color lightBackground = AppColors.lightBackground;
+  static const Color lightSurface = AppColors.lightSurface;
   static const Color lightOnPrimary = Color(0xFFFFFFFF);
-  static const Color lightTextPrimary = Color(0xFF1C1B1F);
-  static const Color lightTextSecondary = Color(0xFF49454F);
-  static const Color lightBorder = Color(0xFFE0E0E0);
-  static const Color lightError = Color(0xFFB3261E);
+  static const Color lightTextPrimary = AppColors.lightTextPrimary;
+  static const Color lightTextSecondary = AppColors.lightTextSecondary;
+  static const Color lightBorder = AppColors.lightBorder;
+  static const Color lightError = AppColors.accentRed;
   static const Color lightOnError = Color(0xFFFFFFFF);
 
-  // ------------------------------------------------------------
-  // PALETTE SÉMANTIQUE — MODE SOMBRE (DARK MODE)
-  // ------------------------------------------------------------
-  static const Color darkPrimary = Color(0xFF90CAF9);
-  static const Color darkSecondary = Color(0xFF80CBC4);
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1E1E1E);
-  static const Color darkSurfaceVariant = Color(0xFF2C2C2C);
-  static const Color darkOnPrimary = Color(0xFF0D47A1);
-  static const Color darkTextPrimary = Color(0xFFE6E1E5);
-  static const Color darkTextSecondary = Color(0xFFCAC4D0);
-  static const Color darkBorder = Color(0xFF333333);
-  static const Color darkError = Color(0xFFF2B8B5);
-  static const Color darkOnError = Color(0xFF601410);
+  static const Color darkPrimary = Color(0xFFF5F5F7);
+  static const Color darkSecondary = AppColors.accentChampagne;
+  static const Color darkBackground = AppColors.darkBackground;
+  static const Color darkSurface = AppColors.darkSurface;
+  static const Color darkSurfaceVariant = AppColors.darkSurfaceElevated;
+  static const Color darkOnPrimary = AppColors.lightTextPrimary;
+  static const Color darkTextPrimary = AppColors.darkTextPrimary;
+  static const Color darkTextSecondary = AppColors.darkTextSecondary;
+  static const Color darkBorder = AppColors.darkBorder;
+  static const Color darkError = Color(0xFFF87171);
+  static const Color darkOnError = Color(0xFF450A0A);
 
-  // ------------------------------------------------------------
-  // GESTION RÉACTIVE DU MODE DE THÈME (ThemeMode)
-  // ------------------------------------------------------------
   static final ValueNotifier<ThemeMode> themeModeNotifier =
       ValueNotifier<ThemeMode>(ThemeMode.light);
 
-  /// Bascule réactive entre le mode clair et le mode sombre.
   static void basculerTheme() {
-    if (themeModeNotifier.value == ThemeMode.dark) {
-      themeModeNotifier.value = ThemeMode.light;
-    } else {
-      themeModeNotifier.value = ThemeMode.dark;
-    }
+    themeModeNotifier.value =
+        themeModeNotifier.value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
   }
 
-  /// Définit explicitement le mode de thème.
   static void definirThemeMode(ThemeMode mode) {
     themeModeNotifier.value = mode;
   }
 
-  // ------------------------------------------------------------
-  // ÉCHELLE TYPOGRAPHIQUE STANDARDISÉE (docs/THEME_SPECIFICATION.md)
-  // ------------------------------------------------------------
-  static TextTheme _construireTextTheme({required Color textPrimary, required Color textSecondary}) {
+  static TextTheme _buildTextTheme({
+    required Color textPrimary,
+    required Color textSecondary,
+  }) {
     return TextTheme(
       displayLarge: TextStyle(
-        fontSize: 28,
+        fontSize: 32,
         fontWeight: FontWeight.w700,
-        height: 34 / 28,
-        letterSpacing: -0.2,
+        height: 1.12,
+        letterSpacing: -0.85,
         color: textPrimary,
       ),
       headlineMedium: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        height: 26 / 20,
-        letterSpacing: 0.0,
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        height: 1.2,
+        letterSpacing: -0.45,
         color: textPrimary,
       ),
       titleMedium: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        height: 24 / 18,
-        letterSpacing: 0.1,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        height: 1.25,
+        letterSpacing: -0.25,
         color: textPrimary,
       ),
       bodyLarge: TextStyle(
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w400,
-        height: 22 / 16,
-        letterSpacing: 0.2,
+        height: 1.45,
+        letterSpacing: -0.1,
         color: textPrimary,
       ),
       bodyMedium: TextStyle(
-        fontSize: 14,
+        fontSize: 13.5,
         fontWeight: FontWeight.w400,
-        height: 20 / 14,
-        letterSpacing: 0.2,
+        height: 1.4,
         color: textSecondary,
       ),
-      labelLarge: const TextStyle(
+      labelLarge: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        height: 20 / 14,
-        letterSpacing: 0.1,
+        letterSpacing: -0.1,
+        color: textPrimary,
       ),
-      labelSmall: const TextStyle(
+      labelSmall: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        height: 16 / 11,
-        letterSpacing: 0.4,
+        letterSpacing: 0.3,
+        color: textSecondary,
       ),
     );
   }
 
-  // ------------------------------------------------------------
-  // CONFIGURATION DU THÈME CLAIR (LIGHT THEME)
-  // ------------------------------------------------------------
   static ThemeData get lightTheme {
-    final colorScheme = const ColorScheme.light(
+    const colorScheme = ColorScheme.light(
       primary: lightPrimary,
       onPrimary: lightOnPrimary,
       secondary: lightSecondary,
@@ -133,37 +114,52 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: lightBackground,
-      textTheme: _construireTextTheme(
+      splashFactory: InkSparkle.splashFactory,
+      textTheme: _buildTextTheme(
         textPrimary: lightTextPrimary,
         textSecondary: lightTextSecondary,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: lightPrimary,
-        foregroundColor: lightOnPrimary,
+        backgroundColor: Colors.transparent,
+        foregroundColor: lightTextPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
       ),
       cardTheme: CardThemeData(
         color: lightSurface,
-        elevation: 2,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(24),
           side: const BorderSide(color: lightBorder, width: 0.8),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: lightSurface,
-        indicatorColor: lightPrimary.withValues(alpha: 0.15),
-        elevation: 3,
+      dividerTheme: const DividerThemeData(
+        color: AppColors.lightBorderSubtle,
+        thickness: 0.8,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.lightSurfaceElevated,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: lightBorder, width: 0.9),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: lightBorder, width: 0.9),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.accentChampagne, width: 1.4),
+        ),
       ),
     );
   }
 
-  // ------------------------------------------------------------
-  // CONFIGURATION DU THÈME SOMBRE (DARK THEME)
-  // ------------------------------------------------------------
   static ThemeData get darkTheme {
-    final colorScheme = const ColorScheme.dark(
+    const colorScheme = ColorScheme.dark(
       primary: darkPrimary,
       onPrimary: darkOnPrimary,
       secondary: darkSecondary,
@@ -177,28 +173,46 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: darkBackground,
-      textTheme: _construireTextTheme(
+      splashFactory: InkSparkle.splashFactory,
+      textTheme: _buildTextTheme(
         textPrimary: darkTextPrimary,
         textSecondary: darkTextSecondary,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: darkSurface,
+        backgroundColor: Colors.transparent,
         foregroundColor: darkTextPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
       ),
       cardTheme: CardThemeData(
         color: darkSurface,
-        elevation: 2,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(24),
           side: const BorderSide(color: darkBorder, width: 0.8),
         ),
       ),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: darkSurface,
-        indicatorColor: darkPrimary.withValues(alpha: 0.25),
-        elevation: 3,
+      dividerTheme: const DividerThemeData(
+        color: AppColors.darkBorderSubtle,
+        thickness: 0.8,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.darkSurfaceElevated,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: darkBorder, width: 0.9),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: darkBorder, width: 0.9),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.accentChampagne, width: 1.4),
+        ),
       ),
     );
   }

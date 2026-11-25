@@ -461,7 +461,7 @@ class AuthService {
         body: json.encode({
           'idToken': token,
           'displayName': fullName.trim(),
-          if (photoUrl != null) 'photoUrl': photoUrl,
+          'photoUrl': ?photoUrl,
         }),
       ).catchError((_) => http.Response('', 500));
 
@@ -469,7 +469,7 @@ class AuthService {
         'fullName': fullName.trim(),
         'phone': phone?.trim() ?? currentUser.phone ?? '',
         'role': safeRole,
-        if (photoUrl != null) 'photoUrl': photoUrl,
+        'photoUrl': ?photoUrl,
         'updatedAt': DateTime.now().toIso8601String(),
       };
       final ok = await _firestore.patchFields('users', uid, patch);

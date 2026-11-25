@@ -1,12 +1,13 @@
 // ============================================================
-// DARLINK — ÉCRAN DES FAVORIS LUXE GLASSMORPHISM (V2-T04 & V8 Fullstack)
-// Connecté à l'API Spring Boot & PostgreSQL avec affichage réel
+// DARLINK — APPLE LIQUID GLASS FAVORITES SCREEN (Flutter)
+// Editorial header, frosted refresh orb, live Firestore sync,
+// Apple-inspired empty state and architectural feed.
 // ============================================================
 
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/design_system/liquid_glass.dart';
 import '../../../../core/localization/app_locale.dart';
 import '../../../favorites/data/favorites_api_service.dart';
 import '../../../properties/domain/models/property.dart';
@@ -58,158 +59,121 @@ class _EcranFavorisState extends State<EcranFavoris> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = AppColors.backgroundOf(context);
-    final textPrim = AppColors.textPrimaryOf(context);
-
-    return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        title: Text(
-          AppLocale.instance.tr('favorites_title'),
-          style: TextStyle(
-            color: textPrim,
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: -0.3,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh_rounded, color: textPrim),
-            tooltip: 'Actualiser',
-            onPressed: _chargerFavoris,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _favoris.isEmpty
-              ? _construireEtatVide(context, isDark)
-              : RefreshIndicator(
-                  onRefresh: _chargerFavoris,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                    itemCount: _favoris.length,
-                    itemBuilder: (context, index) {
-                      return CartePropriete(propriete: _favoris[index]);
-                    },
-                  ),
-                ),
-    );
-  }
-
-  Widget _construireEtatVide(BuildContext context, bool isDark) {
-    final cardBg = AppColors.surfaceOf(context);
-    final borderColor = AppColors.borderOf(context);
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
 
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Editorial Top Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('COLLECTION', style: AppTypography.micro(AppColors.accentChampagne)),
+                      const SizedBox(height: 2),
+                      Text(
+                        AppLocale.instance.tr('favorites_title'),
+                        style: AppTypography.pageTitle(textPrim),
+                      ),
+                    ],
+                  ),
+                  GlassOrbButton(
+                    icon: Icons.refresh_rounded,
+                    tooltip: 'Actualiser',
+                    onTap: _chargerFavoris,
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                  : _favoris.isEmpty
+                      ? _buildEmptyState(context, textPrim, textSec)
+                      : RefreshIndicator(
+                          onRefresh: _chargerFavoris,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+                            itemCount: _favoris.length,
+                            itemBuilder: (context, index) {
+                              return CartePropriete(propriete: _favoris[index]);
+                            },
+                          ),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, Color textPrim, Color textSec) {
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 120),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(36),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0x332563EB) : const Color(0x152563EB),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? const Color(0x4460A5FA) : const Color(0x332563EB),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF2563EB).withValues(alpha: isDark ? 0.25 : 0.1),
-                        blurRadius: 24,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    size: 46,
-                    color: AppColors.accentRed,
-                  ),
+            LiquidGlassSurface(
+              borderRadius: 46,
+              blurSigma: 20,
+              child: const SizedBox(
+                width: 92,
+                height: 92,
+                child: Icon(
+                  Icons.favorite_rounded,
+                  size: 40,
+                  color: AppColors.accentRed,
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: 24),
             Text(
               AppLocale.instance.tr('empty_favorites_title'),
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: textPrim,
-                letterSpacing: -0.4,
-              ),
+              style: AppTypography.pageTitle(textPrim).copyWith(fontSize: 22),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: 8),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
+              constraints: const BoxConstraints(maxWidth: 300),
               child: Text(
                 AppLocale.instance.tr('empty_favorites_hint'),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: textSec,
-                  height: 1.5,
-                ),
+                style: AppTypography.body(textSec),
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: AppSpacing.xl + 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: cardBg.withValues(alpha: isDark ? 0.65 : 0.85),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: borderColor, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+            const SizedBox(height: 24),
+            LiquidGlassSurface(
+              borderRadius: AppSpacing.radiusPill,
+              blurSigma: 16,
+              elevatedShadow: false,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.bookmark_added_outlined,
+                    size: 16,
+                    color: AppColors.accentChampagne,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.bookmark_added_outlined,
-                        size: 18,
-                        color: AppColors.accentBlue,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Flexible(
-                        child: Text(
-                          AppLocale.instance.tr('empty_favorites_sub'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: textSec,
-                          ),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      AppLocale.instance.tr('empty_favorites_sub'),
+                      style: AppTypography.caption(textSec),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
