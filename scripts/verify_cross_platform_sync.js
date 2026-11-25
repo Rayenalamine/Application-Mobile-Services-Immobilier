@@ -175,3 +175,4 @@ runCrossPlatformSyncTest().catch((err) => {
   console.error('\n❌ Échec du test cross-platform :', err);
   process.exit(1);
 });
+
