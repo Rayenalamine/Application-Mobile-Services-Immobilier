@@ -168,10 +168,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
 
             <View style={styles.userTextContainer}>
               <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
-                {currentUser ? 'Bonjour ! 👋' : 'Bienvenue !'}
+                {currentUser ? t('greeting_user') : t('greeting_guest')}
               </Text>
               <Text style={[styles.userNameText, { color: colors.textPrimary }]}>
-                {currentUser ? currentUser.fullName : 'Invité'}
+                {currentUser ? currentUser.fullName : t('guest')}
               </Text>
             </View>
           </View>
@@ -367,18 +367,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             },
           ]}
         >
-          <Text style={styles.bannerTitle}>Services Immobilier DarLink</Text>
+          <Text style={styles.bannerTitle}>{t('home_banner_title')}</Text>
           <Text style={[styles.bannerSubtitle, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
-            Trouvez le bien immobilier de vos rêves en Tunisie avec visite guidée.
+            {t('home_banner_sub')}
           </Text>
         </View>
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Nos biens immobiliers
+            {t('home_properties_title')}
           </Text>
           <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
-            {filteredProperties.length} annonces disponibles
+            {filteredProperties.length} {t('available_count')}
           </Text>
         </View>
 

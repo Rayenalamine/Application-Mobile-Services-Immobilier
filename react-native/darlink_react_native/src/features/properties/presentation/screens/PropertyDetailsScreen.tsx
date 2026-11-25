@@ -99,16 +99,16 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
   const handleDeleteProperty = () => {
     Alert.alert(
-      'Supprimer ce bien',
-      `Voulez-vous supprimer définitivement "${property.titre}" ?`,
+      t('delete_property_title'),
+      `${t('delete_property_confirm')} (${property.titre})`,
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('btn_cancel'), style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: t('btn_delete_property'),
           style: 'destructive',
           onPress: async () => {
             await propertyApiService.deleteProperty(propId);
-            Alert.alert('Supprimé', 'Le bien a été supprimé de la base de données.');
+            Alert.alert(t('deleted_title'), t('deleted_message'));
             onBack();
           },
         },
@@ -118,7 +118,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
   const handleSendContact = async () => {
     if (!senderName.trim() || !senderEmail.trim()) {
-      Alert.alert('Erreur', 'Veuillez saisir votre nom et adresse e-mail.');
+      Alert.alert(t('contact_owner'), `${t('placeholder_name')} & ${t('placeholder_email')}`);
       return;
     }
     setShowContactModal(false);
@@ -130,8 +130,8 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
       message: contactMessage.trim(),
     });
     Alert.alert(
-      'Demande transmise !',
-      'Votre demande de contact a été enregistrée dans la base PostgreSQL et transmise au propriétaire.'
+      t('contact_sent_title'),
+      t('contact_sent_message')
     );
   };
 
@@ -261,7 +261,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           <View style={styles.statusBadge}>
             <View style={styles.statusDot} />
             <Text style={styles.statusBadgeText}>
-              {property.estLocation ? 'À Louer' : 'À Vendre'}
+              {property.estLocation ? t('for_rent') : t('for_sale')}
             </Text>
           </View>
 
@@ -275,7 +275,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             ]}
           >
             <Text style={[styles.estimatedBadgeText, { color: colors.textSecondary }]}>
-              {property.estLocation ? 'Bail 1 an min' : 'Estimation dispo'}
+              {property.estLocation ? t('lease_min') : t('estimate_available')}
             </Text>
           </View>
         </View>
@@ -287,7 +287,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
               {formatPrice(property.prix)}
             </Text>
             <Text style={[styles.priceSubtext, { color: colors.textSecondary }]}>
-              {property.estLocation ? '/mois' : `Est. ${formatPrice(Math.round(property.prix / 250))}/mo`}
+              {property.estLocation ? t('per_month') : `Est. ${formatPrice(Math.round(property.prix / 250))}${t('per_month')}`}
             </Text>
           </View>
           <Text style={[styles.mainTitle, { color: colors.textPrimary }]}>
@@ -311,9 +311,9 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           >
             <Text style={styles.specBoxIcon}>🛏️</Text>
             <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>
-              {property.nombreChambres} Bed
+              {property.nombreChambres} {t('bedrooms_short')}
             </Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Chambres</Text>
+            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>{t('specs_bedrooms')}</Text>
           </View>
 
           <View
@@ -327,9 +327,9 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           >
             <Text style={styles.specBoxIcon}>🚿</Text>
             <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>
-              {property.nombreSallesDeBain} Bath
+              {property.nombreSallesDeBain} {t('bathrooms_short')}
             </Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Salles de bain</Text>
+            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>{t('specs_bathrooms')}</Text>
           </View>
 
           <View
@@ -343,9 +343,9 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           >
             <Text style={styles.specBoxIcon}>📐</Text>
             <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>
-              {property.surfaceM2 ?? 145} m²
+              {property.surfaceM2 ?? 145} {t('area_unit')}
             </Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Surface</Text>
+            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>{t('specs_surface')}</Text>
           </View>
         </View>
 
@@ -363,7 +363,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             <Text style={styles.specItemIcon}>🏠</Text>
             <View>
               <Text style={[styles.specItemLabel, { color: colors.textSecondary }]}>
-                Type de bien
+                {t('specs_type')}
               </Text>
               <Text style={[styles.specItemValue, { color: colors.textPrimary }]}>
                 {property.type}
@@ -377,10 +377,10 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             <Text style={styles.specItemIcon}>🛡️</Text>
             <View>
               <Text style={[styles.specItemLabel, { color: colors.textSecondary }]}>
-                Année / Standing
+                {t('specs_year_standing')}
               </Text>
               <Text style={[styles.specItemValue, { color: colors.textPrimary }]}>
-                {property.anneeConstruction ?? 2021} • {property.standing ?? 'Haut Standing'}
+                {property.anneeConstruction ?? 2021} • {property.standing ?? t('standing_luxury')}
               </Text>
             </View>
           </View>
@@ -529,7 +529,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
             <TextInput
               style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Votre nom complet"
+              placeholder={t('placeholder_name')}
               placeholderTextColor={colors.textSecondary}
               value={senderName}
               onChangeText={setSenderName}
@@ -537,7 +537,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
             <TextInput
               style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Votre adresse e-mail"
+              placeholder={t('placeholder_email')}
               placeholderTextColor={colors.textSecondary}
               value={senderEmail}
               onChangeText={setSenderEmail}
@@ -547,7 +547,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
             <TextInput
               style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Votre numéro de téléphone"
+              placeholder={t('placeholder_phone')}
               placeholderTextColor={colors.textSecondary}
               value={senderPhone}
               onChangeText={setSenderPhone}
@@ -560,7 +560,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                 modalStyles.textArea,
                 { color: colors.textPrimary, borderColor: colors.border },
               ]}
-              placeholder="Votre message"
+              placeholder={t('placeholder_message')}
               placeholderTextColor={colors.textSecondary}
               value={contactMessage}
               onChangeText={setContactMessage}

@@ -16,6 +16,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
@@ -40,6 +41,46 @@ export const SearchScreen: React.FC = () => {
   const [showMap, setShowMap] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const { isDark, colors } = useTheme();
+  const { t } = useTranslation();
+
+  const getSegmentLabel = (seg: string) => {
+    switch (seg) {
+      case 'Tous': return t('segment_all');
+      case 'Acheter': return t('segment_buy');
+      case 'Louer': return t('segment_rent');
+      default: return seg;
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'Tous': return t('segment_all');
+      case 'Appartement': return t('type_apartment');
+      case 'Villa': return t('type_villa');
+      case 'Maison': return t('type_house');
+      case 'Penthouse': return t('type_penthouse');
+      default: return type;
+    }
+  };
+
+  const getCityLabel = (city: string) => {
+    switch (city) {
+      case 'Tunis': return t('city_tunis');
+      case 'La Marsa': return t('city_marsa');
+      case 'Sousse': return t('city_sousse');
+      case 'Hammamet': return t('city_hammamet');
+      case 'Djerba': return t('city_djerba');
+      case 'Monastir': return t('city_monastir');
+      case 'Sfax': return t('city_sfax');
+      default: return city;
+    }
+  };
+
+  const getBedroomLabel = (bed: string) => {
+    if (bed === 'Tous') return t('segment_all');
+    if (bed === 'Studio') return t('bedrooms_studio');
+    return bed;
+  };
 
   useEffect(() => {
     fetchFilteredProperties();
@@ -100,8 +141,8 @@ export const SearchScreen: React.FC = () => {
   const handleApply = () => {
     fetchFilteredProperties();
     Alert.alert(
-      'Filtres appliqués',
-      `${properties.length} bien(s) trouvé(s) dans la base de données.`
+      t('filters_applied'),
+      `${properties.length} ${t('properties_found')}`
     );
   };
 
@@ -115,7 +156,7 @@ export const SearchScreen: React.FC = () => {
         {/* 1. BARRE SUPÉRIEURE */}
         <View style={styles.headerBar}>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            Recherche de biens
+            {t('search_title')}
           </Text>
 
           <View style={styles.headerRightActions}>
@@ -170,7 +211,7 @@ export const SearchScreen: React.FC = () => {
               { color: colors.textPrimary },
               Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
             ]}
-            placeholder="Rechercher par titre, quartier, mot-clé..."
+            placeholder={t('search_input_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={(text) => {
@@ -232,7 +273,7 @@ export const SearchScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  {seg}
+                  {getSegmentLabel(seg)}
                 </Text>
               </TouchableOpacity>
             );
@@ -242,7 +283,7 @@ export const SearchScreen: React.FC = () => {
         {/* 4. SÉLECTION TYPE DE BIEN */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Type de bien
+            {t('section_property_type')}
           </Text>
           <View style={styles.pillsRow}>
             {PROPERTY_TYPES.map((type) => {
@@ -269,7 +310,7 @@ export const SearchScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    {type}
+                    {getTypeLabel(type)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -280,7 +321,7 @@ export const SearchScreen: React.FC = () => {
         {/* 5. VILLES POPULAIRES EN TUNISIE */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Villes populaires en Tunisie
+            {t('section_popular_cities')}
           </Text>
           <View style={styles.pillsRow}>
             {CITIES.map((city) => {
@@ -309,7 +350,7 @@ export const SearchScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    {city}
+                    {getCityLabel(city)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -320,7 +361,7 @@ export const SearchScreen: React.FC = () => {
         {/* 6. NOMBRE DE CHAMBRES */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Nombre de chambres
+            {t('section_bedrooms')}
           </Text>
           <View style={styles.pillsRow}>
             {BEDROOMS.map((bed) => {
@@ -347,7 +388,7 @@ export const SearchScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    {bed}
+                    {getBedroomLabel(bed)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -358,14 +399,14 @@ export const SearchScreen: React.FC = () => {
         {/* 7. FOURCHETTE DE PRIX */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Budget (DT)
+            {t('section_budget')}
           </Text>
           <View style={styles.pillsRow}>
             {[
-              { label: 'Tous prix', min: undefined, max: undefined },
-              { label: '< 300k DT', min: undefined, max: 300000 },
-              { label: '300k - 600k DT', min: 300000, max: 600000 },
-              { label: '> 600k DT', min: 600000, max: undefined },
+              { label: t('segment_all'), min: undefined, max: undefined },
+              { label: '< 300k ' + t('currency'), min: undefined, max: 300000 },
+              { label: '300k - 600k ' + t('currency'), min: 300000, max: 600000 },
+              { label: '> 600k ' + t('currency'), min: 600000, max: undefined },
             ].map((budget, i) => {
               const isSelected = minPrice === budget.min && maxPrice === budget.max;
               return (
@@ -404,12 +445,12 @@ export const SearchScreen: React.FC = () => {
         {/* 8. RÉSULTATS DYNAMIQUES EN TEMPS RÉEL */}
         <View style={styles.resultsHeaderRow}>
           <Text style={[styles.resultsCountText, { color: colors.textPrimary }]}>
-            Résultats correspondants ({properties.length})
+            {t('home_properties_title')} ({properties.length})
           </Text>
           {(selectedCity || selectedType !== 'Tous' || selectedBedrooms !== 'Tous' || selectedSegment !== 'Tous' || searchQuery || minPrice !== undefined) && (
             <TouchableOpacity onPress={handleReset}>
               <Text style={{ color: colors.accentBlue, fontWeight: '700', fontSize: 13 }}>
-                Réinitialiser
+                {t('btn_reset')}
               </Text>
             </TouchableOpacity>
           )}
@@ -424,16 +465,16 @@ export const SearchScreen: React.FC = () => {
           >
             <Text style={styles.emptyIcon}>🔍</Text>
             <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-              Aucun bien ne correspond à ces critères
+              {t('no_results_title')}
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Essayez de réinitialiser la recherche ou de sélectionner une autre ville.
+              {t('no_results_sub')}
             </Text>
             <TouchableOpacity
               style={[styles.resetButton, { backgroundColor: colors.accentBlue }]}
               onPress={handleReset}
             >
-              <Text style={styles.resetButtonText}>Tout réinitialiser</Text>
+              <Text style={styles.resetButtonText}>{t('btn_reset')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -466,7 +507,7 @@ export const SearchScreen: React.FC = () => {
           activeOpacity={0.8}
         >
           <Text style={[styles.dockOutlinedText, { color: colors.textPrimary }]}>
-            Réinitialiser
+            {t('btn_reset')}
           </Text>
         </TouchableOpacity>
 
@@ -475,7 +516,7 @@ export const SearchScreen: React.FC = () => {
           onPress={handleApply}
           activeOpacity={0.8}
         >
-          <Text style={styles.dockFilledText}>Appliquer les filtres</Text>
+          <Text style={styles.dockFilledText}>{t('btn_apply_filters')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

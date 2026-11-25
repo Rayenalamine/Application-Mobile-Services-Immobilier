@@ -21,6 +21,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property, formatPrice } from '../../../properties/domain/models/property';
 
@@ -71,6 +72,7 @@ const CITY_COORDS: Record<string, { lat: number; lng: number; zoom: number }> = 
 
 export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }) => {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [containerSize, setContainerSize] = useState({
     width: windowWidth || 390,
@@ -318,14 +320,14 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
             accessibilityRole="button"
             accessibilityLabel="Retour à l'accueil"
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 13 }}>‹ Accueil</Text>
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 13 }}>{t('back_to_home')}</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={[styles.titleText, { color: colors.textPrimary }]}>
-              🗺️ OpenStreetMap
+              🗺️ {t('map_title')}
             </Text>
             <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
-              {filteredProperties.length} bien(s) géolocalisé(s)
+              {filteredProperties.length} {t('geolocated_count')}
             </Text>
           </View>
           {loading && <ActivityIndicator size="small" color={colors.accentBlue} />}
@@ -447,7 +449,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
                 {formatPrice(selectedProperty.prix)}
               </Text>
               <View style={[styles.consultBtn, { backgroundColor: colors.accentBlue }]}>
-                <Text style={styles.consultBtnText}>Consulter →</Text>
+                <Text style={styles.consultBtnText}>{t('btn_consult')}</Text>
               </View>
             </View>
           </View>

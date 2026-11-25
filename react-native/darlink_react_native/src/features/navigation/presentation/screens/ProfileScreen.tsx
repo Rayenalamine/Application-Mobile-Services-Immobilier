@@ -188,10 +188,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <Text style={{ fontSize: 32 }}>🔐</Text>
           </View>
           <Text style={[styles.authTitle, { color: colors.textPrimary }]}>
-            Bienvenue sur DarLink
+            {t('auth_welcome_title')}
           </Text>
           <Text style={[styles.authSubtitle, { color: colors.textSecondary }]}>
-            Connectez-vous pour gérer vos annonces, vos favoris et vos visites en Tunisie.
+            {t('auth_welcome_sub')}
           </Text>
 
           {/* SÉLECTEUR D'ONGLETS */}
@@ -214,7 +214,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   { color: !isRegisterMode ? '#FFFFFF' : colors.textSecondary },
                 ]}
               >
-                Se connecter
+                {t('login_tab')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -230,7 +230,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   { color: isRegisterMode ? '#FFFFFF' : colors.textSecondary },
                 ]}
               >
-                Créer un compte
+                {t('register_tab')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -254,7 +254,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     borderColor: colors.border,
                   },
                 ]}
-                placeholder="Nom complet"
+                placeholder={t('full_name_label')}
                 placeholderTextColor={colors.textSecondary}
                 value={fullName}
                 onChangeText={setFullName}
@@ -268,7 +268,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     borderColor: colors.border,
                   },
                 ]}
-                placeholder="Téléphone (+216)"
+                placeholder={t('phone_label')}
                 placeholderTextColor={colors.textSecondary}
                 value={phone}
                 onChangeText={setPhone}
@@ -286,7 +286,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 borderColor: colors.border,
               },
             ]}
-            placeholder="Adresse email"
+            placeholder={t('email_label')}
             placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={setEmail}
@@ -303,7 +303,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 borderColor: colors.border,
               },
             ]}
-            placeholder="Mot de passe"
+            placeholder={t('password_label')}
             placeholderTextColor={colors.textSecondary}
             value={password}
             onChangeText={setPassword}
@@ -319,7 +319,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={styles.submitButtonText}>
-                {isRegisterMode ? 'Créer mon compte' : 'Se connecter'}
+                {isRegisterMode ? t('register_tab') : t('login_tab')}
               </Text>
             )}
           </TouchableOpacity>
@@ -333,7 +333,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             }}
           >
             <Text style={{ color: colors.accentBlue, fontSize: 13, textAlign: 'center' }}>
-              Remplir avec le compte test (Mohamed Ben Ali)
+              {t('demo_account_hint')} (Mohamed Ben Ali)
             </Text>
           </TouchableOpacity>
         </View>
@@ -394,7 +394,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               }}
             >
               <Text style={[styles.actionBtnText, { color: colors.accentBlue }]}>
-                ✏️ Modifier profil
+                ✏️ {t('edit_profile')}
               </Text>
             </TouchableOpacity>
 
@@ -406,7 +406,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               onPress={() => setIsChangingPassword(true)}
             >
               <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>
-                🔒 Mot de passe
+                🔒 {t('password_label')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -420,20 +420,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               ]}
             >
               <Text style={[styles.editBoxTitle, { color: colors.textPrimary }]}>
-                Mettre à jour mes coordonnées
+                {t('edit_profile')}
               </Text>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
                 value={editName}
                 onChangeText={setEditName}
-                placeholder="Nom complet"
+                placeholder={t('full_name_label')}
                 placeholderTextColor={colors.textSecondary}
               />
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
                 value={editPhone}
                 onChangeText={setEditPhone}
-                placeholder="Téléphone"
+                placeholder={t('phone_label')}
                 placeholderTextColor={colors.textSecondary}
               />
               <View style={styles.editBoxActions}>
@@ -441,13 +441,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   style={[styles.cancelBtn, { borderColor: colors.border }]}
                   onPress={() => setIsEditingProfile(false)}
                 >
-                  <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                  <Text style={{ color: colors.textSecondary }}>{t('btn_cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]}
                   onPress={handleUpdateProfile}
                 >
-                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Enregistrer</Text>
+                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{t('btn_save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -462,13 +462,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               ]}
             >
               <Text style={[styles.editBoxTitle, { color: colors.textPrimary }]}>
-                Changer mon mot de passe
+                {t('change_password_title')}
               </Text>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
-                placeholder="Mot de passe actuel"
+                placeholder={t('current_password_placeholder')}
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry
               />
@@ -476,7 +476,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
                 value={newPassword}
                 onChangeText={setNewPassword}
-                placeholder="Nouveau mot de passe (min 6 car.)"
+                placeholder={t('new_password_placeholder')}
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry
               />
@@ -485,13 +485,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   style={[styles.cancelBtn, { borderColor: colors.border }]}
                   onPress={() => setIsChangingPassword(false)}
                 >
-                  <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                  <Text style={{ color: colors.textSecondary }}>{t('btn_cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]}
                   onPress={handleChangePassword}
                 >
-                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>Valider</Text>
+                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>{t('btn_save')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -502,16 +502,16 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             style={[styles.addPropButton, { backgroundColor: colors.accentBlue }]}
             onPress={() => onNavigateToAddProperty && onNavigateToAddProperty()}
           >
-            <Text style={styles.addPropButtonText}>🏠 Publier une nouvelle annonce</Text>
+            <Text style={styles.addPropButtonText}>🏠 {t('btn_publish')}</Text>
           </TouchableOpacity>
 
           {/* MES ANNONCES PUBLIÉES */}
           <View style={styles.myPropsHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Mes annonces publiées ({myProperties.length})
+              {t('my_listings')} ({myProperties.length})
             </Text>
             <TouchableOpacity onPress={loadMyProperties}>
-              <Text style={{ color: colors.accentBlue, fontSize: 13 }}>Actualiser 🔄</Text>
+              <Text style={{ color: colors.accentBlue, fontSize: 13 }}>{t('btn_refresh')} 🔄</Text>
             </TouchableOpacity>
           </View>
 
@@ -525,7 +525,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               ]}
             >
               <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
-                Vous n'avez publié aucune annonce pour le moment.
+                {t('no_published_listings')}
               </Text>
             </View>
           ) : (
@@ -562,7 +562,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       {/* PRÉFÉRENCES : THÈME ET LANGUES */}
       {/* ======================================================== */}
       <Text style={[styles.settingsTitle, { color: colors.textPrimary }]}>
-        Paramètres de l'application
+        {t('account_settings')}
       </Text>
 
       {/* MODE SOMBRE / CLAIR */}
@@ -573,7 +573,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         ]}
       >
         <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>
-          {isDark ? '🌙 Mode sombre activé' : '☀️ Mode clair activé'}
+          {isDark ? `🌙 ${t('theme_dark')}` : `☀️ ${t('theme_light')}`}
         </Text>
         <TouchableOpacity
           style={[
@@ -583,7 +583,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           onPress={toggleTheme}
         >
           <Text style={{ color: isDark ? '#FFFFFF' : '#0F1015', fontWeight: 'bold', fontSize: 12 }}>
-            Basculer
+            {t('toggle_theme')}
           </Text>
         </TouchableOpacity>
       </View>
