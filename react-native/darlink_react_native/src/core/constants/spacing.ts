@@ -1,25 +1,21 @@
 // ============================================================
-// DARLINK — ÉCHELLE D'ESPACEMENT (V2-T01 - Membre 2)
-// Échelle de marges et de paddings basée sur une grille de 4px
+// DARLINK — SPACING & RADIUS TOKENS (React Native)
 // ============================================================
 
 export const AppSpacing = {
-  /** 4px : micros-espacements */
+  xxs: 2,
   xs: 4,
-  /** 8px : espacement compact */
   s: 8,
-  /** 12px : espacement moyen-faible */
+  sm: 8,
   m: 12,
-  /** 16px : espacement standard par défaut */
+  md: 16,
   l: 16,
-  /** 24px : espacement aéré pour les sections */
-  xl: 24,
-  /** 32px : grand espacement pour les en-têtes */
-  xxl: 32,
-  /** 12px : rayon de courbure standard des cartes */
-  cardRadius: 12,
-  /** 8px : rayon de courbure des badges */
-  badgeRadius: 8,
+  lg: 20,
+  xl: 28,
+  xxl: 40,
+  cardRadius: 26,
+  badgeRadius: 999,
+  sheetRadius: 34,
 } as const;
 
 export type AppSpacingKey = keyof typeof AppSpacing;

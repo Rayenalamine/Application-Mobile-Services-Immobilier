@@ -198,36 +198,79 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
     >
+      <Text style={[styles.eyebrow, { color: colors.accentChampagne }]}>ESPACE PERSONNEL</Text>
+      <Text style={[styles.pageHeading, { color: colors.textPrimary }]}>
+        {isAuthenticated && user ? user.fullName : 'Mon Profil'}
+      </Text>
+
       {!isAuthenticated && (
-        <View style={styles.authContainer}>
-          <View style={[styles.authIconCircle, { backgroundColor: 'rgba(37,99,235,0.1)' }]}>
-            <Lock size={30} color={colors.accentBlue} />
+        <View
+          style={[
+            styles.glassCard,
+            {
+              backgroundColor: isDark ? 'rgba(22, 24, 30, 0.86)' : 'rgba(255, 255, 255, 0.94)',
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.authIconCircle,
+              {
+                backgroundColor: 'rgba(154, 123, 79, 0.14)',
+                borderColor: 'rgba(154, 123, 79, 0.35)',
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <Lock size={26} color={colors.accentChampagne} />
           </View>
           <Text style={[styles.authTitle, { color: colors.textPrimary }]}>Espace DarLink</Text>
           <Text style={[styles.authSubtitle, { color: colors.textSecondary }]}>
             Connectez-vous ou créez un compte sécurisé Firebase pour gérer vos biens et favoris.
           </Text>
 
-          <View style={[styles.tabSelector, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.tabSelector,
+              { backgroundColor: isDark ? '#1A1C22' : '#F2F2F7', borderColor: 'transparent' },
+            ]}
+          >
             <TouchableOpacity
-              style={[styles.tabButton, !isRegisterMode && { backgroundColor: colors.accentBlue }]}
+              style={[
+                styles.tabButton,
+                !isRegisterMode && { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' },
+              ]}
               onPress={() => {
                 setIsRegisterMode(false);
                 setAuthError(null);
               }}
             >
-              <Text style={[styles.tabText, { color: !isRegisterMode ? '#FFFFFF' : colors.textSecondary }]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: !isRegisterMode ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textSecondary },
+                ]}
+              >
                 Connexion
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tabButton, isRegisterMode && { backgroundColor: colors.accentBlue }]}
+              style={[
+                styles.tabButton,
+                isRegisterMode && { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' },
+              ]}
               onPress={() => {
                 setIsRegisterMode(true);
                 setAuthError(null);
               }}
             >
-              <Text style={[styles.tabText, { color: isRegisterMode ? '#FFFFFF' : colors.textSecondary }]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isRegisterMode ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textSecondary },
+                ]}
+              >
                 Inscription
               </Text>
             </TouchableOpacity>
@@ -235,7 +278,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
 
           {authError && (
             <View style={styles.errorBanner}>
-              <AlertTriangle size={16} color="#EF4444" />
+              <AlertTriangle size={16} color="#DC2626" />
               <Text style={styles.errorText}>{authError}</Text>
             </View>
           )}
@@ -243,21 +286,27 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           {isRegisterMode && (
             <>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+                style={[
+                  styles.input,
+                  { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
+                ]}
                 placeholder="Nom et prénom"
                 placeholderTextColor={colors.textSecondary}
                 value={fullName}
                 onChangeText={setFullName}
               />
               <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+                style={[
+                  styles.input,
+                  { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
+                ]}
                 placeholder="Téléphone (+216)"
                 placeholderTextColor={colors.textSecondary}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
               />
-              <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>Type de compte</Text>
+              <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>TYPE DE COMPTE</Text>
               <View style={styles.roleRow}>
                 {[
                   { key: 'USER', label: 'Particulier' },
@@ -270,11 +319,26 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                       key={r.key}
                       style={[
                         styles.roleChip,
-                        { backgroundColor: active ? colors.accentBlue : colors.surface, borderColor: active ? colors.accentBlue : colors.border },
+                        {
+                          backgroundColor: active
+                            ? isDark
+                              ? '#F5F5F7'
+                              : '#1D1D1F'
+                            : isDark
+                            ? '#1E2128'
+                            : '#F5F5F7',
+                          borderColor: active ? 'transparent' : colors.border,
+                        },
                       ]}
                       onPress={() => setRequestedRole(r.key as 'USER' | 'OWNER' | 'AGENCY')}
                     >
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#FFFFFF' : colors.textSecondary }}>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: '600',
+                          color: active ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textSecondary,
+                        }}
+                      >
                         {r.label}
                       </Text>
                     </TouchableOpacity>
@@ -285,7 +349,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           )}
 
           <TextInput
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+            style={[
+              styles.input,
+              { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
+            ]}
             placeholder="Adresse e-mail"
             placeholderTextColor={colors.textSecondary}
             value={email}
@@ -295,7 +362,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           />
 
           <TextInput
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+            style={[
+              styles.input,
+              { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
+            ]}
             placeholder="Mot de passe"
             placeholderTextColor={colors.textSecondary}
             value={password}
@@ -307,7 +377,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             <>
               {password.length > 0 && (
                 <View style={styles.strengthBox}>
-                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: strength.valid ? '#10B981' : '#F59E0B' }}>
+                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: strength.valid ? '#16A34A' : '#D97706' }}>
                     Robustesse : {strength.label}
                   </Text>
                   {strength.issues.length > 0 && (
@@ -318,7 +388,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                 </View>
               )}
               <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+                style={[
+                  styles.input,
+                  { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
+                ]}
                 placeholder="Confirmer le mot de passe"
                 placeholderTextColor={colors.textSecondary}
                 value={confirmPassword}
@@ -329,14 +402,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           )}
 
           <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: colors.accentBlue }]}
+            style={[styles.submitButton, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
             onPress={handleAuthSubmit}
             disabled={loading}
+            activeOpacity={0.86}
           >
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={isDark ? '#1D1D1F' : '#FFFFFF'} />
             ) : (
-              <Text style={styles.submitButtonText}>
+              <Text style={[styles.submitButtonText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>
                 {isRegisterMode ? 'Créer mon compte' : 'Se connecter'}
               </Text>
             )}
@@ -350,7 +424,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                 setForgotModal(true);
               }}
             >
-              <Text style={{ color: colors.accentBlue, fontSize: 13, fontWeight: '600' }}>
+              <Text style={{ color: colors.accentChampagne, fontSize: 13, fontWeight: '600' }}>
                 Mot de passe oublié ?
               </Text>
             </TouchableOpacity>
@@ -361,18 +435,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       {isAuthenticated && user && (
         <View style={styles.profileSection}>
           {infoBanner && (
-            <View style={[styles.infoBanner, { borderColor: colors.accentBlue }]}>
-              <Text style={{ color: colors.accentBlue, fontSize: 12 }}>{infoBanner}</Text>
+            <View style={[styles.infoBanner, { borderColor: colors.accentChampagne, backgroundColor: 'rgba(154,123,79,0.08)' }]}>
+              <Text style={{ color: colors.accentChampagne, fontSize: 12, fontWeight: '600' }}>{infoBanner}</Text>
             </View>
           )}
 
-          {/* CARTE UTILISATEUR */}
-          <View style={[styles.userCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {/* CARTE UTILISATEUR LIQUID GLASS */}
+          <View
+            style={[
+              styles.userCard,
+              {
+                backgroundColor: isDark ? 'rgba(22, 24, 30, 0.88)' : 'rgba(255, 255, 255, 0.94)',
+                borderColor: colors.border,
+              },
+            ]}
+          >
             {user.photoUrl ? (
-              <Image source={{ uri: user.photoUrl }} style={styles.avatarImg} />
+              <Image source={{ uri: user.photoUrl }} style={[styles.avatarImg, { borderColor: colors.accentChampagne, borderWidth: 1.5 }]} />
             ) : (
-              <View style={[styles.avatarCircle, { backgroundColor: colors.accentBlue }]}>
-                <Text style={styles.avatarText}>
+              <View
+                style={[
+                  styles.avatarCircle,
+                  {
+                    backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F',
+                    borderColor: colors.accentChampagne,
+                    borderWidth: 1.5,
+                  },
+                ]}
+              >
+                <Text style={[styles.avatarText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>
                   {user.fullName
                     .split(' ')
                     .map((e) => e[0])
@@ -385,14 +476,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             <View style={styles.userInfo}>
               <View style={styles.userNameRow}>
                 <Text style={[styles.userName, { color: colors.textPrimary }]}>{user.fullName}</Text>
-                <View style={[styles.roleBadge, { backgroundColor: 'rgba(37,99,235,0.14)' }]}>
-                  <Text style={[styles.roleBadgeText, { color: colors.accentBlue }]}>{user.role}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: 'rgba(154,123,79,0.14)' }]}>
+                  <Text style={[styles.roleBadgeText, { color: colors.accentChampagne }]}>{user.role}</Text>
                 </View>
               </View>
               <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{user.email}</Text>
               {user.phone ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                  <Phone size={12} color={colors.textSecondary} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                  <Phone size={12} color={colors.accentChampagne} />
                   <Text style={[styles.userPhone, { color: colors.textSecondary }]}>{user.phone}</Text>
                 </View>
               ) : null}
@@ -404,32 +495,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             style={[
               styles.verifyBanner,
               {
-                backgroundColor: user.emailVerified ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                borderColor: user.emailVerified ? 'rgba(16,185,129,0.35)' : 'rgba(245,158,11,0.35)',
+                backgroundColor: user.emailVerified ? 'rgba(22,163,74,0.1)' : 'rgba(217,119,6,0.1)',
+                borderColor: user.emailVerified ? 'rgba(22,163,74,0.3)' : 'rgba(217,119,6,0.3)',
               },
             ]}
           >
-            <CheckCircle2 size={17} color={user.emailVerified ? '#10B981' : '#D97706'} />
-            <Text style={{ flex: 1, fontSize: 12, color: colors.textPrimary, fontWeight: '600' }}>
+            <CheckCircle2 size={17} color={user.emailVerified ? '#16A34A' : '#D97706'} />
+            <Text style={{ flex: 1, fontSize: 12.5, color: colors.textPrimary, fontWeight: '600' }}>
               {user.emailVerified ? 'Adresse e-mail vérifiée' : 'E-mail non vérifié'}
             </Text>
             {!user.emailVerified && (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
                   onPress={async () => {
                     const sent = await authService.resendVerificationEmail();
                     Alert.alert(sent ? 'E-mail envoyé' : 'Erreur', sent ? 'Vérifiez votre boîte de réception.' : authService.lastError || 'Échec');
                   }}
                 >
-                  <Text style={{ color: colors.accentBlue, fontSize: 11.5, fontWeight: '700' }}>Renvoyer</Text>
+                  <Text style={{ color: colors.accentChampagne, fontSize: 12, fontWeight: '700' }}>Renvoyer</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={async () => {
                     const ok = await authService.refreshVerificationStatus();
-                    Alert.alert('Statut', ok ? 'Votre e-mail est maintenant confirmé !' : 'Pas encore vérifié dans Firebase.');
+                    Alert.alert('Statut', ok ? 'E-mail confirmé !' : 'Pas encore vérifié dans Firebase.');
                   }}
                 >
-                  <Text style={{ color: '#10B981', fontSize: 11.5, fontWeight: '700' }}>Actualiser</Text>
+                  <Text style={{ color: '#16A34A', fontSize: 12, fontWeight: '700' }}>Actualiser</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -446,15 +537,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                 setEditModal(true);
               }}
             >
-              <Edit3 size={15} color={colors.accentBlue} />
-              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Profil</Text>
+              <Edit3 size={14} color={colors.accentChampagne} />
+              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Modifier profil</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
               onPress={() => setEmailModal(true)}
             >
-              <Mail size={15} color={colors.accentBlue} />
+              <Mail size={14} color={colors.accentChampagne} />
               <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Changer e-mail</Text>
             </TouchableOpacity>
 
@@ -462,37 +553,40 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               style={[styles.actionBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
               onPress={() => setPasswordModal(true)}
             >
-              <KeyRound size={15} color={colors.accentBlue} />
+              <KeyRound size={14} color={colors.accentChampagne} />
               <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Mot de passe</Text>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity
-            style={[styles.addPropButton, { backgroundColor: colors.accentBlue }]}
+            style={[styles.addPropButton, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
             onPress={() => onNavigateToAddProperty && onNavigateToAddProperty()}
+            activeOpacity={0.86}
           >
-            <Plus size={18} color="#FFFFFF" />
-            <Text style={styles.addPropButtonText}>Publier une annonce</Text>
+            <Plus size={18} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
+            <Text style={[styles.addPropButtonText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>
+              Publier une annonce
+            </Text>
           </TouchableOpacity>
 
           {/* MES ANNONCES */}
           <View style={styles.myPropsHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Building2 size={16} color={colors.accentBlue} />
+              <Building2 size={16} color={colors.accentChampagne} />
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
                 Mes annonces ({myProperties.length})
               </Text>
             </View>
             <TouchableOpacity onPress={loadDashboard}>
-              <RefreshCw size={17} color={colors.accentBlue} />
+              <RefreshCw size={17} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {loadingDashboard ? (
-            <ActivityIndicator color={colors.accentBlue} style={{ marginVertical: 12 }} />
+            <ActivityIndicator color={colors.accentChampagne} style={{ marginVertical: 12 }} />
           ) : myProperties.length === 0 ? (
             <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={{ color: colors.textSecondary, fontSize: 12.5 }}>Aucune annonce publiée.</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Aucune annonce publiée.</Text>
             </View>
           ) : (
             myProperties.map((prop) => (
@@ -501,7 +595,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                   <Text style={[styles.myPropTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                     {prop.titre}
                   </Text>
-                  <Text style={[styles.myPropPrice, { color: colors.accentBlue }]}>
+                  <Text style={[styles.myPropPrice, { color: colors.accentChampagne }]}>
                     {formatPrice(prop.prix, Boolean(prop.estLocation), Boolean(prop.priceOnRequest))} • {prop.listingStatus}
                   </Text>
                 </View>
@@ -521,7 +615,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                   }
                   style={{ padding: 6 }}
                 >
-                  <Trash2 size={17} color="#EF4444" />
+                  <Trash2 size={17} color="#DC2626" />
                 </TouchableOpacity>
               </View>
             ))
@@ -530,7 +624,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           {/* DEMANDES DE CONTACT & NOTIFICATIONS */}
           <View style={styles.myPropsHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <MessageSquare size={16} color={colors.accentBlue} />
+              <MessageSquare size={16} color={colors.accentChampagne} />
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
                 Demandes reçues ({receivedRequests.length})
               </Text>
@@ -547,7 +641,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
 
           <View style={styles.myPropsHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Bell size={16} color={colors.accentBlue} />
+              <Bell size={16} color={colors.accentChampagne} />
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
                 Notifications ({notifications.length})
               </Text>
@@ -562,48 +656,70 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
         </View>
       )}
 
-      {/* PARAMÈTRES */}
-      <Text style={[styles.settingsTitle, { color: colors.textPrimary }]}>Paramètres</Text>
-      <View style={[styles.settingRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          {isDark ? <Moon size={18} color={colors.accentBlue} /> : <Sun size={18} color={colors.accentBlue} />}
-          <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>
-            {isDark ? 'Mode sombre' : 'Mode clair'}
-          </Text>
+      {/* PRÉFÉRENCES STYLE APPLE GROUPÉ */}
+      <Text style={[styles.settingsSectionLabel, { color: colors.textSecondary }]}>PRÉFÉRENCES</Text>
+      <View
+        style={[
+          styles.settingsGroup,
+          {
+            backgroundColor: isDark ? 'rgba(22, 24, 30, 0.86)' : 'rgba(255, 255, 255, 0.94)',
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <View style={styles.settingRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[styles.settingIconBox, { backgroundColor: 'rgba(154,123,79,0.14)' }]}>
+              {isDark ? <Moon size={17} color={colors.accentChampagne} /> : <Sun size={17} color={colors.accentChampagne} />}
+            </View>
+            <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>
+              {isDark ? 'Mode sombre' : 'Mode clair'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.themeSwitchBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
+            onPress={toggleTheme}
+          >
+            <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600', fontSize: 12 }}>Basculer</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={[styles.themeSwitchBtn, { backgroundColor: colors.accentBlue }]} onPress={toggleTheme}>
-          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>Basculer</Text>
-        </TouchableOpacity>
-      </View>
 
-      <View style={[styles.settingRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Globe size={18} color={colors.accentBlue} />
-          <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>{t('language_choice')}</Text>
+        <View style={[styles.groupDivider, { backgroundColor: colors.border }]} />
+
+        <View style={styles.settingRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={[styles.settingIconBox, { backgroundColor: 'rgba(154,123,79,0.14)' }]}>
+              <Globe size={17} color={colors.accentChampagne} />
+            </View>
+            <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>{t('language_choice')}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.langBadge, { backgroundColor: colors.surfaceElevated }]}
+            onPress={() => {
+              if (language === 'fr') setLanguage('ar');
+              else if (language === 'ar') setLanguage('en');
+              else setLanguage('fr');
+            }}
+          >
+            <Text style={{ color: colors.textPrimary, fontWeight: '600', fontSize: 12 }}>
+              {language === 'fr' ? 'Français' : language === 'ar' ? 'العربية' : 'English'}
+            </Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[styles.langBadge, { backgroundColor: 'rgba(37,99,235,0.1)' }]}
-          onPress={() => {
-            if (language === 'fr') setLanguage('ar');
-            else if (language === 'ar') setLanguage('en');
-            else setLanguage('fr');
-          }}
-        >
-          <Text style={{ color: colors.accentBlue, fontWeight: '700', fontSize: 12 }}>
-            {language === 'fr' ? 'Français' : language === 'ar' ? 'العربية' : 'English'}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {isAuthenticated && (
         <View style={{ gap: 10, marginTop: 18 }}>
-          <TouchableOpacity style={styles.logoutButton} onPress={() => authService.logout()}>
-            <LogOut size={16} color="#EF4444" />
+          <TouchableOpacity
+            style={[styles.logoutButton, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
+            onPress={() => authService.logout()}
+          >
+            <LogOut size={16} color="#DC2626" />
             <Text style={styles.logoutButtonText}>{t('btn_logout')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={{ alignItems: 'center', padding: 10 }} onPress={() => setDeleteModal(true)}>
-            <Text style={{ color: '#94A3B8', fontSize: 12, textDecorationLine: 'underline' }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
               Supprimer définitivement mon compte
             </Text>
           </TouchableOpacity>
@@ -616,7 +732,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Réinitialiser le mot de passe</Text>
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               placeholder="Votre adresse e-mail"
               placeholderTextColor={colors.textSecondary}
               value={resetEmailVal}
@@ -628,14 +744,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                 <Text style={{ color: colors.textSecondary }}>Annuler</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]}
+                style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
                 onPress={async () => {
                   const err = await authService.sendPasswordResetEmail(resetEmailVal);
                   setForgotModal(false);
                   Alert.alert(err ? 'Erreur' : 'E-mail envoyé', err || 'Consultez votre boîte mail pour choisir un nouveau mot de passe.');
                 }}
               >
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Envoyer</Text>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Envoyer</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -648,21 +764,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Modifier mon profil</Text>
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={editName}
               onChangeText={setEditName}
               placeholder="Nom complet"
               placeholderTextColor={colors.textSecondary}
             />
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={editPhone}
               onChangeText={setEditPhone}
               placeholder="Téléphone"
               placeholderTextColor={colors.textSecondary}
             />
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={editPhoto}
               onChangeText={setEditPhoto}
               placeholder="URL photo de profil (HTTPS, optionnel)"
@@ -673,8 +789,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModal(false)}>
                 <Text style={{ color: colors.textSecondary }}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]} onPress={handleSaveProfile}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Enregistrer</Text>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]} onPress={handleSaveProfile}>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Enregistrer</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -687,7 +803,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Changer de mot de passe</Text>
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={currentPassword}
               onChangeText={setCurrentPassword}
               placeholder="Mot de passe actuel"
@@ -695,7 +811,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               secureTextEntry
             />
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={newPassword}
               onChangeText={setNewPassword}
               placeholder="Nouveau mot de passe (min 8 car., Maj + Chiffre)"
@@ -706,8 +822,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setPasswordModal(false)}>
                 <Text style={{ color: colors.textSecondary }}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]} onPress={handleChangePassword}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Valider</Text>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]} onPress={handleChangePassword}>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Valider</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -720,7 +836,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Changer d’adresse e-mail</Text>
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={currentPassword}
               onChangeText={setCurrentPassword}
               placeholder="Mot de passe actuel (réauthentification)"
@@ -728,7 +844,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               secureTextEntry
             />
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={newEmailVal}
               onChangeText={setNewEmailVal}
               placeholder="Nouvel e-mail"
@@ -739,8 +855,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setEmailModal(false)}>
                 <Text style={{ color: colors.textSecondary }}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.accentBlue }]} onPress={handleChangeEmail}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Valider</Text>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]} onPress={handleChangeEmail}>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Valider</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -751,12 +867,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       <Modal visible={deleteModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: '#EF4444' }]}>Suppression du compte</Text>
-            <Text style={{ fontSize: 12.5, color: colors.textSecondary, marginBottom: 12 }}>
+            <Text style={[styles.modalTitle, { color: '#DC2626' }]}>Suppression du compte</Text>
+            <Text style={{ fontSize: 13, lineHeight: 19, color: colors.textSecondary, marginBottom: 12 }}>
               Vos annonces seront archivées et anonymisées, et vos favoris supprimés. Cette action est irréversible.
             </Text>
             <TextInput
-              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={deletePassword}
               onChangeText={setDeletePassword}
               placeholder="Confirmez avec votre mot de passe"
@@ -767,8 +883,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeleteModal(false)}>
                 <Text style={{ color: colors.textSecondary }}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: '#EF4444' }]} onPress={handleDeleteAccount}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Supprimer</Text>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: '#DC2626' }]} onPress={handleDeleteAccount}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Supprimer</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -780,8 +896,19 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  contentContainer: { padding: 20, paddingBottom: 120 },
-  authContainer: { alignItems: 'stretch', marginTop: 10 },
+  contentContainer: { padding: 20, paddingTop: 18, paddingBottom: 130 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 0.9, marginBottom: 4 },
+  pageHeading: { fontSize: 26, fontWeight: '700', letterSpacing: -0.6, marginBottom: 18 },
+  glassCard: {
+    borderRadius: 28,
+    padding: 22,
+    borderWidth: 0.9,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 22,
+    elevation: 4,
+  },
   authIconCircle: {
     width: 64,
     height: 64,
@@ -789,59 +916,65 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  authTitle: { fontSize: 22, fontWeight: 'bold', textAlign: 'center' },
-  authSubtitle: { fontSize: 13, textAlign: 'center', marginTop: 6, marginBottom: 20 },
-  tabSelector: { flexDirection: 'row', padding: 4, borderRadius: 14, borderWidth: 1, marginBottom: 16 },
-  tabButton: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  tabText: { fontSize: 13, fontWeight: 'bold' },
+  authTitle: { fontSize: 22, fontWeight: '700', letterSpacing: -0.45, textAlign: 'center' },
+  authSubtitle: { fontSize: 13.5, lineHeight: 19, textAlign: 'center', marginTop: 6, marginBottom: 20 },
+  tabSelector: { flexDirection: 'row', padding: 4, borderRadius: 999, marginBottom: 16 },
+  tabButton: { flex: 1, paddingVertical: 10, borderRadius: 999, alignItems: 'center' },
+  tabText: { fontSize: 13.5, fontWeight: '600' },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 14,
+    backgroundColor: 'rgba(220,38,38,0.09)',
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.3)',
+    borderColor: 'rgba(220,38,38,0.28)',
     marginBottom: 14,
   },
-  errorText: { color: '#EF4444', fontSize: 12, flex: 1 },
-  infoBanner: { padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 14 },
+  errorText: { color: '#DC2626', fontSize: 12.5, flex: 1 },
+  infoBanner: { padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 14 },
   input: {
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 16,
+    borderWidth: 0.9,
     marginBottom: 10,
-    fontSize: 14,
+    fontSize: 14.5,
   },
-  roleLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  roleLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, marginTop: 2, marginBottom: 8 },
   roleRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  roleChip: { flex: 1, paddingVertical: 9, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
+  roleChip: { flex: 1, paddingVertical: 10, borderRadius: 999, borderWidth: 0.9, alignItems: 'center' },
   strengthBox: { marginBottom: 10, paddingHorizontal: 4 },
-  submitButton: { paddingVertical: 14, borderRadius: 14, alignItems: 'center', marginTop: 6 },
-  submitButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 15 },
-  profileSection: { marginBottom: 20 },
-  userCard: { flexDirection: 'row', padding: 16, borderRadius: 18, borderWidth: 1, alignItems: 'center' },
-  avatarCircle: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
-  avatarImg: { width: 56, height: 56, borderRadius: 28 },
-  avatarText: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
+  submitButton: { height: 50, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  submitButtonText: { fontWeight: '600', fontSize: 15, letterSpacing: -0.15 },
+  profileSection: { marginBottom: 18 },
+  userCard: {
+    flexDirection: 'row',
+    padding: 18,
+    borderRadius: 26,
+    borderWidth: 0.9,
+    alignItems: 'center',
+  },
+  avatarCircle: { width: 58, height: 58, borderRadius: 29, justifyContent: 'center', alignItems: 'center' },
+  avatarImg: { width: 58, height: 58, borderRadius: 29 },
+  avatarText: { fontSize: 18, fontWeight: '700' },
   userInfo: { flex: 1, marginLeft: 14 },
-  userNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  userName: { fontSize: 16, fontWeight: 'bold' },
-  roleBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  roleBadgeText: { fontSize: 10, fontWeight: 'bold' },
-  userEmail: { fontSize: 12, marginTop: 2 },
+  userNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  userName: { fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
+  roleBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
+  roleBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+  userEmail: { fontSize: 12.5, marginTop: 2 },
   userPhone: { fontSize: 12 },
   verifyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 0.9,
     marginTop: 12,
   },
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
@@ -849,69 +982,69 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 0.9,
   },
-  actionBtnText: { fontSize: 12, fontWeight: '600' },
+  actionBtnText: { fontSize: 12.5, fontWeight: '600' },
   addPropButton: {
     flexDirection: 'row',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
+    height: 50,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
   },
-  addPropButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  addPropButtonText: { fontWeight: '600', fontSize: 14.5 },
   myPropsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 22,
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  sectionTitle: { fontSize: 15, fontWeight: 'bold' },
-  emptyCard: { padding: 14, borderRadius: 12, borderWidth: 1 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.25 },
+  emptyCard: { padding: 14, borderRadius: 16, borderWidth: 0.9 },
   myPropCard: {
     flexDirection: 'row',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 0.9,
     alignItems: 'center',
     marginBottom: 8,
   },
-  myPropTitle: { fontSize: 13, fontWeight: 'bold' },
-  myPropPrice: { fontSize: 12, marginTop: 2 },
-  settingsTitle: { fontSize: 16, fontWeight: 'bold', marginTop: 14, marginBottom: 10 },
+  myPropTitle: { fontSize: 14, fontWeight: '600' },
+  myPropPrice: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  settingsSectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.8, marginTop: 14, marginBottom: 8 },
+  settingsGroup: { borderRadius: 24, borderWidth: 0.9, overflow: 'hidden' },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  settingLabel: { fontSize: 13.5, fontWeight: '600' },
-  themeSwitchBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  langBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  settingIconBox: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  groupDivider: { height: 0.8, marginLeft: 62, opacity: 0.5 },
+  settingLabel: { fontSize: 14.5, fontWeight: '600' },
+  themeSwitchBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999 },
+  langBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   logoutButton: {
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#EF4444',
+    height: 50,
+    borderRadius: 999,
+    borderWidth: 0.9,
     alignItems: 'center',
   },
-  logoutButtonText: { color: '#EF4444', fontWeight: 'bold', fontSize: 14 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 20 },
-  modalCard: { borderRadius: 20, padding: 20, borderWidth: 1 },
-  modalTitle: { fontSize: 16, fontWeight: '800', marginBottom: 12 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 8 },
+  logoutButtonText: { color: '#DC2626', fontWeight: '600', fontSize: 14.5 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalCard: { borderRadius: 28, padding: 22, borderWidth: 0.9 },
+  modalTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3, marginBottom: 14 },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
   cancelBtn: { paddingHorizontal: 14, paddingVertical: 10 },
-  saveBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  saveBtn: { paddingHorizontal: 18, paddingVertical: 11, borderRadius: 999 },
 });

@@ -1,64 +1,65 @@
 // ============================================================
-// DARLINK — SYSTÈME DE COULEURS LUXE MODERNE & GLASSMORPHISM (React Native)
-// Palette Dark & Light adaptative miroir de Flutter (Screen 1, 2, 3)
+// DARLINK — APPLE-INSPIRED LUXURY PALETTE (React Native)
+// Warm Alabaster Light Mode + Obsidian Dark Mode + Liquid Glass
 // ============================================================
 
 export const LightThemeColors = {
-  background: '#F7F8FA',
+  background: '#FBFBFD',
   surface: '#FFFFFF',
-  surfaceElevated: '#F0F2F5',
-  glassCard: 'rgba(255, 255, 255, 0.95)',
-  glassBackground: 'rgba(255, 255, 255, 0.92)',
-  border: 'rgba(0, 0, 0, 0.08)',
-  borderSubtle: 'rgba(0, 0, 0, 0.04)',
-  textPrimary: '#0F1015',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
-  accentGreen: '#10B981',
-  accentBlue: '#2563EB',
-  accentRed: '#EF4444',
-  segmentedBg: '#E9EBF0',
+  surfaceElevated: '#F2F2F7',
+  glassCard: 'rgba(255, 255, 255, 0.78)',
+  glassBackground: 'rgba(255, 255, 255, 0.74)',
+  border: 'rgba(29, 29, 31, 0.09)',
+  borderSubtle: 'rgba(29, 29, 31, 0.05)',
+  textPrimary: '#1D1D1F',
+  textSecondary: '#6E6E73',
+  textTertiary: '#AEAEB2',
+  accentChampagne: '#9A7B4F',
+  accentGreen: '#16A34A',
+  accentBlue: '#0A66C2',
+  accentRed: '#DC2626',
+  accentAmber: '#D97706',
+  segmentedBg: '#EFEFF4',
   activeSegmentBg: '#FFFFFF',
-  activeSegmentText: '#0F1015',
-  topPillBg: 'rgba(255, 255, 255, 0.90)',
-  topPillBorder: 'rgba(0, 0, 0, 0.08)',
-  dockBg: 'rgba(255, 255, 255, 0.95)',
-  dockBorder: 'rgba(0, 0, 0, 0.08)',
-  dockActiveBg: '#0F1015',
+  activeSegmentText: '#1D1D1F',
+  topPillBg: 'rgba(255, 255, 255, 0.82)',
+  topPillBorder: 'rgba(29, 29, 31, 0.08)',
+  dockBg: 'rgba(255, 255, 255, 0.76)',
+  dockBorder: 'rgba(29, 29, 31, 0.10)',
+  dockActiveBg: '#1D1D1F',
   dockActiveIcon: '#FFFFFF',
-  dockInactiveIcon: '#6B7280',
+  dockInactiveIcon: '#6E6E73',
 } as const;
 
 export const DarkThemeColors = {
-  background: '#0F1015',
-  surface: '#181920',
-  surfaceElevated: '#22242D',
-  glassCard: 'rgba(19, 20, 28, 0.88)',
-  glassBackground: 'rgba(24, 25, 32, 0.85)',
+  background: '#0B0C0F',
+  surface: '#15171C',
+  surfaceElevated: '#1E2128',
+  glassCard: 'rgba(21, 23, 28, 0.78)',
+  glassBackground: 'rgba(24, 26, 32, 0.72)',
   border: 'rgba(255, 255, 255, 0.14)',
   borderSubtle: 'rgba(255, 255, 255, 0.08)',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#9CA3AF',
-  textTertiary: '#6B7280',
-  accentGreen: '#10B981',
-  accentBlue: '#2563EB',
+  textPrimary: '#F5F5F7',
+  textSecondary: '#98989D',
+  textTertiary: '#636366',
+  accentChampagne: '#C4A474',
+  accentGreen: '#22C55E',
+  accentBlue: '#38BDF8',
   accentRed: '#EF4444',
-  segmentedBg: '#181920',
-  activeSegmentBg: '#FFFFFF',
-  activeSegmentText: '#0F1015',
-  topPillBg: 'rgba(24, 25, 32, 0.75)',
+  accentAmber: '#F59E0B',
+  segmentedBg: '#1C1E26',
+  activeSegmentBg: '#F5F5F7',
+  activeSegmentText: '#1D1D1F',
+  topPillBg: 'rgba(24, 26, 32, 0.72)',
   topPillBorder: 'rgba(255, 255, 255, 0.16)',
-  dockBg: 'rgba(19, 20, 28, 0.90)',
-  dockBorder: 'rgba(255, 255, 255, 0.14)',
-  dockActiveBg: '#FFFFFF',
-  dockActiveIcon: '#0F1015',
-  dockInactiveIcon: '#9CA3AF',
+  dockBg: 'rgba(20, 22, 27, 0.78)',
+  dockBorder: 'rgba(255, 255, 255, 0.16)',
+  dockActiveBg: '#F5F5F7',
+  dockActiveIcon: '#1D1D1F',
+  dockInactiveIcon: '#98989D',
 } as const;
 
 export const AppColors = {
-  // ------------------------------------------------------------
-  // PALETTE FLAGSHIP — DARK LUXURY
-  // ------------------------------------------------------------
   darkBackground: DarkThemeColors.background,
   darkSurface: DarkThemeColors.surface,
   darkSurfaceElevated: DarkThemeColors.surfaceElevated,
@@ -70,9 +71,6 @@ export const AppColors = {
   darkTextSecondary: DarkThemeColors.textSecondary,
   darkTextTertiary: DarkThemeColors.textTertiary,
 
-  // ------------------------------------------------------------
-  // PALETTE MODERNE — LIGHT LUXURY (PAR DÉFAUT)
-  // ------------------------------------------------------------
   lightBackground: LightThemeColors.background,
   lightSurface: LightThemeColors.surface,
   lightSurfaceElevated: LightThemeColors.surfaceElevated,
@@ -84,28 +82,23 @@ export const AppColors = {
   lightTextSecondary: LightThemeColors.textSecondary,
   lightTextTertiary: LightThemeColors.textTertiary,
 
-  // ------------------------------------------------------------
-  // ACCENTS & STATUTS
-  // ------------------------------------------------------------
-  accentGreen: '#10B981',
-  accentBlue: '#2563EB',
+  accentChampagne: '#9A7B4F',
+  accentGreen: '#16A34A',
+  accentBlue: '#0A66C2',
   accentIndigo: '#4F46E5',
-  accentRed: '#EF4444',
+  accentRed: '#DC2626',
   white: '#FFFFFF',
   black: '#000000',
 
-  // ------------------------------------------------------------
-  // ALIAS RÉTRO-COMPATIBLES (DÉFAUT BLANC LUXE)
-  // ------------------------------------------------------------
-  primary: '#2563EB',
-  secondary: '#10B981',
+  primary: '#1D1D1F',
+  secondary: '#9A7B4F',
   background: LightThemeColors.background,
   surface: LightThemeColors.surface,
   textPrimary: LightThemeColors.textPrimary,
   textSecondary: LightThemeColors.textSecondary,
   border: LightThemeColors.border,
   placeholder: '#E5E7EB',
-  error: '#EF4444',
+  error: '#DC2626',
 } as const;
 
 export type AppColorKey = keyof typeof AppColors;

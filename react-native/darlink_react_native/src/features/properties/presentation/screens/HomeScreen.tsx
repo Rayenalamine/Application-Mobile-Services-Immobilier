@@ -1,7 +1,7 @@
 // ============================================================
-// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (React Native)
-// Chargement exclusif Cloud Firestore (zéro donnée fictive),
-// icônes vectorielles Lucide, zéro emoji.
+// DARLINK — APPLE-LEVEL HOME DISCOVERY SCREEN (React Native)
+// Editorial typography, frosted glass search & action orbs,
+// horizontal architectural collection + vertical live Firestore feed.
 // ============================================================
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -15,7 +15,7 @@ import {
   SafeAreaView,
   Platform,
   RefreshControl,
-  ActivityIndicator,
+  Image,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
@@ -30,9 +30,10 @@ import {
   Building2,
   Bell,
 } from 'lucide-react-native';
-import { Property } from '../../domain/models/property';
+import { Property, formatPrice } from '../../domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { EmptyStateView } from '../../../../core/components/EmptyStateView';
+import { LoadingSkeleton } from '../../../../core/components/LoadingSkeleton';
 import { PropertyDetailsScreen } from './PropertyDetailsScreen';
 import { AddPropertyScreen } from './AddPropertyScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
@@ -43,6 +44,12 @@ import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { authService } from '../../../auth/services/authService';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
+import {
+  LiquidGlassView,
+  GlassOrbButton,
+  EditorialSectionHeader,
+} from '../../../../core/designSystem/LiquidGlass';
+import { TypographyScale, RadiusScale, triggerHaptic } from '../../../../core/designSystem/tokens';
 
 const FILTER_PILLS = ['Tous', 'Appartement', 'Villa', 'Maison', 'Terrain'] as const;
 
@@ -139,11 +146,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentY = event.nativeEvent.contentOffset.y;
     const diff = currentY - lastScrollY.current;
-    if (currentY <= 10) {
+    if (currentY <= 12) {
       setHeaderVisible(true);
-    } else if (diff > 12 && currentY > 50) {
+    } else if (diff > 14 && currentY > 60) {
       setHeaderVisible(false);
-    } else if (diff < -8) {
+    } else if (diff < -10) {
       setHeaderVisible(true);
     }
     lastScrollY.current = currentY;
@@ -207,6 +214,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     );
   }
 
+  const monogram =
+    currentUser && currentUser.fullName
+      ? currentUser.fullName
+          .split(' ')
+          .map((e) => (e ? e[0] : ''))
+          .slice(0, 2)
+          .join('')
+          .toUpperCase()
+      : 'DL';
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView
@@ -225,256 +242,275 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           />
         }
       >
-        {/* BANNIÈRE DEV DIAGNOSTIC (Expo Go / DarLink) */}
         {__DEV__ && headerVisible && (
-          <View
-            style={[
-              styles.diagnosticBanner,
-              {
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.70)' : 'rgba(241, 245, 249, 0.85)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={styles.diagLiveDot} />
-              <Text style={[styles.diagText, { color: isDark ? '#94A3B8' : '#475569' }]}>
-                {authService.getDiagnosticInfo().projectId} • {Platform.OS === 'web' ? 'Web' : `Expo Go (${Platform.OS})`}
-              </Text>
-            </View>
-            <Text style={[styles.diagSubText, { color: isDark ? '#64748B' : '#64748B' }]}>
-              UID: {authService.getDiagnosticInfo().authUid}
-            </Text>
-          </View>
-        )}
-
-        {/* EN-TÊTE COLLAPSIBLE AU SCROLL */}
-        {headerVisible && (
-        <View style={styles.headerRow}>
-          <View style={styles.userInfo}>
+          <View style={styles.diagRow}>
             <View
               style={[
-                styles.monogramAvatar,
-                {
-                  backgroundColor: isDark ? '#22242D' : '#E9EBF0',
-                  borderColor: colors.border,
-                },
+                styles.diagPill,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.borderSubtle },
               ]}
             >
-              <Text style={[styles.monogramText, { color: colors.textPrimary }]}>
-                {currentUser && currentUser.fullName
-                  ? currentUser.fullName
-                      .split(' ')
-                      .map((e) => (e ? e[0] : ''))
-                      .slice(0, 2)
-                      .join('')
-                      .toUpperCase()
-                  : 'DL'}
-              </Text>
-            </View>
-
-            <View style={styles.userTextContainer}>
-              <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
-                {currentUser ? 'Bonjour' : 'Bienvenue sur DarLink'}
-              </Text>
-              <Text style={[styles.userNameText, { color: colors.textPrimary }]} numberOfLines={1}>
-                {currentUser ? currentUser.fullName : 'Visiteur'}
+              <View style={[styles.diagDot, { backgroundColor: colors.accentGreen }]} />
+              <Text style={[TypographyScale.micro, { color: colors.textSecondary, fontSize: 10 }]}>
+                {authService.getDiagnosticInfo().projectId} • {authService.getDiagnosticInfo().authUid}
               </Text>
             </View>
           </View>
-
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border, position: 'relative' }]}
-              onPress={() => setCurrentView('notifications')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Centre de notifications"
-            >
-              <Bell size={17} color={colors.textPrimary} />
-              {unreadNotifCount > 0 && (
-                <View style={styles.notifBadgeCircle}>
-                  <Text style={styles.notifBadgeText}>
-                    {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={toggleTheme}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Basculer le thème"
-            >
-              {isDark ? <Sun size={17} color={colors.textPrimary} /> : <Moon size={17} color={colors.textPrimary} />}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => {
-                if (language === 'fr') setLanguage('ar');
-                else if (language === 'ar') setLanguage('en');
-                else setLanguage('fr');
-              }}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Changer de langue"
-            >
-              <Text style={{ fontSize: 11.5, fontWeight: '800', color: colors.textPrimary }}>
-                {language === 'fr' ? 'FR' : language === 'ar' ? 'AR' : 'EN'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => setCurrentView('add')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Déposer une annonce"
-            >
-              <Plus size={18} color={colors.textPrimary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => setCurrentView('map')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Ouvrir la carte"
-            >
-              <MapIcon size={17} color={colors.accentBlue} />
-            </TouchableOpacity>
-          </View>
-        </View>
         )}
 
-        {/* BARRE DE RECHERCHE */}
-        <View
-          testID="home_search_bar"
-          style={[
-            styles.searchBar,
-            { backgroundColor: colors.surface, borderColor: colors.border, shadowOpacity: isDark ? 0.2 : 0.04 },
-          ]}
-        >
-          <View
-            style={[
-              styles.searchIconContainer,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
-            ]}
-          >
-            <Search size={17} color={colors.accentBlue} />
+        {/* Collapsible Editorial Header */}
+        {headerVisible && (
+          <View style={styles.headerRow}>
+            <View style={styles.userInfo}>
+              <View
+                style={[
+                  styles.monogramAvatar,
+                  { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' },
+                ]}
+              >
+                <Text style={[styles.monogramText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>
+                  {monogram}
+                </Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={[TypographyScale.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {currentUser ? 'Bonjour • DarLink' : 'Bienvenue • DarLink'}
+                </Text>
+                <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {currentUser ? currentUser.fullName : 'Visiteur'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.headerActions}>
+              <GlassOrbButton
+                size={38}
+                onPress={toggleTheme}
+                accessibilityLabel="Basculer le thème"
+              >
+                {isDark ? (
+                  <Sun size={17} color={colors.textPrimary} />
+                ) : (
+                  <Moon size={17} color={colors.textPrimary} />
+                )}
+              </GlassOrbButton>
+
+              <GlassOrbButton
+                size={38}
+                onPress={() => {
+                  if (language === 'fr') setLanguage('ar');
+                  else if (language === 'ar') setLanguage('en');
+                  else setLanguage('fr');
+                }}
+                accessibilityLabel="Changer de langue"
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
+                  {language.toUpperCase()}
+                </Text>
+              </GlassOrbButton>
+
+              <GlassOrbButton
+                size={38}
+                onPress={() => setCurrentView('add')}
+                accessibilityLabel="Déposer une annonce"
+              >
+                <Plus size={18} color={colors.textPrimary} />
+              </GlassOrbButton>
+
+              <GlassOrbButton
+                size={38}
+                badgeCount={unreadNotifCount}
+                onPress={() => setCurrentView('notifications')}
+                accessibilityLabel="Centre de notifications"
+              >
+                <Bell size={17} color={colors.textPrimary} />
+              </GlassOrbButton>
+
+              <GlassOrbButton
+                size={38}
+                onPress={() => setCurrentView('map')}
+                accessibilityLabel="Ouvrir la carte"
+              >
+                <MapIcon size={17} color={colors.accentChampagne} />
+              </GlassOrbButton>
+            </View>
           </View>
-          <TextInput
-            testID="home_search_input"
-            style={[
-              styles.searchInput,
-              { color: colors.textPrimary },
-              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
-            ]}
-            placeholder={t('search_placeholder')}
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            onSubmitEditing={onNavigateToSearch}
-          />
-          {searchQuery.length > 0 ? (
+        )}
+
+        {/* Editorial Hero Headline */}
+        <View style={styles.heroBlock}>
+          <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>
+            IMMOBILIER EN TUNISIE
+          </Text>
+          <Text style={[TypographyScale.heroDisplay, { color: colors.textPrimary, fontSize: 28, marginTop: 6 }]}>
+            {t('hero_title')}
+          </Text>
+        </View>
+
+        {/* Liquid Glass Search Input */}
+        <LiquidGlassView borderRadius={RadiusScale.pill} intensity={isDark ? 45 : 62} style={styles.searchBar}>
+          <View style={styles.searchInner}>
+            <Search size={19} color={colors.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.textPrimary }]}
+              placeholder={t('search_placeholder')}
+              placeholderTextColor={colors.textTertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 ? (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity
-              onPress={() => setSearchQuery('')}
-              style={styles.clearSearchBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Effacer la recherche"
-            >
-              <X size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={onNavigateToSearch}
-              style={[
-                styles.tuneButton,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
-              ]}
-              accessibilityRole="button"
+              style={[styles.filterOrb, { backgroundColor: colors.surfaceElevated }]}
+              onPress={() => {
+                triggerHaptic('selection');
+                if (onNavigateToSearch) onNavigateToSearch();
+              }}
               accessibilityLabel="Filtres avancés"
             >
               <SlidersHorizontal size={16} color={colors.textPrimary} />
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        </LiquidGlassView>
 
-        {/* PILLS DE FILTRE */}
+        {/* Category Filter Pills */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.filterScrollView}
-          contentContainerStyle={styles.filterContainer}
+          contentContainerStyle={styles.filterScroll}
         >
-          {FILTER_PILLS.map((filtre) => {
-            const isSelected = activeFilter === filtre;
+          {FILTER_PILLS.map((pill) => {
+            const isSelected = activeFilter === pill;
             return (
               <TouchableOpacity
-                key={filtre}
+                key={pill}
+                activeOpacity={0.85}
+                onPress={() => {
+                  triggerHaptic('selection');
+                  setActiveFilter(pill);
+                }}
                 style={[
                   styles.filterPill,
                   {
-                    backgroundColor: isSelected ? colors.accentBlue : colors.surface,
-                    borderColor: isSelected ? colors.accentBlue : colors.border,
+                    backgroundColor: isSelected
+                      ? isDark
+                        ? '#F5F5F7'
+                        : '#1D1D1F'
+                      : colors.surface,
+                    borderColor: isSelected ? 'transparent' : colors.border,
                   },
                 ]}
-                onPress={() => setActiveFilter(filtre)}
-                activeOpacity={0.8}
               >
                 <Text
-                  style={[
-                    styles.filterText,
-                    { color: isSelected ? '#FFFFFF' : colors.textSecondary, fontWeight: isSelected ? '700' : '500' },
-                  ]}
+                  style={{
+                    color: isSelected
+                      ? isDark
+                        ? '#1D1D1F'
+                        : '#FFFFFF'
+                      : colors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: isSelected ? '600' : '500',
+                  }}
                 >
-                  {getFilterLabel(filtre)}
+                  {getFilterLabel(pill)}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* BANNIÈRE DISCRÈTE */}
-        <View
-          style={[
-            styles.bannerContainer,
-            {
-              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.08)',
-              borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : 'rgba(37, 99, 235, 0.2)',
-            },
-          ]}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <Building2 size={17} color={colors.accentBlue} />
-            <Text style={styles.bannerTitle}>DarLink Immobilier Tunisie</Text>
-          </View>
-          <Text style={[styles.bannerSubtitle, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
-            Catalogue connecté en direct à Cloud Firestore : annonces vérifiées et dépôts propriétaires.
-          </Text>
-        </View>
+        {/* Horizontal Architectural Collection */}
+        {!loading && filteredProperties.length > 1 && (
+          <View style={styles.collectionSection}>
+            <EditorialSectionHeader
+              title="Sélection en Tunisie"
+              subtitle="Références et biens disponibles"
+              trailing={
+                <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>
+                  {filteredProperties.length}
+                </Text>
+              }
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+            >
+              {filteredProperties.slice(0, 6).map((prop, idx) => (
+                <TouchableOpacity
+                  key={`col_${prop.id || idx}`}
+                  activeOpacity={0.9}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setSelectedProperty(prop);
+                  }}
+                  style={[
+                    styles.collectionTile,
+                    {
+                      backgroundColor: isDark ? '#14171F' : '#EFECE5',
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  {prop.imageUrl ? (
+                    <Image
+                      source={{ uri: prop.imageUrl }}
+                      style={StyleSheet.absoluteFill}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.collectionFallback}>
+                      <Building2 size={28} color={colors.accentChampagne} strokeWidth={1.6} />
+                      <Text style={[TypographyScale.micro, { color: colors.accentChampagne, marginTop: 6 }]}>
+                        {prop.governorate || 'Tunisie'}
+                      </Text>
+                    </View>
+                  )}
 
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Biens disponibles
-          </Text>
-          <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
-            {filteredProperties.length} annonce(s)
-          </Text>
+                  <LiquidGlassView borderRadius={16} intensity={55} elevated={false} style={styles.collectionGlass}>
+                    <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 14.5 }]} numberOfLines={1}>
+                      {formatPrice(prop.prix, Boolean(prop.estLocation), Boolean(prop.priceOnRequest))}
+                    </Text>
+                    <Text style={[TypographyScale.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>
+                      {prop.titre}
+                    </Text>
+                  </LiquidGlassView>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Vertical Catalogue Section */}
+        <View style={styles.catalogueSection}>
+          <EditorialSectionHeader
+            title={t('our_properties')}
+            trailing={
+              <View style={[styles.countChip, { backgroundColor: colors.surfaceElevated }]}>
+                <Text style={[TypographyScale.micro, { color: colors.textSecondary }]}>
+                  {filteredProperties.length} {filteredProperties.length <= 1 ? 'bien' : 'biens'}
+                </Text>
+              </View>
+            }
+          />
         </View>
 
         {loading ? (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={colors.accentBlue} />
+          <View style={styles.feedWrap}>
+            <LoadingSkeleton height={340} borderRadius={RadiusScale.lg} style={{ marginBottom: 20 }} />
+            <LoadingSkeleton height={340} borderRadius={RadiusScale.lg} />
           </View>
         ) : filteredProperties.length === 0 ? (
           <EmptyStateView
-            title="Aucune annonce disponible"
-            message="Aucun bien publié ne correspond à ce filtre pour le moment."
+            title="Aucun bien disponible"
+            message="Aucune annonce ou référence ne correspond actuellement à cette recherche."
             actionLabel="Réinitialiser"
             onAction={() => {
               setActiveFilter('Tous');
@@ -482,13 +518,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             }}
           />
         ) : (
-          filteredProperties.map((property) => (
-            <PropertyCard
-              key={property.id ?? property.titre}
-              property={property}
-              onPress={(p) => setSelectedProperty(p)}
-            />
-          ))
+          <View style={styles.feedWrap}>
+            {filteredProperties.map((prop, index) => (
+              <PropertyCard
+                key={prop.id ? String(prop.id) : `prop_${index}`}
+                property={prop}
+                onPress={(selected) => setSelectedProperty(selected)}
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -498,109 +536,126 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 110 },
-  diagnosticBanner: {
+  scrollContent: { paddingBottom: 118 },
+  diagRow: { paddingHorizontal: 20, paddingTop: 6 },
+  diagPill: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 16,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
     borderWidth: 0.8,
-    marginBottom: 12,
   },
-  diagLiveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#10B981',
+  diagDot: { width: 6, height: 6, borderRadius: 3 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 8,
+    gap: 8,
   },
-  diagText: {
-    fontSize: 11,
-    fontWeight: '600',
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
   },
-  diagSubText: {
-    fontSize: 10.5,
-    fontWeight: '500',
-  },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 8 },
   monogramAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
-    borderWidth: 1.5,
+    justifyContent: 'center',
   },
-  monogramText: { fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
-  userTextContainer: { flex: 1, marginLeft: 10 },
-  greetingText: { fontSize: 12, fontWeight: '500' },
-  userNameText: { fontSize: 16, fontWeight: '700' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  headerActionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
+  monogramText: { fontSize: 13.5, fontWeight: '700' },
+  headerActions: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    gap: 6,
+  },
+  heroBlock: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 16,
   },
   searchBar: {
-    height: 52,
-    borderRadius: 26,
+    marginHorizontal: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  searchInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 6,
+  },
+  filterOrb: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterScroll: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    height: 38,
+    borderRadius: 999,
+    borderWidth: 0.9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  collectionSection: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+  },
+  horizontalScroll: {
+    paddingTop: 14,
+    gap: 14,
+  },
+  collectionTile: {
+    width: 240,
+    height: 212,
+    borderRadius: 22,
+    borderWidth: 0.9,
     overflow: 'hidden',
   },
-  searchIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
+  collectionFallback: {
+    flex: 1,
     alignItems: 'center',
-    marginRight: 10,
+    justifyContent: 'center',
+    paddingBottom: 68,
   },
-  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0, backgroundColor: 'transparent' },
-  clearSearchBtn: { padding: 6, marginRight: 4 },
-  tuneButton: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
-  filterScrollView: { marginBottom: 16, marginHorizontal: -20 },
-  filterContainer: { paddingHorizontal: 20, gap: 8 },
-  filterPill: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 24, borderWidth: 1 },
-  filterText: { fontSize: 13 },
-  bannerContainer: { borderRadius: 18, padding: 16, borderWidth: 1, marginBottom: 18 },
-  bannerTitle: { color: '#2563EB', fontSize: 15, fontWeight: '700' },
-  bannerSubtitle: { fontSize: 12, lineHeight: 18 },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
+  collectionGlass: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    bottom: 10,
+    padding: 11,
+  },
+  catalogueSection: {
+    paddingHorizontal: 20,
+    marginTop: 24,
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
-  sectionCount: { fontSize: 12, fontWeight: '500' },
-  notifBadgeCircle: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    backgroundColor: '#DC2626',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 3,
+  countChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
   },
-  notifBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '800',
+  feedWrap: {
+    paddingHorizontal: 20,
   },
 });

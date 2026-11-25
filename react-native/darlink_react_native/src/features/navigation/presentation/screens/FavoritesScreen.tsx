@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DES FAVORIS (React Native)
-// Synchronisation Cloud Firestore, icônes Lucide, zéro emoji.
+// DARLINK — APPLE LIQUID GLASS FAVORITES SCREEN (React Native)
+// Mirrors Flutter EcranFavoris with live Firestore sync & frosted UI.
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -11,20 +11,20 @@ import {
   SafeAreaView,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { RefreshCw, Heart, BookmarkCheck } from 'lucide-react-native';
-import { AppColors } from '../../../../core/constants/colors';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
+import { LiquidGlassView, GlassOrbButton } from '../../../../core/designSystem/LiquidGlass';
+import { TypographyScale, RadiusScale } from '../../../../core/designSystem/tokens';
 
 export const FavoritesScreen: React.FC = () => {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const [favorites, setFavorites] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -70,62 +70,49 @@ export const FavoritesScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('favorites_title')}</Text>
-        <TouchableOpacity
-          onPress={onRefresh}
-          style={styles.refreshButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityLabel={t('btn_refresh')}
-        >
-          <RefreshCw size={18} color={colors.textPrimary} />
-        </TouchableOpacity>
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>COLLECTION</Text>
+          <Text style={[TypographyScale.pageTitle, { color: colors.textPrimary, marginTop: 2 }]}>
+            {t('favorites_title')}
+          </Text>
+        </View>
+        <GlassOrbButton size={40} onPress={onRefresh} accessibilityLabel={t('btn_refresh')}>
+          <RefreshCw size={17} color={colors.textPrimary} />
+        </GlassOrbButton>
       </View>
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.accentBlue} />
+          <ActivityIndicator size="large" color={colors.accentChampagne} />
         </View>
       ) : favorites.length === 0 ? (
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={styles.emptyContainer}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <View
-            style={[
-              styles.iconCircle,
-              {
-                backgroundColor: isDark ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.08)',
-                borderColor: isDark ? 'rgba(37, 99, 235, 0.35)' : 'rgba(37, 99, 235, 0.2)',
-              },
-            ]}
-          >
-            <Heart size={40} color={AppColors.accentRed} fill={AppColors.accentRed} />
-          </View>
+          <LiquidGlassView borderRadius={46} intensity={52} style={styles.heartEmblem}>
+            <Heart size={38} color={colors.accentRed} fill={colors.accentRed} />
+          </LiquidGlassView>
 
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
+          <Text style={[TypographyScale.pageTitle, { color: colors.textPrimary, fontSize: 22, textAlign: 'center' }]}>
             {t('empty_favorites_title')}
           </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          <Text style={[TypographyScale.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8, maxWidth: 300 }]}>
             {t('empty_favorites_hint')}
           </Text>
 
-          <View
-            style={[
-              styles.noticeCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <BookmarkCheck size={17} color={colors.accentBlue} />
-            <Text style={[styles.noticeText, { color: colors.textSecondary }]}>
+          <LiquidGlassView borderRadius={RadiusScale.pill} intensity={45} elevated={false} style={styles.noticePill}>
+            <BookmarkCheck size={16} color={colors.accentChampagne} />
+            <Text style={[TypographyScale.caption, { color: colors.textSecondary }]}>
               {t('empty_favorites_sub')}
             </Text>
-          </View>
+          </LiquidGlassView>
         </ScrollView>
       ) : (
         <ScrollView
-          style={styles.listContainer}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {favorites.map((prop) => (
@@ -143,52 +130,36 @@ export const FavoritesScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: {
-    height: 56,
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 10,
   },
-  headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
-  refreshButton: { position: 'absolute', right: 16 },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: {
+  emptyContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 40,
-    paddingBottom: 116,
+    paddingHorizontal: 28,
+    paddingBottom: 120,
   },
-  listContainer: { flex: 1 },
-  listContent: { padding: 16, paddingBottom: 116 },
-  iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    justifyContent: 'center',
+  heartEmblem: {
+    width: 92,
+    height: 92,
     alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 1.5,
+    justifyContent: 'center',
+    marginBottom: 24,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 10,
-    textAlign: 'center',
-    letterSpacing: -0.3,
-  },
-  subtitle: { fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 32 },
-  noticeCard: {
+  noticePill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    paddingVertical: 11,
+    marginTop: 24,
   },
-  noticeText: { fontSize: 12, fontWeight: '500' },
+  listContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 120 },
 });

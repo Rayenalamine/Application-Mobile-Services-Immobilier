@@ -1,7 +1,7 @@
 // ============================================================
-// DARLINK — RECHERCHE & FILTRES AVANCÉS CLOUD FIRESTORE (React Native)
-// 24 Gouvernorats, transaction, type, prix/surface min-max, chambres, SDB, tri & pagination.
-// Icônes Lucide sans emoji.
+// DARLINK — APPLE LIQUID GLASS SEARCH & FILTERS (React Native)
+// Mirrors Flutter EcranRecherche: frosted search, segmented
+// controls, 24 governorates, range filters, and editorial cards.
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -13,7 +13,6 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { Map as MapIcon, RotateCcw, Search, X, MapPin } from 'lucide-react-native';
@@ -25,6 +24,12 @@ import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { EmptyStateView } from '../../../../core/components/EmptyStateView';
 import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
+import {
+  LiquidGlassView,
+  GlassOrbButton,
+  EditorialSectionHeader,
+} from '../../../../core/designSystem/LiquidGlass';
+import { TypographyScale, RadiusScale, triggerHaptic } from '../../../../core/designSystem/tokens';
 
 const SEGMENTS = ['Tous', 'Acheter', 'Louer'] as const;
 const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison', 'Studio', 'Terrain', 'Commercial'] as const;
@@ -104,6 +109,7 @@ export const SearchScreen: React.FC = () => {
   }, [fetchFilteredProperties]);
 
   const handleReset = () => {
+    triggerHaptic('light');
     setSearchQuery('');
     setSelectedSegment('Tous');
     setSelectedType('Tous');
@@ -149,69 +155,63 @@ export const SearchScreen: React.FC = () => {
     );
   }
 
+  const activeBg = isDark ? '#F5F5F7' : '#1D1D1F';
+  const activeFg = isDark ? '#1D1D1F' : '#FFFFFF';
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerBar}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Recherche avancée</Text>
-          <View style={styles.headerRightActions}>
-            <TouchableOpacity
-              style={[styles.glassCircleBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => setShowMap(true)}
-              accessibilityLabel="Carte"
-            >
-              <MapIcon size={17} color={colors.accentBlue} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.glassCircleBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={handleReset}
-              accessibilityLabel="Réinitialiser"
-            >
+          <View>
+            <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>EXPLORATION</Text>
+            <Text style={[TypographyScale.pageTitle, { color: colors.textPrimary, fontSize: 22 }]}>
+              Recherche avancée
+            </Text>
+          </View>
+          <View style={styles.headerActions}>
+            <GlassOrbButton size={40} onPress={() => setShowMap(true)} accessibilityLabel="Carte">
+              <MapIcon size={17} color={colors.accentChampagne} />
+            </GlassOrbButton>
+            <GlassOrbButton size={40} onPress={handleReset} accessibilityLabel="Réinitialiser">
               <RotateCcw size={17} color={colors.textPrimary} />
-            </TouchableOpacity>
+            </GlassOrbButton>
           </View>
         </View>
 
-        {/* CHAMP TEXTE */}
-        <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[styles.searchIconContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F2F5' }]}>
-            <Search size={17} color={colors.accentBlue} />
+        <LiquidGlassView borderRadius={RadiusScale.pill} intensity={isDark ? 45 : 62} style={styles.searchBox}>
+          <View style={styles.searchInner}>
+            <Search size={18} color={colors.textSecondary} />
+            <TextInput
+              testID="search_input"
+              style={[styles.searchInput, { color: colors.textPrimary }]}
+              placeholder="Ville, délégation, résidence, mot-clé..."
+              placeholderTextColor={colors.textTertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <X size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
           </View>
-          <TextInput
-            testID="search_input"
-            style={[
-              styles.searchInput,
-              { color: colors.textPrimary },
-              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
-            ]}
-            placeholder="Ville, délégation, résidence, mot-clé..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
-              <X size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
+        </LiquidGlassView>
 
-        {/* SEGMENT TRANSACTION */}
-        <View style={[styles.segmentedControl, { backgroundColor: isDark ? '#181920' : '#E9EBF0', borderColor: colors.border }]}>
+        {/* Segmented Control */}
+        <View style={[styles.segmentedControl, { backgroundColor: colors.segmentedBg, borderColor: colors.border }]}>
           {SEGMENTS.map((seg) => {
             const isSelected = selectedSegment === seg;
             return (
               <TouchableOpacity
                 key={seg}
-                style={[styles.segmentButton, isSelected && { backgroundColor: colors.accentBlue }]}
-                onPress={() => setSelectedSegment(seg)}
+                style={[styles.segmentBtn, isSelected && { backgroundColor: colors.surface }]}
+                onPress={() => {
+                  triggerHaptic('selection');
+                  setSelectedSegment(seg);
+                }}
               >
-                <Text style={[styles.segmentText, { color: isSelected ? '#FFFFFF' : colors.textSecondary, fontWeight: isSelected ? '800' : '600' }]}>
+                <Text style={{ color: isSelected ? colors.textPrimary : colors.textSecondary, fontWeight: isSelected ? '600' : '500', fontSize: 13 }}>
                   {seg}
                 </Text>
               </TouchableOpacity>
@@ -219,35 +219,30 @@ export const SearchScreen: React.FC = () => {
           })}
         </View>
 
-        {/* 24 GOUVERNORATS DE TUNISIE */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Gouvernorat (24)</Text>
+        <View style={styles.section}>
+          <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginBottom: 10 }]}>
+            Gouvernorats (24)
+          </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             <TouchableOpacity
-              style={[
-                styles.pillButton,
-                { backgroundColor: !selectedGov ? colors.accentBlue : colors.surface, borderColor: !selectedGov ? colors.accentBlue : colors.border },
-              ]}
+              style={[styles.pill, { backgroundColor: !selectedGov ? activeBg : colors.surface, borderColor: !selectedGov ? 'transparent' : colors.border }]}
               onPress={() => setSelectedGov('')}
             >
-              <Text style={[styles.pillText, { color: !selectedGov ? '#FFFFFF' : colors.textSecondary, fontWeight: '600' }]}>
-                Tous
-              </Text>
+              <Text style={{ color: !selectedGov ? activeFg : colors.textSecondary, fontSize: 12.5, fontWeight: '600' }}>Tous</Text>
             </TouchableOpacity>
             {TUNISIA_GOVERNORATES.map((g) => {
               const active = selectedGov === g.nameFr;
               return (
                 <TouchableOpacity
                   key={g.code}
-                  style={[
-                    styles.pillButton,
-                    styles.cityPill,
-                    { backgroundColor: active ? colors.accentBlue : colors.surface, borderColor: active ? colors.accentBlue : colors.border },
-                  ]}
-                  onPress={() => setSelectedGov(active ? '' : g.nameFr)}
+                  style={[styles.pill, { backgroundColor: active ? activeBg : colors.surface, borderColor: active ? 'transparent' : colors.border }]}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setSelectedGov(active ? '' : g.nameFr);
+                  }}
                 >
-                  <MapPin size={12} color={active ? '#FFFFFF' : colors.accentBlue} />
-                  <Text style={[styles.pillText, { color: active ? '#FFFFFF' : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>
+                  <MapPin size={12} color={active ? activeFg : colors.accentChampagne} />
+                  <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12.5, fontWeight: active ? '600' : '500' }}>
                     {g.nameFr}
                   </Text>
                 </TouchableOpacity>
@@ -256,19 +251,23 @@ export const SearchScreen: React.FC = () => {
           </ScrollView>
         </View>
 
-        {/* TYPE DE BIEN */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Type de bien</Text>
-          <View style={styles.pillsRow}>
+        <View style={styles.section}>
+          <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginBottom: 10 }]}>
+            Type de bien
+          </Text>
+          <View style={styles.wrapRow}>
             {PROPERTY_TYPES.map((type) => {
               const active = selectedType === type;
               return (
                 <TouchableOpacity
                   key={type}
-                  style={[styles.pillButton, { backgroundColor: active ? colors.accentBlue : colors.surface, borderColor: active ? colors.accentBlue : colors.border }]}
-                  onPress={() => setSelectedType(type)}
+                  style={[styles.pill, { backgroundColor: active ? activeBg : colors.surface, borderColor: active ? 'transparent' : colors.border }]}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setSelectedType(type);
+                  }}
                 >
-                  <Text style={[styles.pillText, { color: active ? '#FFFFFF' : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>
+                  <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12.5, fontWeight: active ? '600' : '500' }}>
                     {type}
                   </Text>
                 </TouchableOpacity>
@@ -277,86 +276,87 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* BUDGET & SURFACE MIN/MAX */}
-        <View style={styles.rangeGrid}>
-          <TextInput
-            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="Prix min (DT)"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="numeric"
-            value={minPriceStr}
-            onChangeText={setMinPriceStr}
-          />
-          <TextInput
-            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="Prix max (DT)"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="numeric"
-            value={maxPriceStr}
-            onChangeText={setMaxPriceStr}
-          />
-        </View>
-        <View style={styles.rangeGrid}>
-          <TextInput
-            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="Surface min (m²)"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="numeric"
-            value={minAreaStr}
-            onChangeText={setMinAreaStr}
-          />
-          <TextInput
-            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="Surface max (m²)"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="numeric"
-            value={maxAreaStr}
-            onChangeText={setMaxAreaStr}
-          />
-        </View>
-
-        {/* CHAMBRES & SALLES DE BAIN */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Chambres & Salles de bain</Text>
-          <View style={styles.pillsRow}>
-            {BEDROOMS.map((b) => (
-              <TouchableOpacity
-                key={'bed_' + b}
-                style={[styles.pillButton, { backgroundColor: selectedBedrooms === b ? colors.accentBlue : colors.surface, borderColor: selectedBedrooms === b ? colors.accentBlue : colors.border }]}
-                onPress={() => setSelectedBedrooms(b)}
-              >
-                <Text style={[styles.pillText, { color: selectedBedrooms === b ? '#FFFFFF' : colors.textSecondary }]}>
-                  {b === 'Tous' ? 'Ch: Toutes' : `Ch: ${b}`}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            {BATHROOMS.map((b) => (
-              <TouchableOpacity
-                key={'bath_' + b}
-                style={[styles.pillButton, { backgroundColor: selectedBathrooms === b ? colors.accentBlue : colors.surface, borderColor: selectedBathrooms === b ? colors.accentBlue : colors.border }]}
-                onPress={() => setSelectedBathrooms(b)}
-              >
-                <Text style={[styles.pillText, { color: selectedBathrooms === b ? '#FFFFFF' : colors.textSecondary }]}>
-                  {b === 'Tous' ? 'SDB: Toutes' : `SDB: ${b}`}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        <View style={[styles.rangeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.rangeGrid}>
+            <TextInput
+              style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
+              placeholder="Prix min (DT)"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="numeric"
+              value={minPriceStr}
+              onChangeText={setMinPriceStr}
+            />
+            <TextInput
+              style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
+              placeholder="Prix max (DT)"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="numeric"
+              value={maxPriceStr}
+              onChangeText={setMaxPriceStr}
+            />
+          </View>
+          <View style={styles.rangeGrid}>
+            <TextInput
+              style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
+              placeholder="Surface min (m²)"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="numeric"
+              value={minAreaStr}
+              onChangeText={setMinAreaStr}
+            />
+            <TextInput
+              style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
+              placeholder="Surface max (m²)"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="numeric"
+              value={maxAreaStr}
+              onChangeText={setMaxAreaStr}
+            />
           </View>
         </View>
 
-        {/* TRI */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Trier par</Text>
-          <View style={styles.pillsRow}>
+        <View style={styles.section}>
+          <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginBottom: 10 }]}>
+            Chambres, SDB & Tri
+          </Text>
+          <View style={styles.wrapRow}>
+            {BEDROOMS.map((b) => {
+              const active = selectedBedrooms === b;
+              return (
+                <TouchableOpacity
+                  key={`bed_${b}`}
+                  style={[styles.pill, { backgroundColor: active ? activeBg : colors.surface, borderColor: active ? 'transparent' : colors.border }]}
+                  onPress={() => setSelectedBedrooms(b)}
+                >
+                  <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12 }}>
+                    {b === 'Tous' ? 'Ch: Toutes' : `Ch: ${b}`}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            {BATHROOMS.map((b) => {
+              const active = selectedBathrooms === b;
+              return (
+                <TouchableOpacity
+                  key={`bath_${b}`}
+                  style={[styles.pill, { backgroundColor: active ? activeBg : colors.surface, borderColor: active ? 'transparent' : colors.border }]}
+                  onPress={() => setSelectedBathrooms(b)}
+                >
+                  <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12 }}>
+                    {b === 'Tous' ? 'SDB: Toutes' : `SDB: ${b}`}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
             {SORT_OPTIONS.map((opt) => {
               const active = sortBy === opt.key;
               return (
                 <TouchableOpacity
                   key={opt.key}
-                  style={[styles.pillButton, { backgroundColor: active ? colors.accentBlue : colors.surface, borderColor: active ? colors.accentBlue : colors.border }]}
+                  style={[styles.pill, { backgroundColor: active ? activeBg : colors.surface, borderColor: active ? 'transparent' : colors.border }]}
                   onPress={() => setSortBy(opt.key)}
                 >
-                  <Text style={[styles.pillText, { color: active ? '#FFFFFF' : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>
+                  <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12, fontWeight: active ? '600' : '500' }}>
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -365,44 +365,41 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* RÉSULTATS */}
-        <View style={styles.resultsHeaderRow}>
-          <Text style={[styles.resultsCountText, { color: colors.textPrimary }]}>
-            Résultats ({properties.length})
-          </Text>
-          <TouchableOpacity onPress={handleReset}>
-            <Text style={{ color: colors.accentBlue, fontWeight: '700', fontSize: 13 }}>Réinitialiser</Text>
-          </TouchableOpacity>
+        <View style={styles.section}>
+          <EditorialSectionHeader
+            title={`Résultats (${properties.length})`}
+            trailing={
+              <TouchableOpacity onPress={handleReset}>
+                <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>Réinitialiser</Text>
+              </TouchableOpacity>
+            }
+          />
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.accentBlue} style={{ marginVertical: 24 }} />
+          <ActivityIndicator size="large" color={colors.accentChampagne} style={{ marginVertical: 28 }} />
         ) : properties.length === 0 ? (
           <EmptyStateView
             title="Aucun bien trouvé"
-            message="Modifiez vos filtres (gouvernorat, prix, surface) ou réinitialisez la recherche."
+            message="Modifiez vos filtres ou réinitialisez la recherche."
             actionLabel="Tout réinitialiser"
             onAction={handleReset}
           />
         ) : (
-          <>
+          <View style={{ paddingHorizontal: 20, marginTop: 14 }}>
             {properties.map((prop) => (
-              <View key={prop.id} style={styles.cardWrapper}>
-                <PropertyCard property={prop} onPress={() => setSelectedProperty(prop)} />
-              </View>
+              <PropertyCard key={prop.id} property={prop} onPress={() => setSelectedProperty(prop)} />
             ))}
             {properties.length >= limit && (
               <TouchableOpacity
-                style={[styles.loadMoreBtn, { borderColor: colors.accentBlue }]}
+                style={[styles.loadMoreBtn, { borderColor: colors.border }]}
                 onPress={() => setLimit((l) => l + 20)}
               >
-                <Text style={{ color: colors.accentBlue, fontWeight: '700' }}>Charger plus d’annonces</Text>
+                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>Charger plus</Text>
               </TouchableOpacity>
             )}
-          </>
+          </View>
         )}
-
-        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -410,70 +407,65 @@ export const SearchScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 110 },
-  headerBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  headerTitle: { fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
-  headerRightActions: { flexDirection: 'row', gap: 8 },
-  glassCircleBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    marginBottom: 14,
-  },
-  searchIconContainer: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
-  clearBtn: { padding: 6 },
-  segmentedControl: { flexDirection: 'row', borderRadius: 22, borderWidth: 1, padding: 4, marginBottom: 18 },
-  segmentButton: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 18 },
-  segmentText: { fontSize: 13 },
-  sectionContainer: { marginBottom: 16 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
-  pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pillButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, borderWidth: 1 },
-  cityPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  pillText: { fontSize: 12.5 },
-  rangeGrid: { flexDirection: 'row', gap: 10, marginBottom: 10 },
-  rangeInput: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    fontSize: 13,
-  },
-  resultsHeaderRow: {
+  scrollContent: { paddingBottom: 120 },
+  headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 6,
-    marginBottom: 12,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 10,
   },
-  resultsCountText: { fontSize: 16, fontWeight: '800' },
-  cardWrapper: { marginBottom: 4 },
-  loadMoreBtn: {
-    marginTop: 8,
-    paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
+  headerActions: { flexDirection: 'row', gap: 8 },
+  searchBox: { marginHorizontal: 20, paddingHorizontal: 14, paddingVertical: 10, marginTop: 4 },
+  searchInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  searchInput: { flex: 1, fontSize: 14.5 },
+  segmentedControl: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 16,
+    padding: 4,
+    borderRadius: RadiusScale.pill,
+    borderWidth: 0.8,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: RadiusScale.pill,
     alignItems: 'center',
+  },
+  section: { paddingHorizontal: 20, marginTop: 20 },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: RadiusScale.pill,
+    borderWidth: 0.9,
+  },
+  rangeCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 14,
+    borderRadius: 22,
+    borderWidth: 0.9,
+    gap: 10,
+  },
+  rangeGrid: { flexDirection: 'row', gap: 10 },
+  rangeInput: {
+    flex: 1,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13.5,
+  },
+  loadMoreBtn: {
+    paddingVertical: 13,
+    borderRadius: RadiusScale.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 4,
   },
 });

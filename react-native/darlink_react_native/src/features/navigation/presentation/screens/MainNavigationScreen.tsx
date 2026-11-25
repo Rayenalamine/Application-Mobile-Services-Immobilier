@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — NAVIGATION FLOTTANTE PAR ONGLETS (React Native)
-// Design System cohérent avec icônes Lucide (zéro emoji).
+// DARLINK — FLOATING LIQUID GLASS NAVIGATION BAR (React Native)
+// True BlurView capsule floating over scrollable content.
 // ============================================================
 
 import React, { useState } from 'react';
@@ -14,13 +14,15 @@ import {
   StatusBar,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { LayoutGrid, Search, Heart, User } from 'lucide-react-native';
+import { Compass, Search, Heart, User } from 'lucide-react-native';
 import { HomeScreen } from '../../../properties/presentation/screens/HomeScreen';
 import { SearchScreen } from './SearchScreen';
 import { FavoritesScreen } from './FavoritesScreen';
 import { ProfileScreen } from './ProfileScreen';
 import { ThemeProvider, useTheme } from '../../../../core/theme/ThemeContext';
 import { LocalizationProvider, useTranslation } from '../../../../core/localization/LocalizationContext';
+import { LiquidGlassView } from '../../../../core/designSystem/LiquidGlass';
+import { triggerHaptic } from '../../../../core/designSystem/tokens';
 
 type TabKey = 'home' | 'search' | 'favorites' | 'profile';
 
@@ -30,23 +32,23 @@ const MainNavigationContent: React.FC = () => {
   const { t } = useTranslation();
 
   const renderIcon = (key: TabKey, isActive: boolean) => {
-    const iconColor = isActive ? '#FFFFFF' : colors.textSecondary;
+    const iconColor = isActive ? colors.dockActiveIcon : colors.dockInactiveIcon;
     switch (key) {
       case 'home':
-        return <LayoutGrid size={18} color={iconColor} strokeWidth={2} />;
+        return <Compass size={19} color={iconColor} strokeWidth={isActive ? 2.2 : 1.75} />;
       case 'search':
-        return <Search size={18} color={iconColor} strokeWidth={2} />;
+        return <Search size={19} color={iconColor} strokeWidth={isActive ? 2.2 : 1.75} />;
       case 'favorites':
         return (
           <Heart
-            size={18}
+            size={19}
             color={iconColor}
-            fill={isActive ? '#FFFFFF' : 'transparent'}
-            strokeWidth={2}
+            fill={isActive ? colors.dockActiveIcon : 'transparent'}
+            strokeWidth={1.85}
           />
         );
       case 'profile':
-        return <User size={18} color={iconColor} strokeWidth={2} />;
+        return <User size={19} color={iconColor} strokeWidth={isActive ? 2.2 : 1.75} />;
     }
   };
 
@@ -78,57 +80,56 @@ const MainNavigationContent: React.FC = () => {
         styles.safeArea,
         {
           backgroundColor: colors.background,
-          paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 28) : 0,
+          paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 0,
         },
       ]}
     >
       <ExpoStatusBar style={isDark ? 'light' : 'dark'} />
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
-      <View style={styles.dockWrapper}>
-        <View
-          style={[
-            styles.floatingDock,
-            {
-              backgroundColor: isDark ? 'rgba(22, 23, 32, 0.94)' : 'rgba(255, 255, 255, 0.96)',
-              borderColor: colors.border,
-              shadowOpacity: isDark ? 0.45 : 0.08,
-            },
-          ]}
-        >
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={styles.tabButton}
-                onPress={() => setActiveTab(tab.key)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={tab.label}
-                accessibilityState={{ selected: isActive }}
-              >
-                <View
-                  style={[
-                    styles.iconPill,
-                    isActive && { backgroundColor: colors.accentBlue },
-                  ]}
+      <View style={styles.dockWrapper} pointerEvents="box-none">
+        <LiquidGlassView borderRadius={34} intensity={isDark ? 55 : 70} style={styles.dockContainer}>
+          <View style={styles.dockRow}>
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={styles.tabButton}
+                  onPress={() => {
+                    triggerHaptic('selection');
+                    setActiveTab(tab.key);
+                  }}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={tab.label}
+                  accessibilityState={{ selected: isActive }}
                 >
-                  {renderIcon(tab.key, isActive)}
-                </View>
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    { color: colors.textTertiary },
-                    isActive && { color: colors.textPrimary, fontWeight: '700' },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <View
+                    style={[
+                      styles.iconPill,
+                      isActive && { backgroundColor: colors.dockActiveBg },
+                    ]}
+                  >
+                    {renderIcon(tab.key, isActive)}
+                  </View>
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      {
+                        color: isActive ? colors.textPrimary : colors.textSecondary,
+                        fontWeight: isActive ? '600' : '500',
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </LiquidGlassView>
       </View>
     </SafeAreaView>
   );
@@ -147,27 +148,35 @@ export const MainNavigationScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   screenContainer: { flex: 1 },
-  dockWrapper: { position: 'absolute', bottom: 16, left: 16, right: 16 },
-  floatingDock: {
+  dockWrapper: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 24 : 14,
+    left: 18,
+    right: 18,
+  },
+  dockContainer: {
     height: 68,
+    justifyContent: 'center',
+  },
+  dockRow: {
     flexDirection: 'row',
-    borderRadius: 36,
-    borderWidth: 1.2,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 18,
-    elevation: 8,
     alignItems: 'center',
+    justifyContent: 'space-around',
     paddingHorizontal: 8,
   },
-  tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  iconPill: {
-    width: 44,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
+  tabButton: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
   },
-  tabLabel: { fontSize: 10, marginTop: 2 },
+  iconPill: {
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginBottom: 2,
+  },
+  tabLabel: {
+    fontSize: 10.5,
+    letterSpacing: -0.1,
+  },
 });

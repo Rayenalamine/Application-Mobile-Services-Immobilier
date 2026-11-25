@@ -1,6 +1,5 @@
 // ============================================================
-// DARLINK — BOUTON PRINCIPAL LUXE (PrimaryButton)
-// Conforme à docs/UI_COMPONENTS_SPEC.md (Membre 1)
+// DARLINK — LUXURY PILL BUTTON (React Native)
 // ============================================================
 
 import React from 'react';
@@ -13,7 +12,8 @@ import {
   TextStyle,
   View,
 } from 'react-native';
-import { AppColors } from '../constants/colors';
+import { useTheme } from '../theme/ThemeContext';
+import { RadiusScale, triggerHaptic } from '../designSystem/tokens';
 
 export interface PrimaryButtonProps {
   readonly label: string;
@@ -38,49 +38,53 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   textStyle,
   variant = 'primary',
 }) => {
-  const getBackgroundColor = () => {
-    if (disabled) return 'rgba(255, 255, 255, 0.1)';
-    if (variant === 'secondary') return '#FFFFFF';
-    if (variant === 'glass') return 'rgba(255, 255, 255, 0.12)';
-    return AppColors.accentBlue;
-  };
+  const { isDark, colors } = useTheme();
 
-  const getTextColor = () => {
-    if (disabled) return AppColors.darkTextTertiary;
-    if (variant === 'secondary') return '#0F1015';
-    return '#FFFFFF';
-  };
+  const bg = disabled
+    ? colors.surfaceElevated
+    : variant === 'secondary'
+    ? colors.surfaceElevated
+    : variant === 'glass'
+    ? colors.glassCard
+    : isDark
+    ? '#F5F5F7'
+    : '#1D1D1F';
+
+  const fg = disabled
+    ? colors.textTertiary
+    : variant === 'secondary' || variant === 'glass'
+    ? colors.textPrimary
+    : isDark
+    ? '#1D1D1F'
+    : '#FFFFFF';
 
   return (
     <TouchableOpacity
       style={[
         styles.button,
         isFullWidth && styles.fullWidth,
-        { backgroundColor: getBackgroundColor() },
-        variant === 'glass' && styles.glassBorder,
+        {
+          backgroundColor: bg,
+          borderWidth: variant === 'primary' ? 0 : 0.9,
+          borderColor: colors.border,
+        },
         style,
       ]}
-      onPress={onPress}
+      onPress={() => {
+        triggerHaptic('light');
+        onPress();
+      }}
       disabled={disabled || isLoading}
-      activeOpacity={0.85}
+      activeOpacity={0.86}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || isLoading }}
     >
       {isLoading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'secondary' ? '#0F1015' : '#FFFFFF'}
-        />
+        <ActivityIndicator size="small" color={fg} />
       ) : (
         <View style={styles.contentRow}>
-          {typeof icon === 'string' ? (
-            <Text style={styles.iconString}>{icon}</Text>
-          ) : (
-            icon
-          )}
-          <Text style={[styles.label, { color: getTextColor() }, textStyle]}>
-            {label}
-          </Text>
+          {typeof icon === 'string' ? <Text style={[styles.iconString, { color: fg }]}>{icon}</Text> : icon}
+          <Text style={[styles.label, { color: fg }, textStyle]}>{label}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -89,32 +93,14 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    height: 48,
-    borderRadius: 16,
+    height: 50,
+    borderRadius: RadiusScale.pill,
+    paddingHorizontal: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
-  fullWidth: {
-    width: '100%',
-  },
-  glassBorder: {
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconString: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.1,
-  },
+  fullWidth: { width: '100%' },
+  contentRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconString: { fontSize: 15 },
+  label: { fontSize: 14.5, fontWeight: '600', letterSpacing: -0.15 },
 });
-

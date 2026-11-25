@@ -1,7 +1,7 @@
 // ============================================================
-// DARLINK — ÉCRAN DE DÉTAILS DU BIEN (React Native)
-// Localisation carte directe, attribution source, signalement,
-// icônes Lucide sans emoji, appel & contact Cloud Firestore.
+// DARLINK — IMMERSIVE PROPERTY DETAILS SCREEN (React Native)
+// Swipeable full-bleed gallery, overlapping surface sheet,
+// Liquid Glass orbs, floating glass bottom contact bar.
 // ============================================================
 
 import React, { useState } from 'react';
@@ -17,6 +17,7 @@ import {
   Modal,
   TextInput,
   Linking,
+  useWindowDimensions,
 } from 'react-native';
 import {
   ArrowLeft,
@@ -27,14 +28,12 @@ import {
   Bath,
   Maximize2,
   Building2,
-  ShieldCheck,
   Check,
   Phone,
   ExternalLink,
   Flag,
-  Camera,
+  ChevronRight,
 } from 'lucide-react-native';
-import { AppColors } from '../../../../core/constants/colors';
 import { firestoreEngine } from '../../../../core/firebase/firestoreEngine';
 import { Property, formatPrice } from '../../domain/models/property';
 import { useTheme } from '../../../../core/theme/ThemeContext';
@@ -43,6 +42,13 @@ import { favoritesApiService } from '../../../favorites/services/favoritesApiSer
 import { contactApiService } from '../../../contact/services/contactApiService';
 import { propertyApiService } from '../../services/propertyApiService';
 import { authService } from '../../../auth/services/authService';
+import {
+  LiquidGlassView,
+  GlassOrbButton,
+  EditorialSectionHeader,
+  LuxuryPillButton,
+} from '../../../../core/designSystem/LiquidGlass';
+import { TypographyScale, RadiusScale, triggerHaptic } from '../../../../core/designSystem/tokens';
 
 interface PropertyDetailsScreenProps {
   readonly property: Property;
@@ -55,13 +61,13 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
   onBack,
   onLocateOnMap,
 }) => {
+  const { width } = useWindowDimensions();
   const allImages = [
     ...(property.imageUrl ? [property.imageUrl] : []),
     ...(property.imagesGalerie ?? []),
   ];
-  const [displayedImage, setDisplayedImage] = useState<string>(allImages[0] || '');
   const [imageIndex, setImageIndex] = useState<number>(0);
-  const [imageError, setImageError] = useState<boolean>(false);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const propId = property.id || '1';
   const [isFavorite, setIsFavorite] = useState<boolean>(
     property.isFavorite ?? favoritesApiService.isFavorite(propId)
@@ -90,24 +96,17 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
     const url = `tel:${cleanPhone}`;
     try {
       const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert(t('call_owner'), `${t('call_error')} ${cleanPhone}`);
-      }
+      if (canOpen) await Linking.openURL(url);
+      else Alert.alert(t('call_owner'), `${t('call_error')} ${cleanPhone}`);
     } catch {
       Alert.alert(t('call_owner'), `${t('call_error')} ${cleanPhone}`);
     }
   };
 
   const handleToggleFavorite = async () => {
+    triggerHaptic('light');
     await favoritesApiService.toggleFavorite(propId, property);
-    const updated = favoritesApiService.isFavorite(propId);
-    setIsFavorite(updated);
-    Alert.alert(
-      updated ? t('added_to_favorites') : t('removed_from_favorites'),
-      property.titre
-    );
+    setIsFavorite(favoritesApiService.isFavorite(propId));
   };
 
   const handleDeleteProperty = () => {
@@ -174,7 +173,10 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
     });
     setShowReportModal(false);
     setReportReason('');
-    Alert.alert(ok ? 'Signalement envoyé' : 'Erreur', ok ? 'Merci, notre équipe vérifiera cette annonce.' : 'Impossible d’enregistrer le signalement.');
+    Alert.alert(
+      ok ? 'Signalement envoyé' : 'Erreur',
+      ok ? 'Merci, notre équipe vérifiera cette annonce.' : 'Impossible d’enregistrer le signalement.'
+    );
   };
 
   const isOwner = Boolean(
@@ -182,396 +184,320 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
       String(authService.getCurrentUser()?.id) === String(property.ownerId || '')
   );
 
+  const isInstitutional =
+    property.listingCategory === 'DEVELOPMENT_REFERENCE' ||
+    Boolean(property.sourceName && !property.republicationAuthorized);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 1. HERO */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+        {/* 1. Immersive Swipeable Hero Gallery */}
         <View style={styles.heroContainer}>
-          {displayedImage && !imageError ? (
-            <Image
-              source={{ uri: displayedImage }}
-              style={styles.heroImage}
-              resizeMode="cover"
-              onError={() => setImageError(true)}
-            />
+          {allImages.length > 0 ? (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / (width || 390));
+                setImageIndex(idx);
+              }}
+            >
+              {allImages.map((img, idx) =>
+                !imageErrors[idx] ? (
+                  <Image
+                    key={`${img}_${idx}`}
+                    source={{ uri: img }}
+                    style={{ width: width || 390, height: 370 }}
+                    resizeMode="cover"
+                    onError={() => setImageErrors((prev) => ({ ...prev, [idx]: true }))}
+                  />
+                ) : (
+                  <View
+                    key={`err_${idx}`}
+                    style={[
+                      styles.heroFallback,
+                      { width: width || 390, backgroundColor: isDark ? '#14171F' : '#EFECE5' },
+                    ]}
+                  >
+                    <Building2 size={46} color={colors.accentChampagne} strokeWidth={1.6} />
+                  </View>
+                )
+              )}
+            </ScrollView>
           ) : (
             <View
               style={[
-                styles.heroPlaceholder,
-                { backgroundColor: isDark ? '#181B24' : '#EEF2F7' },
+                styles.heroFallback,
+                { width: '100%', backgroundColor: isDark ? '#14171F' : '#EFECE5' },
               ]}
             >
-              <Building2 size={54} color={colors.accentBlue} strokeWidth={1.5} />
-              <Text style={[styles.placeholderTitle, { color: colors.textSecondary }]}>
-                {property.imageAttribution || 'Photographie non hébergée sur DarLink'}
+              <Building2 size={48} color={colors.accentChampagne} strokeWidth={1.6} />
+              <Text style={[TypographyScale.caption, { color: colors.textSecondary, marginTop: 10 }]}>
+                {property.imageAttribution || 'Visuels non hébergés sur DarLink'}
               </Text>
             </View>
           )}
 
-          {allImages.length > 0 && (
-            <View style={styles.photoCounter}>
-              <Camera size={13} color="#FFFFFF" />
-              <Text style={styles.photoCounterText}>
-                {imageIndex + 1}/{allImages.length}
-              </Text>
+          {/* Floating Top Controls */}
+          <View style={styles.topControls}>
+            <GlassOrbButton size={40} onPress={onBack} accessibilityLabel="Retour">
+              <ArrowLeft size={19} color={colors.textPrimary} />
+            </GlassOrbButton>
+
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <GlassOrbButton size={40} onPress={handleToggleFavorite} accessibilityLabel="Favori">
+                <Heart
+                  size={18}
+                  color={isFavorite ? colors.accentRed : colors.textPrimary}
+                  fill={isFavorite ? colors.accentRed : 'transparent'}
+                />
+              </GlassOrbButton>
+              {isOwner && (
+                <GlassOrbButton size={40} onPress={handleDeleteProperty} accessibilityLabel="Supprimer">
+                  <Trash2 size={18} color={colors.accentRed} />
+                </GlassOrbButton>
+              )}
             </View>
+          </View>
+
+          {allImages.length > 1 && (
+            <LiquidGlassView borderRadius={999} intensity={48} elevated={false} style={styles.counterPill}>
+              <Text style={[TypographyScale.micro, { color: colors.textPrimary }]}>
+                {imageIndex + 1} / {allImages.length}
+              </Text>
+            </LiquidGlassView>
           )}
         </View>
 
-        {/* 2. BARRE SUPÉRIEURE */}
-        <View style={styles.topActionsBar}>
-          <TouchableOpacity
-            style={[
-              styles.glassCircleBtn,
-              {
-                backgroundColor: isDark ? 'rgba(15, 16, 21, 0.72)' : 'rgba(255, 255, 255, 0.90)',
-                borderColor: colors.border,
-              },
-            ]}
-            onPress={onBack}
-            activeOpacity={0.8}
-          >
-            <ArrowLeft size={19} color={colors.textPrimary} />
-          </TouchableOpacity>
-
-          <View style={styles.topRightActions}>
-            <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.72)' : 'rgba(255, 255, 255, 0.90)',
-                  borderColor: colors.border,
-                },
-              ]}
-              onPress={handleToggleFavorite}
-              activeOpacity={0.8}
-            >
-              <Heart
-                size={18}
-                color={isFavorite ? AppColors.accentRed : colors.textPrimary}
-                fill={isFavorite ? AppColors.accentRed : 'transparent'}
+        {/* 2. Overlapping Luxury Content Sheet */}
+        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusBadge, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: isInstitutional ? colors.accentChampagne : colors.accentGreen },
+                ]}
               />
-            </TouchableOpacity>
+              <Text style={[TypographyScale.micro, { color: colors.textPrimary }]}>
+                {property.estLocation ? t('for_rent') : t('for_sale')}
+              </Text>
+            </View>
 
-            {isOwner && (
-              <TouchableOpacity
-                style={[
-                  styles.glassCircleBtn,
-                  {
-                    backgroundColor: isDark ? 'rgba(15, 16, 21, 0.72)' : 'rgba(255, 255, 255, 0.90)',
-                    borderColor: colors.border,
-                  },
-                ]}
-                onPress={handleDeleteProperty}
-                activeOpacity={0.8}
-              >
-                <Trash2 size={18} color="#EF4444" />
-              </TouchableOpacity>
+            {isInstitutional && (
+              <View style={[styles.refPill, { backgroundColor: 'rgba(154,123,79,0.14)' }]}>
+                <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>
+                  Référence programme
+                </Text>
+              </View>
             )}
+
+            <TouchableOpacity onPress={() => setShowReportModal(true)} style={styles.reportBtn}>
+              <Flag size={14} color={colors.textSecondary} />
+              <Text style={[TypographyScale.caption, { color: colors.textSecondary }]}>Signaler</Text>
+            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* 3. MINIATURES */}
-        {allImages.length > 1 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.thumbnailStrip}
-            contentContainerStyle={styles.thumbnailContainer}
-          >
-            {allImages.map((img, idx) => (
-              <TouchableOpacity
-                key={img + idx}
-                style={[
-                  styles.thumbnailItem,
-                  {
-                    borderColor: imageIndex === idx ? colors.accentBlue : colors.border,
-                    borderWidth: imageIndex === idx ? 2 : 1,
-                  },
-                ]}
-                onPress={() => {
-                  setDisplayedImage(img);
-                  setImageIndex(idx);
-                  setImageError(false);
-                }}
-              >
-                <Image source={{ uri: img }} style={styles.thumbnailImage} />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* 4. STATUT & SOURCE */}
-        <View style={styles.statusRow}>
-          <View style={styles.statusBadge}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusBadgeText}>
-              {property.estLocation ? 'À Louer' : 'À Vendre'} • {property.listingStatus || 'PUBLISHED'}
-            </Text>
-          </View>
-          <TouchableOpacity onPress={() => setShowReportModal(true)} style={styles.reportPill}>
-            <Flag size={13} color={colors.textSecondary} />
-            <Text style={{ fontSize: 11.5, color: colors.textSecondary, fontWeight: '600' }}>
-              Signaler
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 5. PRIX, TITRE & BOUTON LOCALISER SUR CARTE */}
-        <View style={styles.titleSection}>
-          <Text style={[styles.hugePrice, { color: colors.textPrimary }]}>
+          <Text style={[TypographyScale.heroDisplay, { color: colors.textPrimary, fontSize: 29, marginTop: 14 }]}>
             {formatPrice(property.prix, Boolean(property.estLocation), Boolean(property.priceOnRequest))}
           </Text>
-          <Text style={[styles.mainTitle, { color: colors.textPrimary }]}>{property.titre}</Text>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 }}>
-              <MapPin size={15} color={colors.accentBlue} />
-              <Text style={[styles.mainAddress, { color: colors.textSecondary }]} numberOfLines={2}>
-                {property.localisation}
+          <Text style={[TypographyScale.pageTitle, { color: colors.textPrimary, marginTop: 6 }]}>
+            {property.titre}
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            disabled={!onLocateOnMap}
+            onPress={() => onLocateOnMap && onLocateOnMap(property)}
+            style={[styles.locationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <MapPin size={17} color={colors.accentChampagne} />
+            <Text style={[TypographyScale.body, { color: colors.textPrimary, flex: 1 }]} numberOfLines={2}>
+              {property.localisation}
+            </Text>
+            {onLocateOnMap ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>Carte</Text>
+                <ChevronRight size={16} color={colors.accentChampagne} />
+              </View>
+            ) : null}
+          </TouchableOpacity>
+
+          {/* 4-Metric Spec Grid */}
+          <View style={styles.specsRow}>
+            <View style={[styles.specTile, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <BedDouble size={18} color={colors.accentChampagne} />
+              <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginTop: 6 }]}>
+                {property.nombreChambres}
+              </Text>
+              <Text style={[TypographyScale.micro, { color: colors.textSecondary, fontSize: 10 }]}>Chambres</Text>
+            </View>
+            <View style={[styles.specTile, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Bath size={18} color={colors.accentChampagne} />
+              <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginTop: 6 }]}>
+                {property.nombreSallesDeBain}
+              </Text>
+              <Text style={[TypographyScale.micro, { color: colors.textSecondary, fontSize: 10 }]}>SDB</Text>
+            </View>
+            <View style={[styles.specTile, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Maximize2 size={17} color={colors.accentChampagne} />
+              <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginTop: 6 }]}>
+                {property.surfaceM2 ?? 0} m²
+              </Text>
+              <Text style={[TypographyScale.micro, { color: colors.textSecondary, fontSize: 10 }]}>Surface</Text>
+            </View>
+          </View>
+
+          <View style={{ marginTop: 24 }}>
+            <EditorialSectionHeader title={t('description_title')} />
+            <Text style={[TypographyScale.body, { color: colors.textSecondary, marginTop: 10, lineHeight: 23 }]}>
+              {property.description}
+            </Text>
+          </View>
+
+          {property.commodites && property.commodites.length > 0 && (
+            <View style={{ marginTop: 24 }}>
+              <EditorialSectionHeader title={t('amenities_title')} />
+              <View style={styles.amenitiesWrap}>
+                {property.commodites.map((item) => (
+                  <View
+                    key={item}
+                    style={[styles.amenityPill, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  >
+                    <Check size={13} color={colors.accentGreen} strokeWidth={2.5} />
+                    <Text style={[TypographyScale.caption, { color: colors.textPrimary }]}>
+                      {translateAmenity(item)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Source / Owner Card */}
+          <View style={[styles.ownerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.ownerAvatar, { backgroundColor: colors.surfaceElevated }]}>
+              <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary }]}>
+                {(property.agentNom || 'D')[0].toUpperCase()}
               </Text>
             </View>
-            {onLocateOnMap && (
-              <TouchableOpacity
-                onPress={() => onLocateOnMap(property)}
-                style={[styles.locateBtn, { borderColor: colors.accentBlue }]}
-              >
-                <MapPin size={14} color={colors.accentBlue} />
-                <Text style={{ color: colors.accentBlue, fontSize: 12, fontWeight: '700' }}>
-                  Voir sur carte
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* 6. CARACTÉRISTIQUES */}
-        <View style={styles.specsGrid}>
-          <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <BedDouble size={20} color={colors.accentBlue} />
-            <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>{property.nombreChambres}</Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Chambres</Text>
-          </View>
-
-          <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Bath size={20} color={colors.accentBlue} />
-            <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>{property.nombreSallesDeBain}</Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Salles de bain</Text>
-          </View>
-
-          <View style={[styles.specBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Maximize2 size={20} color={colors.accentBlue} />
-            <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>{property.surfaceM2 ?? 0} m²</Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Surface</Text>
-          </View>
-        </View>
-
-        {/* 7. TYPE & STANDING */}
-        <View style={[styles.specificationsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.specItem}>
-            <Building2 size={20} color={colors.accentBlue} />
-            <View style={{ marginLeft: 10 }}>
-              <Text style={[styles.specItemLabel, { color: colors.textSecondary }]}>Type</Text>
-              <Text style={[styles.specItemValue, { color: colors.textPrimary }]}>{property.type}</Text>
-            </View>
-          </View>
-          <View style={[styles.specDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.specItem}>
-            <ShieldCheck size={20} color={colors.accentBlue} />
-            <View style={{ marginLeft: 10, flex: 1 }}>
-              <Text style={[styles.specItemLabel, { color: colors.textSecondary }]}>Standing</Text>
-              <Text style={[styles.specItemValue, { color: colors.textPrimary }]} numberOfLines={1}>
-                {property.standing ?? 'Standard'}
+            <View style={{ flex: 1 }}>
+              <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary }]}>
+                {property.agentNom ?? 'Annonceur'}
               </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* 8. COMMODITÉS */}
-        {property.commodites && property.commodites.length > 0 && (
-          <View style={styles.amenitiesSection}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('amenities_title')}</Text>
-            <View style={styles.amenitiesGrid}>
-              {property.commodites.map((item) => (
-                <View
-                  key={item}
-                  style={[styles.amenityChip, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              <Text style={[TypographyScale.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                {property.sourceName ? `Source : ${property.sourceName}` : t('owner_role')}
+              </Text>
+              {property.sourceUrl ? (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(property.sourceUrl!)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
                 >
-                  <Check size={13} color="#10B981" strokeWidth={2.5} />
-                  <Text style={[styles.amenityText, { color: colors.textSecondary }]}>
-                    {translateAmenity(item)}
+                  <ExternalLink size={12} color={colors.accentChampagne} />
+                  <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>
+                    Portail officiel
                   </Text>
-                </View>
-              ))}
+                </TouchableOpacity>
+              ) : null}
             </View>
-          </View>
-        )}
-
-        {/* 9. SOURCE OFFICIELLE / ANNONCEUR */}
-        <View style={[styles.agentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.agentAvatarBox}>
-            <Text style={styles.agentAvatarText}>
-              {(property.agentNom || 'D')
-                .split(' ')
-                .map((e) => (e ? e[0] : ''))
-                .slice(0, 2)
-                .join('')
-                .toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.agentInfo}>
-            <Text style={[styles.agentName, { color: colors.textPrimary }]}>
-              {property.agentNom ?? 'Annonceur'}
-            </Text>
-            <Text style={[styles.agentRole, { color: colors.textSecondary }]}>
-              {property.sourceName ? `Source : ${property.sourceName}` : t('owner_role')}
-            </Text>
             {property.agentTel ? (
-              <TouchableOpacity onPress={handleCallOwner}>
-                <Text style={[styles.agentPhone, { textDecorationLine: 'underline' }]}>{property.agentTel}</Text>
-              </TouchableOpacity>
-            ) : null}
-            {property.sourceUrl ? (
-              <TouchableOpacity
-                onPress={() => Linking.openURL(property.sourceUrl!)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}
-              >
-                <ExternalLink size={12} color={colors.accentBlue} />
-                <Text style={{ color: colors.accentBlue, fontSize: 12, fontWeight: '600' }}>
-                  Consulter le portail officiel
-                </Text>
-              </TouchableOpacity>
+              <GlassOrbButton size={42} onPress={handleCallOwner} accessibilityLabel="Appeler">
+                <Phone size={18} color={colors.textPrimary} />
+              </GlassOrbButton>
             ) : null}
           </View>
-          {property.agentTel ? (
-            <TouchableOpacity style={styles.agentCallBtn} onPress={handleCallOwner}>
-              <Phone size={18} color={colors.accentBlue} />
-            </TouchableOpacity>
-          ) : null}
         </View>
-
-        {/* 10. DESCRIPTION */}
-        <View style={styles.descriptionSection}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('description_title')}</Text>
-          <Text style={[styles.descriptionBody, { color: colors.textSecondary }]}>{property.description}</Text>
-        </View>
-
-        <View style={{ height: 185 }} />
       </ScrollView>
 
-      {/* DOCK BAS */}
-      <View
-        style={[
-          styles.bottomDock,
-          {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.95)' : 'rgba(255, 255, 255, 0.96)',
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={onBack}
-        >
-          <Text style={[styles.backButtonText, { color: colors.textPrimary }]}>{t('btn_back')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.scheduleButton, { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }]}
-          onPress={() => setShowContactModal(true)}
-        >
-          <Text style={[styles.scheduleButtonText, { color: isDark ? '#0F1015' : '#FFFFFF' }]}>
-            {t('btn_schedule_visit')}
-          </Text>
-        </TouchableOpacity>
+      {/* Floating Liquid Glass Bottom Contact Bar */}
+      <View style={styles.bottomWrap}>
+        <LiquidGlassView borderRadius={30} intensity={isDark ? 55 : 70} style={styles.bottomGlass}>
+          <GlassOrbButton size={48} onPress={handleCallOwner} accessibilityLabel="Appeler">
+            <Phone size={19} color={colors.textPrimary} />
+          </GlassOrbButton>
+          <View style={{ flex: 1 }}>
+            <LuxuryPillButton
+              label={t('btn_schedule_visit')}
+              onPress={() => setShowContactModal(true)}
+            />
+          </View>
+        </LiquidGlassView>
       </View>
 
-      {/* MODAL CONTACT */}
+      {/* Contact Sheet Modal */}
       <Modal visible={showContactModal} transparent animationType="slide">
         <View style={modalStyles.overlay}>
-          <View style={[modalStyles.content, { backgroundColor: colors.surface }]}>
-            <View style={modalStyles.handleBar} />
-            <Text style={[modalStyles.title, { color: colors.textPrimary }]}>{t('contact_owner')}</Text>
-            <Text style={[modalStyles.subTitle, { color: colors.textSecondary }]}>{t('contact_owner_sub')}</Text>
-
+          <LiquidGlassView borderRadius={32} intensity={isDark ? 65 : 85} style={modalStyles.sheet}>
+            <View style={modalStyles.handle} />
+            <Text style={[TypographyScale.pageTitle, { color: colors.textPrimary, fontSize: 20 }]}>
+              {t('contact_owner')}
+            </Text>
+            <Text style={[TypographyScale.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 16 }]}>
+              {t('contact_owner_sub')}
+            </Text>
             <TextInput
-              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[modalStyles.input, { color: colors.textPrimary, backgroundColor: colors.surfaceElevated }]}
               placeholder="Votre nom complet"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textTertiary}
               value={senderName}
               onChangeText={setSenderName}
             />
             <TextInput
-              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[modalStyles.input, { color: colors.textPrimary, backgroundColor: colors.surfaceElevated }]}
               placeholder="Votre adresse e-mail"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textTertiary}
               value={senderEmail}
               onChangeText={setSenderEmail}
               autoCapitalize="none"
               keyboardType="email-address"
             />
             <TextInput
-              style={[modalStyles.input, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[modalStyles.input, { color: colors.textPrimary, backgroundColor: colors.surfaceElevated }]}
               placeholder="Téléphone (+216)"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textTertiary}
               value={senderPhone}
               onChangeText={setSenderPhone}
               keyboardType="phone-pad"
             />
             <TextInput
-              style={[modalStyles.input, modalStyles.textArea, { color: colors.textPrimary, borderColor: colors.border }]}
+              style={[modalStyles.input, { color: colors.textPrimary, backgroundColor: colors.surfaceElevated, height: 84, textAlignVertical: 'top' }]}
               placeholder="Votre message"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textTertiary}
               value={contactMessage}
               onChangeText={setContactMessage}
               multiline
-              numberOfLines={3}
             />
-
-            <View style={modalStyles.actions}>
-              <TouchableOpacity
-                style={[modalStyles.cancelBtn, { borderColor: colors.border }]}
-                onPress={() => setShowContactModal(false)}
-              >
-                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{t('btn_cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={modalStyles.submitBtn} onPress={handleSendContact}>
-                <Text style={modalStyles.submitBtnText}>{t('send_request')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            <LuxuryPillButton label="Envoyer la demande" onPress={handleSendContact} style={{ marginTop: 8 }} />
+            <LuxuryPillButton
+              label="Annuler"
+              secondary
+              onPress={() => setShowContactModal(false)}
+              style={{ marginTop: 8 }}
+            />
+          </LiquidGlassView>
         </View>
       </Modal>
 
-      {/* MODAL SIGNALEMENT */}
+      {/* Report Modal */}
       <Modal visible={showReportModal} transparent animationType="fade">
         <View style={modalStyles.overlay}>
-          <View style={[modalStyles.content, { backgroundColor: colors.surface }]}>
-            <Text style={[modalStyles.title, { color: colors.textPrimary }]}>Signaler cette annonce</Text>
+          <LiquidGlassView borderRadius={28} intensity={70} style={modalStyles.sheet}>
+            <Text style={[TypographyScale.sectionTitle, { color: colors.textPrimary }]}>
+              Signaler cette annonce
+            </Text>
             <TextInput
-              style={[modalStyles.input, modalStyles.textArea, { color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Motif (annonce expirée, erreur de prix, contenu suspect...)"
-              placeholderTextColor={colors.textSecondary}
+              style={[modalStyles.input, { color: colors.textPrimary, backgroundColor: colors.surfaceElevated, height: 84, marginTop: 12 }]}
+              placeholder="Motif du signalement..."
+              placeholderTextColor={colors.textTertiary}
               value={reportReason}
               onChangeText={setReportReason}
               multiline
             />
-            <View style={modalStyles.actions}>
-              <TouchableOpacity
-                style={[modalStyles.cancelBtn, { borderColor: colors.border }]}
-                onPress={() => setShowReportModal(false)}
-              >
-                <Text style={{ color: colors.textPrimary }}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={modalStyles.submitBtn} onPress={handleSubmitReport}>
-                <Text style={modalStyles.submitBtnText}>Envoyer</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            <LuxuryPillButton label="Envoyer" onPress={handleSubmitReport} style={{ marginTop: 8 }} />
+            <LuxuryPillButton label="Annuler" secondary onPress={() => setShowReportModal(false)} style={{ marginTop: 8 }} />
+          </LiquidGlassView>
         </View>
       </Modal>
     </SafeAreaView>
@@ -580,225 +506,147 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingBottom: 20 },
-  heroContainer: {
-    height: 340,
-    width: '100%',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  heroImage: { width: '100%', height: '100%' },
-  heroPlaceholder: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-    gap: 12,
-  },
-  placeholderTitle: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  photoCounter: {
-    position: 'absolute',
-    bottom: 18,
-    right: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(24, 25, 32, 0.78)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 18,
-  },
-  photoCounterText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  topActionsBar: {
+  heroContainer: { height: 370, position: 'relative' },
+  heroFallback: { height: 370, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  topControls: {
     position: 'absolute',
     top: 14,
-    left: 20,
-    right: 20,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  topRightActions: { flexDirection: 'row', gap: 8 },
-  glassCircleBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
+  counterPill: {
+    position: 'absolute',
+    right: 16,
+    bottom: 38,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
   },
-  thumbnailStrip: { marginTop: 14, paddingHorizontal: 20 },
-  thumbnailContainer: { gap: 10 },
-  thumbnailItem: { width: 84, height: 60, borderRadius: 14, overflow: 'hidden' },
-  thumbnailImage: { width: '100%', height: '100%' },
+  sheet: {
+    marginTop: -24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 20,
+    paddingTop: 22,
+  },
   statusRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 18,
+    gap: 8,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.14)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    borderRadius: 999,
+    borderWidth: 0.8,
   },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: AppColors.accentGreen, marginRight: 6 },
-  statusBadgeText: { color: AppColors.accentGreen, fontSize: 12, fontWeight: '700' },
-  reportPill: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 6 },
-  titleSection: { paddingHorizontal: 20, marginTop: 14 },
-  hugePrice: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  mainTitle: { fontSize: 19, fontWeight: '700', marginTop: 6 },
-  mainAddress: { fontSize: 13.5, flex: 1 },
-  locateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  statusDot: { width: 7, height: 7, borderRadius: 3.5 },
+  refPill: {
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingVertical: 5.5,
+    borderRadius: 999,
   },
-  specsGrid: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginTop: 20 },
-  specBox: { flex: 1, borderRadius: 18, padding: 14, alignItems: 'center', borderWidth: 1, gap: 4 },
-  specBoxValue: { fontSize: 15, fontWeight: '700' },
-  specBoxLabel: { fontSize: 11 },
-  specificationsCard: {
+  reportBtn: {
+    marginLeft: 'auto',
     flexDirection: 'row',
-    marginHorizontal: 20,
-    marginTop: 18,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
     alignItems: 'center',
+    gap: 4,
   },
-  specItem: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  specItemLabel: { fontSize: 11 },
-  specItemValue: { fontSize: 13, fontWeight: '700', marginTop: 2 },
-  specDivider: { width: 1, height: 34, marginHorizontal: 12 },
-  amenitiesSection: { paddingHorizontal: 20, marginTop: 22 },
-  amenitiesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  amenityChip: {
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 0.9,
+    marginTop: 14,
+  },
+  specsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+  },
+  specTile: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 18,
+    borderWidth: 0.9,
+  },
+  amenitiesWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  amenityPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 14,
-    borderWidth: 1,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 0.9,
   },
-  amenityText: { fontSize: 12.5, fontWeight: '500' },
-  agentCard: {
+  ownerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginTop: 22,
-    borderRadius: 20,
+    gap: 14,
     padding: 16,
-    borderWidth: 1,
-  },
-  agentAvatarBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  agentAvatarText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
-  agentInfo: { flex: 1 },
-  agentName: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
-  agentRole: { fontSize: 11.5, marginBottom: 4 },
-  agentPhone: { color: '#2563EB', fontSize: 12, fontWeight: '600' },
-  agentCallBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(37, 99, 235, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  descriptionSection: { paddingHorizontal: 20, marginTop: 22 },
-  sectionTitle: { fontSize: 17, fontWeight: '700', marginBottom: 8 },
-  descriptionBody: { fontSize: 14, lineHeight: 22 },
-  bottomDock: {
-    position: 'absolute',
-    bottom: 96,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     borderRadius: 22,
-    borderWidth: 1,
+    borderWidth: 0.9,
+    marginTop: 24,
+  },
+  ownerAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomWrap: {
+    position: 'absolute',
+    left: 18,
+    right: 18,
+    bottom: 16,
+  },
+  bottomGlass: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
-    elevation: 6,
+    padding: 10,
   },
-  backButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: { fontSize: 13, fontWeight: '600' },
-  scheduleButton: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scheduleButtonText: { fontSize: 14, fontWeight: '800' },
 });
 
 const modalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  content: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
-  handleBar: {
-    width: 44,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#94A3B8',
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+    padding: 12,
+  },
+  sheet: {
+    padding: 22,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(142,142,147,0.4)',
     alignSelf: 'center',
     marginBottom: 16,
   },
-  title: { fontSize: 18, fontWeight: '800', marginBottom: 6 },
-  subTitle: { fontSize: 13, marginBottom: 16 },
   input: {
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: RadiusScale.md,
     paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14.5,
     marginBottom: 10,
-    fontSize: 14,
   },
-  textArea: { height: 84, paddingTop: 12, textAlignVertical: 'top' },
-  actions: { flexDirection: 'row', marginTop: 12, gap: 12 },
-  cancelBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitBtn: {
-    flex: 2,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#2563EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 });

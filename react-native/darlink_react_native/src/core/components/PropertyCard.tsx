@@ -1,24 +1,33 @@
 // ============================================================
-// DARLINK — CARTE DE PROPRIÉTÉ LUXE GLASSMORPHISM (React Native)
-// Design épuré, zéro emoji, icônes Lucide, attribution & repli photo sobre.
+// DARLINK — ARCHITECTURAL LIQUID GLASS PROPERTY CARD (React Native)
+// Mirrors Flutter CartePropriete: 396px showcase, frosted BlurView
+// bottom sheet, architectural fallback when photo rights unavailable.
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Animated,
+} from 'react-native';
 import {
   Heart,
   MapPin,
   BedDouble,
   Bath,
   Maximize2,
-  ArrowRight,
+  ArrowUpRight,
   Building2,
 } from 'lucide-react-native';
-import { AppColors } from '../constants/colors';
 import { Property, formatPrice } from '../../features/properties/domain/models/property';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from '../localization/LocalizationContext';
 import { favoritesApiService } from '../../features/favorites/services/favoritesApiService';
+import { LiquidGlassView } from '../designSystem/LiquidGlass';
+import { RadiusScale, TypographyScale, triggerHaptic } from '../designSystem/tokens';
 
 interface PropertyCardProps {
   readonly property: Property;
@@ -32,6 +41,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
   const [imageError, setImageError] = useState(false);
   const { isDark, colors } = useTheme();
   const { t } = useTranslation();
+  const cardScale = useRef(new Animated.Value(1)).current;
+  const heartScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const propId = property.id;
@@ -45,272 +56,319 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
 
   const handleToggleFavorite = () => {
     if (!property.id) return;
+    triggerHaptic('light');
+    Animated.sequence([
+      Animated.spring(heartScale, { toValue: 1.24, useNativeDriver: true, speed: 40 }),
+      Animated.spring(heartScale, { toValue: 1, useNativeDriver: true, speed: 30 }),
+    ]).start();
     favoritesApiService.toggleFavorite(property.id, property);
   };
 
   const hasValidImage = Boolean(property.imageUrl && property.imageUrl.trim().length > 0 && !imageError);
+  const isInstitutional =
+    property.listingCategory === 'DEVELOPMENT_REFERENCE' ||
+    Boolean(property.sourceName && !property.republicationAuthorized);
+
+  const statusLabel = isInstitutional
+    ? 'Référence programme'
+    : property.estLocation
+    ? t('for_rent')
+    : t('for_sale');
 
   return (
-    <View
-      style={[
-        styles.cardContainer,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          shadowOpacity: isDark ? 0.35 : 0.06,
-        },
-      ]}
-    >
-      {hasValidImage ? (
-        <Image
-          source={{ uri: property.imageUrl }}
-          style={styles.heroImage}
-          resizeMode="cover"
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <View
-          style={[
-            styles.placeholderHero,
-            { backgroundColor: isDark ? '#181B24' : '#EEF2F7' },
-          ]}
-        >
-          <Building2 size={44} color={colors.accentBlue} strokeWidth={1.6} />
-          <Text style={[styles.placeholderLabel, { color: colors.textSecondary }]}>
-            {property.sourceName ? `Référence officielle • ${property.sourceName}` : t('no_photo')}
-          </Text>
-        </View>
-      )}
-
-      {/* Badge supérieur gauche : Type transaction & source */}
-      <View
-        style={[
-          styles.statusPill,
-          {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.80)' : 'rgba(255, 255, 255, 0.94)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-          },
-        ]}
-      >
-        <View style={styles.statusDot} />
-        <Text style={[styles.statusText, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-          {property.listingCategory === 'DEVELOPMENT_REFERENCE' || (property.sourceName && !property.republicationAuthorized)
-            ? 'Référence programme'
-            : property.estLocation
-            ? t('for_rent')
-            : t('for_sale')}
-        </Text>
-      </View>
-
-      {/* Bouton favori */}
+    <Animated.View style={{ transform: [{ scale: cardScale }] }}>
       <TouchableOpacity
+        activeOpacity={0.95}
+        onPressIn={() =>
+          Animated.spring(cardScale, { toValue: 0.985, useNativeDriver: true, speed: 36 }).start()
+        }
+        onPressOut={() =>
+          Animated.spring(cardScale, { toValue: 1, useNativeDriver: true, speed: 36 }).start()
+        }
+        onPress={() => {
+          triggerHaptic('selection');
+          onPress(property);
+        }}
         style={[
-          styles.favoriteButton,
+          styles.cardContainer,
           {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.75)' : 'rgba(255, 255, 255, 0.94)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.08)',
-          },
-        ]}
-        onPress={handleToggleFavorite}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-        accessibilityLabel={isFavorite ? t('removed_from_favorites') : t('added_to_favorites')}
-      >
-        <Heart
-          size={18}
-          color={isFavorite ? AppColors.accentRed : isDark ? '#FFFFFF' : '#111827'}
-          fill={isFavorite ? AppColors.accentRed : 'transparent'}
-          strokeWidth={2}
-        />
-      </TouchableOpacity>
-
-      {/* Dock inférieur */}
-      <View
-        style={[
-          styles.glassDock,
-          {
-            backgroundColor: isDark ? 'rgba(19, 20, 28, 0.92)' : 'rgba(255, 255, 255, 0.96)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            shadowOpacity: isDark ? 0.36 : 0.06,
           },
         ]}
       >
-        <View style={styles.dockHeader}>
-          <View style={styles.priceContainer}>
-            <Text style={[styles.priceText, { color: colors.textPrimary }]} numberOfLines={1}>
-              {formatPrice(property.prix, Boolean(property.estLocation), Boolean(property.priceOnRequest))}
-            </Text>
-            <Text style={[styles.propertyTitle, { color: colors.textSecondary }]} numberOfLines={1}>
-              {property.titre}
-            </Text>
-          </View>
-
-          <TouchableOpacity
+        {hasValidImage ? (
+          <Image
+            source={{ uri: property.imageUrl }}
+            style={styles.heroImage}
+            resizeMode="cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <View
             style={[
-              styles.actionButton,
-              { backgroundColor: isDark ? '#FFFFFF' : AppColors.accentBlue },
+              styles.blueprintFallback,
+              { backgroundColor: isDark ? '#14171F' : '#EFECE5' },
             ]}
-            onPress={() => onPress(property)}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel={t('btn_details')}
           >
-            <Text
+            <View
               style={[
-                styles.actionButtonText,
-                { color: isDark ? '#0F1015' : '#FFFFFF' },
+                styles.emblemRing,
+                {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.78)',
+                  borderColor: colors.accentChampagne,
+                },
               ]}
             >
-              {t('btn_details')}
+              <Building2 size={28} color={colors.accentChampagne} strokeWidth={1.6} />
+            </View>
+            <Text style={[TypographyScale.micro, { color: colors.accentChampagne, marginTop: 12 }]}>
+              {(property.sourceName || property.type).toUpperCase()}
             </Text>
-            <ArrowRight size={15} color={isDark ? '#0F1015' : '#FFFFFF'} />
-          </TouchableOpacity>
+            <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, marginTop: 3 }]}>
+              {property.governorate || property.city || 'Tunisie'}
+            </Text>
+            <Text style={[TypographyScale.caption, { color: colors.textSecondary, marginTop: 2, fontSize: 11.5 }]}>
+              Visuels disponibles sur portail officiel
+            </Text>
+          </View>
+        )}
+
+        {/* Top Bar: Liquid Glass Status Pill + Heart Orb */}
+        <View style={styles.topRow}>
+          <LiquidGlassView borderRadius={999} intensity={45} elevated={false} style={styles.statusPill}>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: isInstitutional ? colors.accentChampagne : colors.accentGreen },
+              ]}
+            />
+            <Text style={[styles.statusText, { color: colors.textPrimary }]}>{statusLabel}</Text>
+          </LiquidGlassView>
+
+          <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+            <TouchableOpacity
+              onPress={handleToggleFavorite}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={isFavorite ? t('removed_from_favorites') : t('added_to_favorites')}
+            >
+              <LiquidGlassView borderRadius={20} intensity={45} elevated={false} style={styles.heartOrb}>
+                <Heart
+                  size={18}
+                  color={isFavorite ? colors.accentRed : colors.textPrimary}
+                  fill={isFavorite ? colors.accentRed : 'transparent'}
+                  strokeWidth={2}
+                />
+              </LiquidGlassView>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
 
-        <View style={styles.locationRow}>
-          <MapPin size={13} color={colors.accentBlue} />
-          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
-            {property.localisation}
-          </Text>
-        </View>
+        {/* Bottom Frosted Liquid Glass Sheet */}
+        <LiquidGlassView borderRadius={20} intensity={isDark ? 55 : 70} elevated={false} style={styles.bottomGlass}>
+          <View style={styles.dockHeader}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={[TypographyScale.priceDisplay, { color: colors.textPrimary }]} numberOfLines={1}>
+                {formatPrice(property.prix, Boolean(property.estLocation), Boolean(property.priceOnRequest))}
+              </Text>
+              <Text
+                style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 14.5, marginTop: 2 }]}
+                numberOfLines={1}
+              >
+                {property.titre}
+              </Text>
+            </View>
 
-        <View style={styles.specsRow}>
-          <View
-            style={[
-              styles.specPill,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-              },
-            ]}
-          >
-            <BedDouble size={13} color={colors.textSecondary} />
-            <Text style={[styles.specText, { color: colors.textSecondary }]}>
-              {property.nombreChambres} {t('bedrooms_short')}
+            <View
+              style={[
+                styles.ctaPill,
+                { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' },
+              ]}
+            >
+              <Text style={[styles.ctaText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>
+                {t('btn_details')}
+              </Text>
+              <ArrowUpRight size={14} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
+            </View>
+          </View>
+
+          <View style={styles.locationRow}>
+            <MapPin size={13} color={colors.accentChampagne} />
+            <Text style={[TypographyScale.caption, { color: colors.textSecondary, flex: 1 }]} numberOfLines={1}>
+              {property.localisation}
             </Text>
           </View>
 
-          <View
-            style={[
-              styles.specPill,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-              },
-            ]}
-          >
-            <Bath size={13} color={colors.textSecondary} />
-            <Text style={[styles.specText, { color: colors.textSecondary }]}>
-              {property.nombreSallesDeBain} {t('bathrooms_short')}
-            </Text>
-          </View>
+          <View style={styles.specsRow}>
+            <View
+              style={[
+                styles.specPill,
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(29,29,31,0.05)' },
+              ]}
+            >
+              <BedDouble size={13} color={colors.textSecondary} />
+              <Text style={[styles.specText, { color: colors.textSecondary }]}>
+                {property.nombreChambres} {t('bedrooms_short')}
+              </Text>
+            </View>
 
-          <View
-            style={[
-              styles.specPill,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-              },
-            ]}
-          >
-            <Maximize2 size={13} color={colors.textSecondary} />
-            <Text style={[styles.specText, { color: colors.textSecondary }]}>
-              {property.surfaceM2 ?? 0} {t('area_unit')}
-            </Text>
+            <View
+              style={[
+                styles.specPill,
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(29,29,31,0.05)' },
+              ]}
+            >
+              <Bath size={13} color={colors.textSecondary} />
+              <Text style={[styles.specText, { color: colors.textSecondary }]}>
+                {property.nombreSallesDeBain} {t('bathrooms_short')}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.specPill,
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(29,29,31,0.05)' },
+              ]}
+            >
+              <Maximize2 size={12} color={colors.textSecondary} />
+              <Text style={[styles.specText, { color: colors.textSecondary }]}>
+                {property.surfaceM2 || 0} m²
+              </Text>
+            </View>
+
+            {property.sourceName ? (
+              <Text style={[TypographyScale.micro, { color: colors.accentChampagne, marginLeft: 'auto' }]}>
+                {property.sourceName.split(' ')[0]}
+              </Text>
+            ) : null}
           </View>
-        </View>
-      </View>
-    </View>
+        </LiquidGlassView>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   cardContainer: {
-    height: 376,
-    borderRadius: 24,
+    height: 396,
+    borderRadius: RadiusScale.lg,
+    borderWidth: 0.9,
     overflow: 'hidden',
-    marginBottom: 20,
-    borderWidth: 1,
-    position: 'relative',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 14,
-    elevation: 4,
+    marginBottom: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 24,
+    elevation: 6,
   },
-  heroImage: { width: '100%', height: '100%', backgroundColor: '#E5E7EB' },
-  placeholderHero: {
+  heroImage: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     width: '100%',
-    height: '62%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    gap: 8,
+    height: '100%',
   },
-  placeholderLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
-  statusPill: {
+  blueprintFallback: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 112,
+    paddingHorizontal: 24,
+  },
+  emblemRing: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topRow: {
     position: 'absolute',
     top: 14,
     left: 14,
+    right: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingVertical: 7,
+    gap: 7,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: AppColors.accentGreen,
-    marginRight: 6,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
-  statusText: { fontSize: 12, fontWeight: '700' },
-  favoriteButton: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
+  statusText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  heartOrb: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    justifyContent: 'center',
   },
-  glassDock: {
+  bottomGlass: {
     position: 'absolute',
-    bottom: 12,
     left: 12,
     right: 12,
-    borderRadius: 20,
+    bottom: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderWidth: 1,
   },
-  dockHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  priceContainer: { flex: 1, marginRight: 10 },
-  priceText: { fontSize: 20, fontWeight: '800', letterSpacing: -0.4 },
-  propertyTitle: { fontSize: 13, fontWeight: '600', marginTop: 2 },
-  actionButton: {
+  dockHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ctaPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     paddingVertical: 9,
-    borderRadius: 16,
+    borderRadius: 999,
   },
-  actionButtonText: { fontWeight: '700', fontSize: 13 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
-  locationText: { fontSize: 13, fontWeight: '500', flex: 1 },
-  specsRow: { flexDirection: 'row', marginTop: 12, gap: 8 },
+  ctaText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 7,
+  },
+  specsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
   specPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 0.8,
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: 10,
   },
-  specText: { fontSize: 12, fontWeight: '600' },
+  specText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
 });

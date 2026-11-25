@@ -316,14 +316,17 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
         />
 
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: colors.accentBlue }]}
+          style={[styles.submitButton, { backgroundColor: colors.textPrimary }]}
           onPress={handleSubmit}
           disabled={submitting}
+          activeOpacity={0.86}
         >
           {submitting ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.background} />
           ) : (
-            <Text style={styles.submitButtonText}>Enregistrer l’annonce</Text>
+            <Text style={[styles.submitButtonText, { color: colors.background }]}>
+              Enregistrer l’annonce
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -338,39 +341,96 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderBottomWidth: 0.9,
   },
-  iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700' },
-  content: { padding: 20, paddingBottom: 40 },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 17.5, fontWeight: '700', letterSpacing: -0.3 },
+  content: { padding: 20, paddingBottom: 100 },
   authWarning: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 16,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 0.9,
+    marginBottom: 18,
   },
-  sectionLabel: { fontSize: 12.5, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.4 },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 14,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   toggleRow: { flexDirection: 'row', gap: 10 },
-  toggleBtn: { flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  toggleText: { fontWeight: '700', fontSize: 13.5 },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggleText: { fontWeight: '600', fontSize: 13.5 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
+  chip: { paddingHorizontal: 15, paddingVertical: 9, borderRadius: 999 },
   chipText: { fontWeight: '600', fontSize: 12.5 },
   cityScroll: { gap: 8, paddingBottom: 4 },
-  cityChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
+  cityChip: { paddingHorizontal: 15, paddingVertical: 9, borderRadius: 999 },
   twoCols: { flexDirection: 'row' },
-  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14 },
-  textArea: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, minHeight: 96, textAlignVertical: 'top' },
-  counterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
-  counterBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  input: {
+    borderWidth: 0.9,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    fontSize: 14.5,
+  },
+  textArea: {
+    borderWidth: 0.9,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    fontSize: 14.5,
+    minHeight: 104,
+    textAlignVertical: 'top',
+  },
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  counterBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   counterBtnText: { fontSize: 18, fontWeight: '600' },
   counterVal: { fontSize: 16, fontWeight: '700' },
-  amenityChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 },
-  submitButton: { marginTop: 26, paddingVertical: 15, borderRadius: 16, alignItems: 'center' },
-  submitButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  amenityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+  },
+  submitButton: {
+    marginTop: 28,
+    height: 52,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submitButtonText: { fontSize: 15, fontWeight: '600', letterSpacing: -0.15 },
 });

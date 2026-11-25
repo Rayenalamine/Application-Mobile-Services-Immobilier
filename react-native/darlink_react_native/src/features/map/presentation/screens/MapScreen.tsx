@@ -33,6 +33,7 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { LiquidGlassView } from '../../../../core/designSystem/LiquidGlass';
 import { findGovernorate } from '../../../../core/constants/tunisiaLocations';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property, formatPrice } from '../../../properties/domain/models/property';
@@ -317,18 +318,18 @@ export const MapScreen: React.FC<MapScreenProps> = ({
                   styles.priceBadge,
                   {
                     backgroundColor: isSelected
-                      ? colors.accentBlue
+                      ? isDark ? '#F5F5F7' : '#1D1D1F'
                       : isDark
                       ? colors.surfaceElevated
                       : '#FFFFFF',
-                    borderColor: isSelected ? '#FFFFFF' : colors.accentBlue,
+                    borderColor: isSelected ? colors.accentChampagne : colors.border,
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.priceBadgeText,
-                    { color: isSelected ? '#FFFFFF' : isDark ? '#FFFFFF' : colors.accentBlue },
+                    { color: isSelected ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textPrimary },
                   ]}
                   numberOfLines={1}
                 >
@@ -336,9 +337,9 @@ export const MapScreen: React.FC<MapScreenProps> = ({
                 </Text>
               </View>
               <MapPin
-                size={22}
-                color={isSelected ? colors.accentBlue : isDark ? '#E2E8F0' : '#0F172A'}
-                fill={isSelected ? colors.accentBlue : 'transparent'}
+                size={20}
+                color={isSelected ? colors.accentChampagne : colors.textPrimary}
+                fill={isSelected ? colors.accentChampagne : 'transparent'}
               />
             </TouchableOpacity>
           );
@@ -347,23 +348,15 @@ export const MapScreen: React.FC<MapScreenProps> = ({
 
       {/* 2. EN-TÊTE ET GOUVERNORATS */}
       <View style={styles.headerContainer}>
-        <View
-          style={[
-            styles.titleCard,
-            {
-              backgroundColor: isDark ? 'rgba(22,25,33,0.95)' : 'rgba(255,255,255,0.95)',
-              borderColor: colors.border,
-            },
-          ]}
-        >
+        <LiquidGlassView borderRadius={22} style={styles.titleCard}>
           <TouchableOpacity
             onPress={onBack}
-            style={[styles.backBtn, { backgroundColor: colors.accentBlue }]}
+            style={[styles.backBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
             accessibilityRole="button"
             accessibilityLabel="Retour"
           >
-            <ArrowLeft size={16} color="#FFFFFF" />
-            <Text style={styles.backBtnText}>Retour</Text>
+            <ArrowLeft size={15} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
+            <Text style={[styles.backBtnText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>Retour</Text>
           </TouchableOpacity>
 
           <View style={{ flex: 1 }}>
@@ -374,8 +367,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({
               {properties.length} bien(s) • {selectedGov}
             </Text>
           </View>
-          {loading && <ActivityIndicator size="small" color={colors.accentBlue} />}
-        </View>
+          {loading && <ActivityIndicator size="small" color={colors.accentChampagne} />}
+        </LiquidGlassView>
 
         {gpsStatusMessage && (
           <View style={[styles.gpsBanner, { backgroundColor: cardSurface(isDark), borderColor: colors.border }]}>
@@ -400,18 +393,18 @@ export const MapScreen: React.FC<MapScreenProps> = ({
                   styles.cityChip,
                   {
                     backgroundColor: isSelected
-                      ? colors.accentBlue
+                      ? isDark ? '#F5F5F7' : '#1D1D1F'
                       : isDark
-                      ? 'rgba(22,25,33,0.94)'
-                      : 'rgba(255,255,255,0.95)',
-                    borderColor: isSelected ? colors.accentBlue : colors.border,
+                      ? 'rgba(21,23,28,0.88)'
+                      : 'rgba(255,255,255,0.90)',
+                    borderColor: isSelected ? 'transparent' : colors.border,
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.cityChipText,
-                    { color: isSelected ? '#FFFFFF' : colors.textPrimary, fontWeight: isSelected ? '700' : '500' },
+                    { color: isSelected ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textPrimary, fontWeight: isSelected ? '600' : '500' },
                   ]}
                 >
                   {gov}
@@ -500,16 +493,16 @@ export const MapScreen: React.FC<MapScreenProps> = ({
               </Text>
             </View>
             <View style={styles.previewFooter}>
-              <Text style={[styles.previewPrice, { color: colors.accentBlue }]}>
+              <Text style={[styles.previewPrice, { color: colors.textPrimary }]}>
                 {formatPrice(
                   selectedProperty.prix,
                   Boolean(selectedProperty.estLocation),
                   Boolean(selectedProperty.priceOnRequest)
                 )}
               </Text>
-              <View style={[styles.consultBtn, { backgroundColor: colors.accentBlue }]}>
-                <Text style={styles.consultBtnText}>Consulter</Text>
-                <ChevronRight size={13} color="#FFFFFF" />
+              <View style={[styles.consultBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}>
+                <Text style={[styles.consultBtnText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>Consulter</Text>
+                <ChevronRight size={13} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
               </View>
             </View>
           </View>
@@ -582,103 +575,108 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   priceBadgeText: { fontSize: 10.5, fontWeight: '700' },
-  headerContainer: { position: 'absolute', top: 12, left: 16, right: 16 },
+  headerContainer: { position: 'absolute', top: 14, left: 16, right: 16 },
   titleCard: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 8,
-    elevation: 4,
+    marginBottom: 10,
   },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 10,
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 999,
     marginRight: 10,
   },
-  backBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12.5 },
-  titleText: { fontSize: 14.5, fontWeight: '700' },
+  backBtnText: { fontWeight: '600', fontSize: 12.5 },
+  titleText: { fontSize: 15, fontWeight: '700', letterSpacing: -0.25 },
   subtitleText: { fontSize: 11, marginTop: 1 },
   gpsBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 16,
+    borderWidth: 0.9,
     marginBottom: 8,
   },
   gpsBannerText: { fontSize: 11.5, flex: 1 },
   citiesScroll: { paddingBottom: 4 },
   cityChip: {
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-    borderRadius: 18,
-    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 0.9,
     marginRight: 8,
   },
   cityChipText: { fontSize: 12 },
-  controlsContainer: { position: 'absolute', right: 16, top: 146 },
+  controlsContainer: { position: 'absolute', right: 16, top: 148 },
   fab: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0.9,
     marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
     elevation: 4,
   },
   attributionBadge: {
     position: 'absolute',
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    right: 12,
+    backgroundColor: 'rgba(11,12,15,0.68)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
   },
-  attributionText: { color: '#FFFFFF', fontSize: 9.5 },
+  attributionText: { color: '#FFFFFF', fontSize: 9.5, fontWeight: '500' },
   previewCard: {
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 98,
+    bottom: 24,
     flexDirection: 'row',
-    padding: 10,
-    borderRadius: 18,
-    borderWidth: 1,
-    elevation: 6,
+    padding: 12,
+    borderRadius: 24,
+    borderWidth: 0.9,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  previewImage: { width: 86, height: 80, borderRadius: 12 },
+  previewImage: { width: 90, height: 84, borderRadius: 16 },
   previewContent: { flex: 1, marginLeft: 12, justifyContent: 'space-between' },
-  previewTitle: { fontSize: 13.5, fontWeight: '700' },
-  previewLocation: { fontSize: 11, flex: 1 },
+  previewTitle: { fontSize: 14, fontWeight: '600', letterSpacing: -0.2 },
+  previewLocation: { fontSize: 11.5, flex: 1 },
   previewFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 4,
   },
-  previewPrice: { fontSize: 13.5, fontWeight: '800' },
+  previewPrice: { fontSize: 14, fontWeight: '700' },
   consultBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    gap: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
-  consultBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  consultBtnText: { fontSize: 11.5, fontWeight: '600' },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0,0,0,0.52)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -686,13 +684,13 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 380,
-    borderRadius: 22,
-    padding: 22,
-    borderWidth: 1,
+    borderRadius: 28,
+    padding: 24,
+    borderWidth: 0.9,
     alignItems: 'center',
   },
-  modalTitle: { fontSize: 17, fontWeight: '700', marginTop: 12, textAlign: 'center' },
-  modalBody: { fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: 8, marginBottom: 18 },
+  modalTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3, marginTop: 12, textAlign: 'center' },
+  modalBody: { fontSize: 13.5, lineHeight: 20, textAlign: 'center', marginTop: 8, marginBottom: 18 },
   modalActions: { flexDirection: 'row', gap: 10, width: '100%' },
-  modalBtn: { flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center' },
+  modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 999, alignItems: 'center' },
 });

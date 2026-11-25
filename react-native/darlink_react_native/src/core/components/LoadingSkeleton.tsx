@@ -1,16 +1,10 @@
 // ============================================================
-// DARLINK — SQUELETTE DE CHARGEMENT (LoadingSkeleton)
-// Conforme à docs/UI_COMPONENTS_SPEC.md (Membre 1)
+// DARLINK — SQUELETTE DE CHARGEMENT ADAPTATIF (React Native)
 // ============================================================
 
 import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  StyleSheet,
-  ViewStyle,
-  DimensionValue,
-} from 'react-native';
-import { AppColors } from '../constants/colors';
+import { Animated, ViewStyle, DimensionValue } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
 
 export interface LoadingSkeletonProps {
   readonly width?: DimensionValue;
@@ -23,29 +17,21 @@ export interface LoadingSkeletonProps {
 export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   width = '100%',
   height = 20,
-  borderRadius = 8,
+  borderRadius = 12,
   isCircle = false,
   style,
 }) => {
-  const opacityAnim = useRef(new Animated.Value(0.3)).current;
+  const { isDark } = useTheme();
+  const opacityAnim = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacityAnim, {
-          toValue: 0.7,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0.3,
-          duration: 700,
-          useNativeDriver: true,
-        }),
+        Animated.timing(opacityAnim, { toValue: 0.75, duration: 750, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 0.35, duration: 750, useNativeDriver: true }),
       ])
     );
     pulse.start();
-
     return () => pulse.stop();
   }, [opacityAnim]);
 
@@ -58,8 +44,8 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   return (
     <Animated.View
       style={[
-        styles.skeleton,
         {
+          backgroundColor: isDark ? '#1E2128' : '#E9E9EE',
           width: isCircle ? height : width,
           height,
           borderRadius: computedRadius,
@@ -72,10 +58,3 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
     />
   );
 };
-
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: AppColors.darkSurfaceElevated,
-  },
-});
-
