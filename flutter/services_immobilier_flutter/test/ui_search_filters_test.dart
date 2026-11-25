@@ -7,11 +7,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:services_immobilier_flutter/features/navigation/presentation/screens/search_screen.dart';
+import 'package:services_immobilier_flutter/features/properties/data/property_api_service.dart';
+import 'fixtures/test_properties.dart';
 import 'test_helper.dart';
 
 void main() {
   setUpAll(() {
     HttpOverrides.global = MockHttpOverrides();
+    PropertyApiService.instance.injectTestFixtures(testFixtureProperties);
   });
 
   Widget createWidgetUnderTest() {
@@ -58,7 +61,7 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('4. Déclenchement de l\'application des filtres vers PostgreSQL', (tester) async {
+    testWidgets('4. Déclenchement de l\'application des filtres vers Cloud Firestore', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
@@ -66,7 +69,7 @@ void main() {
       await tester.tap(applyBtn);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('trouvé(s) depuis PostgreSQL !'), findsOneWidget);
+      expect(find.textContaining('trouvé(s) sur Cloud Firestore !'), findsOneWidget);
     });
   });
 }

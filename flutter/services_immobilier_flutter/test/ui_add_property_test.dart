@@ -30,7 +30,7 @@ void main() {
       expect(find.text('Prix (DT) *'), findsOneWidget);
       expect(find.text('Surface (m²) *'), findsOneWidget);
       expect(find.text('Type de bien'), findsOneWidget);
-      expect(find.text('Ville'), findsOneWidget);
+      expect(find.text('Gouvernorat'), findsOneWidget);
       expect(find.text('Publier l\'annonce sur DarLink'), findsOneWidget);
     });
 

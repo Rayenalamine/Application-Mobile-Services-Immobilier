@@ -3,11 +3,20 @@
 // Vérifie la NavigationBar Material 3, les 4 onglets et le basculement
 // ============================================================
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:services_immobilier_flutter/features/properties/data/property_api_service.dart';
 import 'package:services_immobilier_flutter/main.dart';
+import 'fixtures/test_properties.dart';
+import 'test_helper.dart';
 
 void main() {
+  setUpAll(() {
+    HttpOverrides.global = MockHttpOverrides();
+    PropertyApiService.instance.injectTestFixtures(testFixtureProperties);
+  });
+
   group('Tests de navigation principale Material 3 — V2-T04 (Membre 1)', () {
     // ------------------------------------------------------------
     // TEST 1 : Présence des 4 destinations de la NavigationBar
@@ -44,7 +53,7 @@ void main() {
       // Vérification du titre de l'écran recherche
       expect(find.text('Recherche de biens'), findsOneWidget);
       expect(find.text('Type de bien'), findsOneWidget);
-      expect(find.text('Villes populaires en Tunisie'), findsOneWidget);
+      expect(find.text('Gouvernorats de Tunisie (24)'), findsOneWidget);
       expect(find.text('Appliquer les filtres'), findsOneWidget);
     });
 

@@ -1,18 +1,20 @@
 {
   "expo": {
-    "name": "darlink_react_native",
-    "slug": "darlink_react_native",
+    "name": "DarLink",
+    "slug": "darlink",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "tn.darlink.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "DarLink a besoin d'accéder à votre position pour vous afficher les biens immobiliers à proximité sur la carte."
       }
     },
     "android": {
+      "package": "tn.darlink.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

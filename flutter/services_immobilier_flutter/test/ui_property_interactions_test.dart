@@ -123,7 +123,7 @@ void main() {
       await tester.tap(find.text('Envoyer la demande'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Demande de visite transmise et enregistrée dans PostgreSQL !'), findsOneWidget);
+      expect(find.text('Demande de visite transmise et enregistrée dans Cloud Firestore !'), findsOneWidget);
     });
 
     testWidgets('6. Bouton d\'appel et lien téléphone natif pour contacter le propriétaire', (tester) async {

@@ -6,12 +6,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:services_immobilier_flutter/features/properties/data/property_api_service.dart';
 import 'package:services_immobilier_flutter/main.dart';
+import 'fixtures/test_properties.dart';
 import 'test_helper.dart';
 
 void main() {
   setUpAll(() {
     HttpOverrides.global = MockHttpOverrides();
+    PropertyApiService.instance.injectTestFixtures(testFixtureProperties);
   });
 
   group("Suite de tests fonctionnels et d'interface — Services Immobilier", () {
