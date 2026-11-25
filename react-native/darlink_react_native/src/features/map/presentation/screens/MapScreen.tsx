@@ -196,13 +196,11 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     setZoom(14);
   };
 
-  // Source de tuiles haute disponibilité CartoDB / OSM (non bloquée, rapide, thème adaptatif)
+  // Source de tuiles haute disponibilité mondiale Esri ArcGIS (100% accessible, sans clé requise, aucun blocage)
   const getTileUri = (tile: { tx: number; ty: number }) => {
-    const subIdx = Math.abs(tile.tx + tile.ty) % 4;
-    const subdomain = ['a', 'b', 'c', 'd'][subIdx];
     return isDark
-      ? `https://${subdomain}.basemaps.cartocdn.com/dark_all/${zoom}/${tile.tx}/${tile.ty}.png`
-      : `https://${subdomain}.basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tile.tx}/${tile.ty}.png`;
+      ? `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${zoom}/${tile.ty}/${tile.tx}`
+      : `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${zoom}/${tile.ty}/${tile.tx}`;
   };
 
   return (
@@ -212,7 +210,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     >
       {/* 1. MOTEUR CARTOGRAPHIQUE SLIPPY MAP */}
       <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers}>
-        {/* A. TUILES OPENSTREETMAP / CARTODB COMPATIBLES EXPO GO & WEB */}
+        {/* A. TUILES CARTOGRAPHIQUES HAUTE DISPONIBILITÉ (SANS BLOCAGE NI CLÉ REQUISE) */}
         {visibleTiles.map((tile) => (
           <Image
             key={tile.key}
@@ -413,9 +411,9 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
         </TouchableOpacity>
       </View>
 
-      {/* 4. ATTRIBUTION LÉGALE OPENSTREETMAP */}
+      {/* 4. ATTRIBUTION LÉGALE */}
       <View style={[styles.attributionBadge, { bottom: selectedProperty ? 135 : 16 }]}>
-        <Text style={styles.attributionText}>© OpenStreetMap contributors</Text>
+        <Text style={styles.attributionText}>© Esri, HERE, Garmin, OpenStreetMap</Text>
       </View>
 
       {/* 5. CARTE D'APERÇU DU BIEN SÉLECTIONNÉ */}
