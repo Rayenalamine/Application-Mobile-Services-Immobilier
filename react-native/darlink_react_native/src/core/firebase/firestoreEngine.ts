@@ -348,3 +348,4 @@ export class FirestoreEngine {
 }
 
 export const firestoreEngine = FirestoreEngine.getInstance();
+

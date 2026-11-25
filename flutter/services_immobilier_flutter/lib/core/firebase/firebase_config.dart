@@ -4,9 +4,9 @@
 
 class FirebaseConfig {
   static const String apiKey = 'AIzaSyDarLinkTunisieDefaultKey2026';
-  static const String projectId = 'darlink-tunisie-immo';
-  static const String authDomain = 'darlink-tunisie-immo.firebaseapp.com';
-  static const String storageBucket = 'darlink-tunisie-immo.appspot.com';
+  static const String projectId = 'darlink-74715';
+  static const String authDomain = 'darlink-74715.firebaseapp.com';
+  static const String storageBucket = 'darlink-74715.firebasestorage.app';
   static const String messagingSenderId = '1029384756';
   static const String appId = '1:1029384756:web:darlinkimmoapp2026';
 
@@ -15,3 +15,4 @@ class FirebaseConfig {
 
   static String get authBaseUrl => 'https://identitytoolkit.googleapis.com/v1';
 }
+
