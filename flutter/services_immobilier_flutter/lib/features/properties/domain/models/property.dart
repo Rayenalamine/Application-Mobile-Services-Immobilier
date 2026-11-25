@@ -1,85 +1,90 @@
 // ============================================================
-// DARLINK — MODÈLE DE DONNÉES : PROPRIETE (V2 LUXURY PRO)
-// Modèle immuable enrichi pour l'interface moderne & galeries
+// DARLINK — MODÈLE DE DONNÉES : PROPRIETE (Flutter)
+// Modèle enrichi : gouvernorats, statuts d'annonce, traçabilité source,
+// précision géographique et relations propriétaire / agence.
 // ============================================================
 
-/// Représente un bien immobilier dans l'application DarLink.
-/// Cette classe est immuable et supporte les détails avancés (surface, commodités, agent).
+enum ListingStatus {
+  draft('DRAFT'),
+  pendingReview('PENDING_REVIEW'),
+  published('PUBLISHED'),
+  rejected('REJECTED'),
+  expired('EXPIRED'),
+  sold('SOLD'),
+  rented('RENTED'),
+  archived('ARCHIVED');
+
+  final String value;
+  const ListingStatus(this.value);
+
+  static ListingStatus fromString(String? raw) {
+    final upper = raw?.toUpperCase().trim() ?? 'PUBLISHED';
+    return ListingStatus.values.firstWhere(
+      (s) => s.value == upper,
+      orElse: () => ListingStatus.published,
+    );
+  }
+}
+
 class Propriete {
-  /// Identifiant unique du bien
   final String id;
-
-  /// Titre de l'annonce immobilière
   final String titre;
-
-  /// Localisation (quartier, ville en Tunisie)
   final String localisation;
-
-  /// Prix en Dinars Tunisiens (TND)
-  final double prix;
-
-  /// Type de bien : "Appartement", "Maison" ou "Villa"
-  final String type;
-
-  /// URL de l'image principale distante (Unsplash haute définition)
-  final String imageUrl;
-
-  /// Nombre de chambres à coucher
-  final int nombreChambres;
-
-  /// Nombre de salles de bain
-  final int nombreSallesDeBain;
-
-  /// Description complète du bien
-  final String description;
-
-  /// Surface en mètres carrés (m²)
-  final int surfaceM2;
-
-  /// Année de construction ou de rénovation
-  final int anneeConstruction;
-
-  /// Niveau de standing : "Haut Standing", "Standing Supérieur", etc.
-  final String standing;
-
-  /// Indique s'il s'agit d'une location (`true`) ou d'une vente (`false`)
-  final bool estLocation;
-
-  /// Galerie de photos supplémentaires (salon, chambre, cuisine)
-  final List<String> imagesGalerie;
-
-  /// Statut favori
-  final bool isFavorite;
-
-  /// Liste des commodités et atouts du bien
-  final List<String> commodites;
-
-  /// Nom de l'agent immobilier dédié
-  final String agentNom;
-
-  /// Téléphone de l'agent
-  final String agentTel;
-
-  /// Identifiant du propriétaire du bien
-  final String proprietaireId;
-
-  /// Ville (ex: Tunis, Sousse, Djerba)
+  final String governorate;
   final String ville;
+  final String neighborhood;
+  final double prix;
+  final bool priceOnRequest;
+  final String type;
+  final String imageUrl;
+  final int nombreChambres;
+  final int nombreSallesDeBain;
+  final String description;
+  final int surfaceM2;
+  final int anneeConstruction;
+  final String standing;
+  final bool estLocation;
+  final List<String> imagesGalerie;
+  final bool isFavorite;
+  final List<String> commodites;
+  final String agentNom;
+  final String agentTel;
+  final String proprietaireId;
+  final String? agencyId;
+  final String? agentId;
 
-  /// Coordonnées GPS (V8 Cartographie OpenStreetMap)
+  // Géolocalisation & confidentialité
   final double latitude;
   final double longitude;
+  final String coordinatePrecision; // VERIFIED | APPROXIMATE | CITY_CENTER | UNVERIFIED
+  final String addressVisibility; // AREA_ONLY | PUBLIC
 
-  /// Constructeur constant pour créer un objet Propriete immuable.
+  // Cycle de vie & traçabilité catalogue
+  final ListingStatus listingStatus;
+  final String? publishedAt;
+  final String? lastVerifiedAt;
+  final String? collectedAt;
+  final String? sourceName;
+  final String? sourceUrl;
+  final bool republicationAuthorized;
+  final String imagePermissionStatus;
+  final String? imageAttribution;
+  final String? createdAt;
+
   const Propriete({
     this.id = '1',
     this.proprietaireId = '1',
     this.ville = 'Tunis',
+    this.governorate = 'Tunis',
+    this.neighborhood = '',
     this.latitude = 36.8065,
     this.longitude = 10.1815,
+    this.coordinatePrecision = 'CITY_CENTER',
+    this.addressVisibility = 'AREA_ONLY',
     required this.titre,
     required this.localisation,
     required this.prix,
+    this.priceOnRequest = false,
     required this.type,
     required this.imageUrl,
     required this.nombreChambres,
@@ -99,19 +104,30 @@ class Propriete {
       'Balcon terrasse',
     ],
     this.agentNom = 'Propriétaire',
-    this.agentTel = '+216 71 888 999',
+    this.agentTel = '',
+    this.agencyId,
+    this.agentId,
+    this.listingStatus = ListingStatus.published,
+    this.publishedAt,
+    this.lastVerifiedAt,
+    this.collectedAt,
+    this.sourceName,
+    this.sourceUrl,
+    this.republicationAuthorized = false,
+    this.imagePermissionStatus = 'NONE_PLACEHOLDER_USED',
+    this.imageAttribution,
+    this.createdAt,
   });
 
-  /// Retourne le prix formaté avec séparateur de milliers (ex: 320000 -> "320 000").
   String get prixFormate => formaterPrix(prix);
 
-  /// Retourne le libellé complet du prix avec devise et période
-  String get prixAffiche => estLocation ? '$prixFormate DT/mois' : '$prixFormate DT';
+  String get prixAffiche {
+    if (priceOnRequest || prix <= 0) return 'Prix sur demande';
+    return estLocation ? '$prixFormate DT/mois' : '$prixFormate DT';
+  }
 
-  /// Calcule le prix au mètre carré
-  int get prixParM2 => surfaceM2 > 0 ? (prix / surfaceM2).round() : 0;
+  int get prixParM2 => (surfaceM2 > 0 && prix > 0) ? (prix / surfaceM2).round() : 0;
 
-  /// Fonction utilitaire statique pour formater un prix en dinars tunisiens.
   static String formaterPrix(double montant) {
     final entier = montant.round().toString();
     final buffer = StringBuffer();
@@ -127,12 +143,15 @@ class Propriete {
     return buffer.toString();
   }
 
-  /// Méthode de commodité copyWith
   Propriete copyWith({
     String? id,
     String? titre,
     String? localisation,
+    String? governorate,
+    String? ville,
+    String? neighborhood,
     double? prix,
+    bool? priceOnRequest,
     String? type,
     String? imageUrl,
     int? nombreChambres,
@@ -148,13 +167,27 @@ class Propriete {
     String? agentNom,
     String? agentTel,
     String? proprietaireId,
+    String? agencyId,
+    String? agentId,
+    double? latitude,
+    double? longitude,
+    String? coordinatePrecision,
+    String? addressVisibility,
+    ListingStatus? listingStatus,
+    String? sourceName,
+    String? sourceUrl,
+    String? lastVerifiedAt,
   }) {
     return Propriete(
       id: id ?? this.id,
       proprietaireId: proprietaireId ?? this.proprietaireId,
+      ville: ville ?? this.ville,
+      governorate: governorate ?? this.governorate,
+      neighborhood: neighborhood ?? this.neighborhood,
       titre: titre ?? this.titre,
       localisation: localisation ?? this.localisation,
       prix: prix ?? this.prix,
+      priceOnRequest: priceOnRequest ?? this.priceOnRequest,
       type: type ?? this.type,
       imageUrl: imageUrl ?? this.imageUrl,
       nombreChambres: nombreChambres ?? this.nombreChambres,
@@ -169,6 +202,22 @@ class Propriete {
       commodites: commodites ?? this.commodites,
       agentNom: agentNom ?? this.agentNom,
       agentTel: agentTel ?? this.agentTel,
+      agencyId: agencyId ?? this.agencyId,
+      agentId: agentId ?? this.agentId,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      coordinatePrecision: coordinatePrecision ?? this.coordinatePrecision,
+      addressVisibility: addressVisibility ?? this.addressVisibility,
+      listingStatus: listingStatus ?? this.listingStatus,
+      sourceName: sourceName ?? this.sourceName,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      lastVerifiedAt: lastVerifiedAt ?? this.lastVerifiedAt,
+      collectedAt: collectedAt,
+      publishedAt: publishedAt,
+      republicationAuthorized: republicationAuthorized,
+      imagePermissionStatus: imagePermissionStatus,
+      imageAttribution: imageAttribution,
+      createdAt: createdAt,
     );
   }
 }

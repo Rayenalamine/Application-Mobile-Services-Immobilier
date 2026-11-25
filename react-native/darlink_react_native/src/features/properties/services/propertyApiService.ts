@@ -1,23 +1,34 @@
 // ============================================================
 // DARLINK — SERVICE DES PROPRIÉTÉS CLOUD FIRESTORE (React Native)
-// Synchronisation cloud temps réel avec Cloud Firestore & résilience locale
+// Zéro donnée fictive en production. Requêtes structurées Firestore (:runQuery),
+// pagination, filtres multicritères, statuts d'annonce et relations réelles.
 // ============================================================
 
-import { firestoreEngine } from '../../../core/firebase/firestoreEngine';
-import { mockProperties } from '../data/mockProperties';
-import { Property, PropertyType } from '../domain/models/property';
+import { resolveFallbackCoordinates } from '../../../core/constants/tunisiaLocations';
+import {
+  firestoreEngine,
+  StructuredFieldFilter,
+  StructuredOrderBy,
+} from '../../../core/firebase/firestoreEngine';
+import { authService } from '../../auth/services/authService';
+import { ListingStatus, Property, PropertyType } from '../domain/models/property';
 
 export interface PropertyFilterParams {
+  governorate?: string;
   city?: string;
+  neighborhood?: string;
   type?: string;
   isRental?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  minArea?: number;
+  maxArea?: number;
   minBedrooms?: number;
+  minBathrooms?: number;
   search?: string;
-  sort?: string;
-  page?: number;
-  size?: number;
+  sort?: 'newest' | 'price_asc' | 'price_desc';
+  limit?: number;
+  offset?: number;
 }
 
 export interface CreatePropertyPayload {
@@ -26,7 +37,9 @@ export interface CreatePropertyPayload {
   type: string;
   price: number;
   location: string;
+  governorate?: string;
   city: string;
+  neighborhood?: string;
   bedrooms: number;
   bathrooms: number;
   surfaceM2: number;
@@ -38,27 +51,28 @@ export interface CreatePropertyPayload {
   imageUrl?: string;
   galleryUrls?: string[];
   amenities?: string[];
-  agentName?: string;
-  agentPhone?: string;
-  ownerId?: string;
+  listingStatus?: ListingStatus;
 }
 
-export interface SpringPropertyDto {
-  id: number | string;
+export interface FirestorePropertyDto {
+  id: string;
   title?: string;
   titre?: string;
-  description: string;
-  type: string;
+  description?: string;
+  type?: string;
   price?: number;
   prix?: number;
+  priceOnRequest?: boolean;
   location?: string;
   localisation?: string;
+  governorate?: string;
   city?: string;
+  neighborhood?: string;
   bedrooms?: number;
   nombreChambres?: number;
   bathrooms?: number;
   nombreSallesDeBain?: number;
-  surfaceM2: number;
+  surfaceM2?: number;
   yearBuilt?: number;
   anneeConstruction?: number;
   standing?: string;
@@ -66,26 +80,34 @@ export interface SpringPropertyDto {
   estLocation?: boolean;
   latitude?: number;
   longitude?: number;
-  imageUrl: string;
+  coordinatePrecision?: 'VERIFIED' | 'APPROXIMATE' | 'CITY_CENTER' | 'UNVERIFIED';
+  addressVisibility?: 'AREA_ONLY' | 'PUBLIC';
+  imageUrl?: string;
   galleryUrls?: string[];
-  imagesGalerie?: string[];
+  imagePermissionStatus?: 'OWNER_UPLOADED' | 'LICENSED' | 'NONE_PLACEHOLDER_USED';
+  imageAttribution?: string;
   amenities?: string[];
-  commodites?: string[];
   agentName?: string;
-  agentNom?: string;
   agentPhone?: string;
-  agentTel?: string;
   ownerId?: string;
+  agencyId?: string;
+  agentId?: string;
+  listingStatus?: ListingStatus;
+  publishedAt?: string;
+  lastVerifiedAt?: string;
+  collectedAt?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  republicationAuthorized?: boolean;
+  createdAt?: string;
 }
 
 class PropertyApiService {
   private static instance: PropertyApiService;
-  private cachedProperties: Property[] = [...mockProperties];
-  private isSeeded = false;
+  private cachedProperties: Property[] = [];
+  private testFixtures: Property[] | null = null;
 
-  private constructor() {
-    this.seedFirestoreIfEmpty();
-  }
+  private constructor() {}
 
   public static getInstance(): PropertyApiService {
     if (!PropertyApiService.instance) {
@@ -95,87 +117,111 @@ class PropertyApiService {
   }
 
   /**
-   * Initialise la collection Cloud Firestore avec le catalogue initial si vide
+   * Uniquement destiné aux tests unitaires isolés
    */
-  private async seedFirestoreIfEmpty(): Promise<void> {
-    if (this.isSeeded) return;
-    try {
-      const existing = await firestoreEngine.getCollection<SpringPropertyDto>('properties');
-      if (!existing || existing.length === 0) {
-        // Enregistrer les 13 propriétés dans Cloud Firestore
-        for (const prop of mockProperties) {
-          const docId = prop.id || String(Date.now());
-          await firestoreEngine.setDocument('properties', docId, {
-            id: docId,
-            title: prop.titre,
-            description: prop.description,
-            location: prop.localisation || '',
-            city: (prop.localisation || '').split(',').pop()?.trim() || 'Tunis',
-            price: prop.prix,
-            type: prop.type,
-            imageUrl: prop.imageUrl,
-            galleryUrls: prop.imagesGalerie || [],
-            bedrooms: prop.nombreChambres,
-            bathrooms: prop.nombreSallesDeBain,
-            surfaceM2: prop.surfaceM2,
-            yearBuilt: prop.anneeConstruction,
-            standing: prop.standing,
-            isRental: prop.estLocation,
-            latitude: prop.latitude || 36.8,
-            longitude: prop.longitude || 10.2,
-            amenities: prop.commodites || [],
-            agentName: prop.agentNom,
-            agentPhone: prop.agentTel,
-            ownerId: 'user_admin_1',
-            createdAt: new Date().toISOString(),
-          });
-        }
-      }
-      this.isSeeded = true;
-    } catch {
-      // Ignorer si hors-ligne
+  public injectTestFixtures(fixtures: Property[] | null): void {
+    this.testFixtures = fixtures;
+    if (fixtures) {
+      this.cachedProperties = [...fixtures];
     }
   }
 
   public async getProperties(params?: PropertyFilterParams): Promise<Property[]> {
-    try {
-      const docs = await firestoreEngine.getCollection<SpringPropertyDto>('properties');
-      if (Array.isArray(docs) && docs.length > 0) {
-        this.cachedProperties = docs.map((d) => this.mapDtoToProperty(d));
-      }
-    } catch {
-      // Utiliser le cache
+    if (this.testFixtures) {
+      return this.applySecondaryFilters(this.testFixtures, params);
     }
-    return this.filterLocal(params);
+
+    const limit = params?.limit ?? 30;
+    const offset = params?.offset ?? 0;
+
+    const whereFilters: StructuredFieldFilter[] = [
+      {
+        field: { fieldPath: 'listingStatus' },
+        op: 'EQUAL',
+        value: { stringValue: 'PUBLISHED' },
+      },
+    ];
+
+    if (params?.governorate && params.governorate !== 'Tous') {
+      whereFilters.push({
+        field: { fieldPath: 'governorate' },
+        op: 'EQUAL',
+        value: { stringValue: params.governorate },
+      });
+    }
+    if (params?.type && params.type !== 'Tous') {
+      whereFilters.push({
+        field: { fieldPath: 'type' },
+        op: 'EQUAL',
+        value: { stringValue: params.type },
+      });
+    }
+    if (params?.isRental !== undefined) {
+      whereFilters.push({
+        field: { fieldPath: 'isRental' },
+        op: 'EQUAL',
+        value: { booleanValue: params.isRental },
+      });
+    }
+
+    const orderBy: StructuredOrderBy[] = [];
+    if (params?.sort === 'price_asc') {
+      orderBy.push({ field: { fieldPath: 'price' }, direction: 'ASCENDING' });
+    } else if (params?.sort === 'price_desc') {
+      orderBy.push({ field: { fieldPath: 'price' }, direction: 'DESCENDING' });
+    } else {
+      orderBy.push({ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' });
+    }
+
+    let docs = await firestoreEngine.runStructuredQuery<FirestorePropertyDto>({
+      collectionId: 'properties',
+      whereFilters,
+      orderBy,
+      limit,
+      offset,
+    });
+
+    if (docs.length === 0 && whereFilters.length > 1) {
+      docs = await firestoreEngine.runStructuredQuery<FirestorePropertyDto>({
+        collectionId: 'properties',
+        whereFilters: whereFilters.slice(0, 1),
+        limit,
+        offset,
+      });
+    }
+    if (docs.length === 0 && offset === 0) {
+      docs = await firestoreEngine.getCollection<FirestorePropertyDto>('properties', limit);
+    }
+
+    const mapped = docs.map((d) => this.mapDtoToProperty(d));
+    if (offset === 0) {
+      this.cachedProperties = mapped;
+    } else {
+      this.cachedProperties = [...this.cachedProperties, ...mapped];
+    }
+
+    return this.applySecondaryFilters(mapped, params);
   }
 
-  public async getMapProperties(): Promise<Property[]> {
-    try {
-      const docs = await firestoreEngine.getCollection<SpringPropertyDto>('properties');
-      if (Array.isArray(docs) && docs.length > 0) {
-        this.cachedProperties = docs.map((d) => this.mapDtoToProperty(d));
-      }
-    } catch {
-      // Utiliser le cache
-    }
-    return this.cachedProperties.filter((p) => p.latitude !== undefined && p.longitude !== undefined);
+  public async getMapProperties(governorate?: string): Promise<Property[]> {
+    return this.getProperties({ governorate, limit: 60 });
   }
 
-  public async getUserProperties(ownerId?: string): Promise<Property[]> {
-    try {
-      const docs = await firestoreEngine.getCollection<SpringPropertyDto>('properties');
-      if (Array.isArray(docs) && docs.length > 0) {
-        this.cachedProperties = docs.map((d) => this.mapDtoToProperty(d));
-      }
-    } catch {
-      // Utiliser le cache
-    }
-
-    if (ownerId) {
-      const userProps = this.cachedProperties.filter((p) => p.agentNom === ownerId || p.id === '1' || p.id === '2');
-      return userProps.length > 0 ? userProps : this.cachedProperties.slice(0, 2);
-    }
-    return this.cachedProperties.slice(0, 2);
+  public async getUserProperties(): Promise<Property[]> {
+    const user = authService.getCurrentUser();
+    if (!user) return [];
+    const docs = await firestoreEngine.runStructuredQuery<FirestorePropertyDto>({
+      collectionId: 'properties',
+      whereFilters: [
+        {
+          field: { fieldPath: 'ownerId' },
+          op: 'EQUAL',
+          value: { stringValue: user.id },
+        },
+      ],
+      limit: 50,
+    });
+    return docs.map((d) => this.mapDtoToProperty(d));
   }
 
   public async getMyProperties(): Promise<Property[]> {
@@ -183,76 +229,97 @@ class PropertyApiService {
   }
 
   public async createProperty(payload: CreatePropertyPayload): Promise<Property> {
-    const newId = String(Date.now());
-    const propertyData = {
+    const user = authService.getCurrentUser();
+    if (!user) {
+      throw new Error('Authentification requise pour publier une annonce.');
+    }
+
+    const fallback = resolveFallbackCoordinates(payload.governorate || payload.city);
+    const hasCoords = payload.latitude !== undefined && payload.longitude !== undefined;
+    const gov = payload.governorate || fallback.governorate;
+    const newId = `prop_${Date.now()}`;
+    const nowIso = new Date().toISOString();
+    const img = (payload.imageUrl || '').trim();
+
+    const docData: Record<string, unknown> = {
       id: newId,
-      title: payload.title,
-      description: payload.description,
-      location: payload.location,
-      city: payload.city || payload.location.split(',').pop()?.trim() || 'Tunis',
+      title: payload.title.trim(),
+      description: payload.description.trim(),
+      location: payload.location.trim(),
+      governorate: gov,
+      city: payload.city.trim(),
+      neighborhood: payload.neighborhood?.trim() || '',
       price: payload.price,
+      priceOnRequest: payload.price <= 0,
       type: payload.type,
-      imageUrl: payload.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+      imageUrl: img,
       galleryUrls: payload.galleryUrls || [],
+      imagePermissionStatus: img ? 'OWNER_UPLOADED' : 'NONE_PLACEHOLDER_USED',
+      imageAttribution: img ? `Photo fournie par ${user.fullName}` : '',
       bedrooms: payload.bedrooms,
       bathrooms: payload.bathrooms,
       surfaceM2: payload.surfaceM2,
-      yearBuilt: payload.yearBuilt ?? 2024,
-      standing: payload.standing ?? 'Haut Standing',
+      yearBuilt: payload.yearBuilt ?? new Date().getFullYear(),
+      standing: payload.standing ?? 'Standard',
       isRental: payload.isRental ?? false,
-      latitude: payload.latitude ?? 36.8065,
-      longitude: payload.longitude ?? 10.1815,
-      amenities: payload.amenities ?? ['Climatisation', 'Ascenseur'],
-      agentName: payload.agentName || 'Propriétaire',
-      agentPhone: payload.agentPhone || '+216 71 888 999',
-      ownerId: payload.ownerId || 'current_user',
-      createdAt: new Date().toISOString(),
+      latitude: payload.latitude ?? fallback.latitude,
+      longitude: payload.longitude ?? fallback.longitude,
+      coordinatePrecision: hasCoords ? 'VERIFIED' : 'CITY_CENTER',
+      addressVisibility: 'AREA_ONLY',
+      amenities: payload.amenities ?? [],
+      agentName: user.fullName,
+      agentPhone: user.phone || '',
+      ownerId: user.id,
+      agencyId: user.agencyId || '',
+      listingStatus: payload.listingStatus || 'PUBLISHED',
+      republicationAuthorized: true,
+      sourceName: 'DarLink Direct',
+      publishedAt: nowIso,
+      lastVerifiedAt: nowIso,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
 
-    // Persistance dans Cloud Firestore
-    await firestoreEngine.setDocument('properties', newId, propertyData);
+    const ok = await firestoreEngine.setDocument('properties', newId, docData);
+    if (!ok) {
+      throw new Error('Échec de l’enregistrement dans Cloud Firestore (vérifiez vos droits).');
+    }
 
-    const prop = this.mapDtoToProperty(propertyData);
+    const prop = this.mapDtoToProperty(docData as unknown as FirestorePropertyDto);
     this.cachedProperties.unshift(prop);
     return prop;
   }
 
   public async updateProperty(id: string, payload: Partial<CreatePropertyPayload>): Promise<Property | null> {
-    const existing = this.cachedProperties.find((p) => p.id === id);
-    const updatedData = {
-      title: payload.title || existing?.titre || 'Titre mis à jour',
-      description: payload.description || existing?.description || '',
-      location: payload.location || existing?.localisation || 'Tunis, Tunisie',
-      city: payload.city || 'Tunis',
-      type: payload.type || existing?.type || 'Appartement',
-      price: payload.price ?? existing?.prix ?? 200000,
-      bedrooms: payload.bedrooms ?? existing?.nombreChambres ?? 2,
-      bathrooms: payload.bathrooms ?? existing?.nombreSallesDeBain ?? 1,
-      surfaceM2: payload.surfaceM2 ?? existing?.surfaceM2 ?? 100,
-      isRental: payload.isRental ?? existing?.estLocation ?? false,
-      imageUrl: payload.imageUrl || existing?.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
-      amenities: payload.amenities ?? existing?.commodites ?? [],
+    const safePatch: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
     };
+    if (payload.title !== undefined) safePatch.title = payload.title.trim();
+    if (payload.description !== undefined) safePatch.description = payload.description.trim();
+    if (payload.location !== undefined) safePatch.location = payload.location.trim();
+    if (payload.governorate !== undefined) safePatch.governorate = payload.governorate;
+    if (payload.city !== undefined) safePatch.city = payload.city;
+    if (payload.type !== undefined) safePatch.type = payload.type;
+    if (payload.price !== undefined) {
+      safePatch.price = payload.price;
+      safePatch.priceOnRequest = payload.price <= 0;
+    }
+    if (payload.bedrooms !== undefined) safePatch.bedrooms = payload.bedrooms;
+    if (payload.bathrooms !== undefined) safePatch.bathrooms = payload.bathrooms;
+    if (payload.surfaceM2 !== undefined) safePatch.surfaceM2 = payload.surfaceM2;
+    if (payload.isRental !== undefined) safePatch.isRental = payload.isRental;
+    if (payload.imageUrl !== undefined) safePatch.imageUrl = payload.imageUrl;
+    if (payload.amenities !== undefined) safePatch.amenities = payload.amenities;
+    if (payload.listingStatus !== undefined) safePatch.listingStatus = payload.listingStatus;
 
-    // Mise à jour dans Cloud Firestore
-    await firestoreEngine.setDocument('properties', id, updatedData);
+    const ok = await firestoreEngine.patchFields('properties', id, safePatch);
+    if (!ok) return null;
 
-    const index = this.cachedProperties.findIndex((p) => p.id === id);
-    if (index !== -1) {
-      const current = this.cachedProperties[index];
-      const updated: Property = {
-        ...current,
-        titre: updatedData.title,
-        prix: updatedData.price,
-        description: updatedData.description,
-        localisation: updatedData.location,
-        type: (updatedData.type as PropertyType) || current.type,
-        imageUrl: updatedData.imageUrl,
-        nombreChambres: updatedData.bedrooms,
-        nombreSallesDeBain: updatedData.bathrooms,
-      };
-      this.cachedProperties[index] = updated;
+    const fresh = await firestoreEngine.getDocument<FirestorePropertyDto>('properties', id);
+    if (fresh) {
+      const updated = this.mapDtoToProperty(fresh);
+      const idx = this.cachedProperties.findIndex((p) => p.id === id);
+      if (idx !== -1) this.cachedProperties[idx] = updated;
       return updated;
     }
     return null;
@@ -260,59 +327,113 @@ class PropertyApiService {
 
   public async deleteProperty(id: string | number): Promise<boolean> {
     const strId = String(id);
-    // Suppression dans Cloud Firestore
-    await firestoreEngine.deleteDocument('properties', strId);
-    this.cachedProperties = this.cachedProperties.filter((p) => p.id !== strId);
-    return true;
+    const ok = await firestoreEngine.deleteDocument('properties', strId);
+    if (ok) {
+      this.cachedProperties = this.cachedProperties.filter((p) => p.id !== strId);
+    }
+    return ok;
   }
 
-  private filterLocal(params?: PropertyFilterParams): Property[] {
-    return this.cachedProperties.filter((p) => {
-      if (params?.city && params.city !== 'Toutes' && !p.localisation.toLowerCase().includes(params.city.toLowerCase())) {
-        return false;
+  private applySecondaryFilters(input: Property[], params?: PropertyFilterParams): Property[] {
+    const filtered = input.filter((p) => {
+      if (p.listingStatus && p.listingStatus !== 'PUBLISHED') return false;
+      if (params?.governorate && params.governorate !== 'Tous') {
+        if ((p.governorate || '').toLowerCase() !== params.governorate.toLowerCase()) return false;
+      }
+      if (params?.city && params.city !== 'Toutes') {
+        const c = params.city.toLowerCase();
+        if (
+          !p.localisation.toLowerCase().includes(c) &&
+          !(p.city || '').toLowerCase().includes(c) &&
+          !(p.governorate || '').toLowerCase().includes(c)
+        ) {
+          return false;
+        }
+      }
+      if (params?.neighborhood) {
+        const n = params.neighborhood.toLowerCase();
+        if (!(p.neighborhood || '').toLowerCase().includes(n) && !p.localisation.toLowerCase().includes(n)) {
+          return false;
+        }
       }
       if (params?.type && params.type !== 'Tous' && p.type.toLowerCase() !== params.type.toLowerCase()) {
         return false;
       }
-      if (params?.isRental !== undefined && p.estLocation !== params.isRental) {
-        return false;
-      }
-      if (params?.minPrice && p.prix < params.minPrice) return false;
+      if (params?.isRental !== undefined && Boolean(p.estLocation) !== params.isRental) return false;
+      if (params?.minPrice && (p.priceOnRequest || p.prix < params.minPrice)) return false;
       if (params?.maxPrice && p.prix > params.maxPrice) return false;
+      if (params?.minArea && (p.surfaceM2 ?? 0) < params.minArea) return false;
+      if (params?.maxArea && (p.surfaceM2 ?? 0) > params.maxArea) return false;
       if (params?.minBedrooms && p.nombreChambres < params.minBedrooms) return false;
+      if (params?.minBathrooms && p.nombreSallesDeBain < params.minBathrooms) return false;
       if (params?.search) {
-        const query = params.search.toLowerCase();
+        const q = params.search.toLowerCase();
         return (
-          p.titre.toLowerCase().includes(query) ||
-          p.localisation.toLowerCase().includes(query) ||
-          p.description.toLowerCase().includes(query)
+          p.titre.toLowerCase().includes(q) ||
+          p.localisation.toLowerCase().includes(q) ||
+          (p.governorate || '').toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q)
         );
       }
       return true;
     });
+
+    if (params?.sort === 'price_asc') {
+      filtered.sort((a, b) => a.prix - b.prix);
+    } else if (params?.sort === 'price_desc') {
+      filtered.sort((a, b) => b.prix - a.prix);
+    }
+    return filtered;
   }
 
-  public mapDtoToProperty(dto: SpringPropertyDto): Property {
+  public mapDtoToProperty(dto: FirestorePropertyDto): Property {
+    const city = dto.city || 'Tunis';
+    const fallback = resolveFallbackCoordinates(dto.governorate || city);
+    const hasCoords =
+      typeof dto.latitude === 'number' &&
+      typeof dto.longitude === 'number' &&
+      Math.abs(dto.latitude) > 0.1 &&
+      Math.abs(dto.longitude) > 0.1;
+
     return {
       id: String(dto.id),
-      titre: dto.title || dto.titre || 'Propriété Prestige',
-      localisation: dto.location || dto.localisation || 'Tunis, Tunisie',
+      titre: dto.title || dto.titre || 'Bien immobilier',
+      localisation: dto.location || dto.localisation || `${city}, ${fallback.governorate}`,
+      governorate: dto.governorate || fallback.governorate,
+      city,
+      neighborhood: dto.neighborhood || '',
       prix: dto.price ?? dto.prix ?? 0,
-      type: ((dto.type as PropertyType) || 'Appartement'),
-      imageUrl: dto.imageUrl || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+      priceOnRequest: dto.priceOnRequest ?? false,
+      type: (dto.type as PropertyType) || 'Appartement',
+      imageUrl: dto.imageUrl || '',
       nombreChambres: dto.bedrooms ?? dto.nombreChambres ?? 1,
       nombreSallesDeBain: dto.bathrooms ?? dto.nombreSallesDeBain ?? 1,
-      surfaceM2: dto.surfaceM2 || 100,
-      anneeConstruction: dto.yearBuilt ?? dto.anneeConstruction ?? 2022,
-      standing: dto.standing || 'Haut Standing',
+      surfaceM2: dto.surfaceM2 ?? 0,
+      anneeConstruction: dto.yearBuilt ?? dto.anneeConstruction ?? 2024,
+      standing: dto.standing || 'Standard',
       estLocation: dto.isRental ?? dto.estLocation ?? false,
-      latitude: dto.latitude,
-      longitude: dto.longitude,
-      imagesGalerie: dto.galleryUrls || dto.imagesGalerie || [],
-      commodites: dto.amenities || dto.commodites || [],
+      latitude: hasCoords ? dto.latitude : fallback.latitude,
+      longitude: hasCoords ? dto.longitude : fallback.longitude,
+      coordinatePrecision: hasCoords ? dto.coordinatePrecision || 'APPROXIMATE' : 'CITY_CENTER',
+      addressVisibility: dto.addressVisibility || 'AREA_ONLY',
+      imagesGalerie: dto.galleryUrls || [],
+      commodites: dto.amenities || [],
       description: dto.description || '',
-      agentNom: dto.agentName || dto.agentNom || 'Propriétaire',
-      agentTel: dto.agentPhone || dto.agentTel || '+216 71 888 999',
+      agentNom: dto.agentName || 'Propriétaire',
+      agentTel: dto.agentPhone || '',
+      ownerId: dto.ownerId || '',
+      agencyId: dto.agencyId || '',
+      agentId: dto.agentId || '',
+      listingStatus: dto.listingStatus || 'PUBLISHED',
+      publishedAt: dto.publishedAt,
+      lastVerifiedAt: dto.lastVerifiedAt,
+      collectedAt: dto.collectedAt,
+      sourceName: dto.sourceName,
+      sourceUrl: dto.sourceUrl,
+      republicationAuthorized: dto.republicationAuthorized ?? false,
+      imagePermissionStatus: dto.imagePermissionStatus || 'NONE_PLACEHOLDER_USED',
+      imageAttribution: dto.imageAttribution,
+      createdAt: dto.createdAt,
     };
   }
 }

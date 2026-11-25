@@ -1,62 +1,103 @@
 // ============================================================
 // DARLINK — MODÈLE DE DONNÉES : PROPERTY (React Native Luxe)
-// Représente une annonce immobilière avec caractéristiques enrichies
+// Modèle enrichi : gouvernorats, statuts légaux, traçabilité source,
+// précision géographique et relations propriétaire / agence.
 // ============================================================
 
-export type PropertyType = 'Appartement' | 'Maison' | 'Villa' | 'Studio';
+export type PropertyType =
+  | 'Appartement'
+  | 'Maison'
+  | 'Villa'
+  | 'Studio'
+  | 'Terrain'
+  | 'Commercial';
+
+export type ListingStatus =
+  | 'DRAFT'
+  | 'PENDING_REVIEW'
+  | 'PUBLISHED'
+  | 'REJECTED'
+  | 'EXPIRED'
+  | 'SOLD'
+  | 'RENTED'
+  | 'ARCHIVED';
+
+export type CoordinatePrecision =
+  | 'VERIFIED'
+  | 'APPROXIMATE'
+  | 'CITY_CENTER'
+  | 'UNVERIFIED';
+
+export type AddressVisibility = 'AREA_ONLY' | 'PUBLIC';
+
+export type ImagePermissionStatus =
+  | 'OWNER_UPLOADED'
+  | 'LICENSED'
+  | 'NONE_PLACEHOLDER_USED';
 
 /**
  * Interface immuable représentant un bien immobilier dans l'application DarLink.
  */
 export interface Property {
-  /** Identifiant unique ou titre clé */
   readonly id?: string;
-  /** Titre de l'annonce immobilière */
   readonly titre: string;
-  /** Localisation (quartier, ville en Tunisie) */
   readonly localisation: string;
-  /** Prix en Dinars Tunisiens (TND) */
+  readonly governorate?: string;
+  readonly city?: string;
+  readonly neighborhood?: string;
   readonly prix: number;
-  /** Type de bien : 'Appartement' | 'Maison' | 'Villa' */
+  readonly priceOnRequest?: boolean;
   readonly type: PropertyType;
-  /** URL de l'image principale distante (Unsplash) */
   readonly imageUrl: string;
-  /** Nombre de chambres à coucher */
   readonly nombreChambres: number;
-  /** Nombre de salles de bain */
   readonly nombreSallesDeBain: number;
-  /** Description complète du bien */
   readonly description: string;
 
-  /** Surface habitable en m² */
   readonly surfaceM2?: number;
-  /** Année de construction */
   readonly anneeConstruction?: number;
-  /** Niveau de standing (ex: 'Haut standing', 'Prestige') */
   readonly standing?: string;
-  /** Indique si le bien est proposé à la location */
   readonly estLocation?: boolean;
-  /** Galerie de photos intérieures complémentaires */
   readonly imagesGalerie?: string[];
-  /** Atouts & commodités (ex: Piscine, Vue mer, Jardin, Climatisation) */
   readonly commodites?: string[];
-  /** Nom de l'agent immobilier dédié */
   readonly agentNom?: string;
-  /** Téléphone de contact de l'agent */
   readonly agentTel?: string;
-  /** Prix au mètre carré */
+  readonly ownerId?: string;
+  readonly agencyId?: string;
+  readonly agentId?: string;
   readonly prixParM2?: number;
-  /** Coordonnées GPS (V8 Cartographie) */
+
+  // Géolocalisation & confidentialité
   readonly latitude?: number;
   readonly longitude?: number;
-  /** État de favori */
+  readonly coordinatePrecision?: CoordinatePrecision;
+  readonly addressVisibility?: AddressVisibility;
+
+  // Cycle de vie & traçabilité catalogue
+  readonly listingStatus?: ListingStatus;
+  readonly publishedAt?: string;
+  readonly lastVerifiedAt?: string;
+  readonly collectedAt?: string;
+  readonly sourceName?: string;
+  readonly sourceUrl?: string;
+  readonly republicationAuthorized?: boolean;
+  readonly imagePermissionStatus?: ImagePermissionStatus;
+  readonly imageAttribution?: string;
+  readonly createdAt?: string;
+
   readonly isFavorite?: boolean;
 }
 
 /**
  * Formate un montant en Dinars Tunisiens avec séparateur de milliers (ex: 320000 -> "320 000 DT").
  */
-export function formatPrice(price: number, isRental: boolean = false): string {
+export function formatPrice(
+  price: number,
+  isRental: boolean = false,
+  priceOnRequest: boolean = false
+): string {
+  if (priceOnRequest || !price || price <= 0) {
+    return 'Prix sur demande';
+  }
   const integerPart = Math.floor(price).toString();
   const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   return isRental ? `${formatted} DT/mois` : `${formatted} DT`;

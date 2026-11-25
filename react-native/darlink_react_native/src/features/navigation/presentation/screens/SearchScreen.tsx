@@ -1,9 +1,10 @@
 // ============================================================
-// DARLINK — ÉCRAN DE RECHERCHE & FILTRES MULTICRITÈRES (React Native V5-T02)
-// Recherche textuelle réelle, filtres dynamiques, budget & thèmes
+// DARLINK — RECHERCHE & FILTRES AVANCÉS CLOUD FIRESTORE (React Native)
+// 24 Gouvernorats, transaction, type, prix/surface min-max, chambres, SDB, tri & pagination.
+// Icônes Lucide sans emoji.
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,75 +13,121 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
+import { Map as MapIcon, RotateCcw, Search, X, MapPin } from 'lucide-react-native';
+import { TUNISIA_GOVERNORATES } from '../../../../core/constants/tunisiaLocations';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
+import { EmptyStateView } from '../../../../core/components/EmptyStateView';
 import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
 
 const SEGMENTS = ['Tous', 'Acheter', 'Louer'] as const;
-const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison', 'Penthouse'] as const;
-const BEDROOMS = ['Tous', 'Studio', '1+', '2+', '3+', '4+'] as const;
-const CITIES = ['Tunis', 'La Marsa', 'Sousse', 'Hammamet', 'Djerba', 'Monastir', 'Sfax'] as const;
+const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison', 'Studio', 'Terrain', 'Commercial'] as const;
+const BEDROOMS = ['Tous', '1+', '2+', '3+', '4+'] as const;
+const BATHROOMS = ['Tous', '1+', '2+', '3+'] as const;
+const SORT_OPTIONS = [
+  { key: 'newest', label: 'Plus récentes' },
+  { key: 'price_asc', label: 'Prix croissant' },
+  { key: 'price_desc', label: 'Prix décroissant' },
+] as const;
 
 export const SearchScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedSegment, setSelectedSegment] = useState<string>('Tous');
   const [selectedType, setSelectedType] = useState<string>('Tous');
   const [selectedBedrooms, setSelectedBedrooms] = useState<string>('Tous');
-  const [selectedCity, setSelectedCity] = useState<string>('');
-  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
-  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
+  const [selectedBathrooms, setSelectedBathrooms] = useState<string>('Tous');
+  const [selectedGov, setSelectedGov] = useState<string>('');
+  const [minPriceStr, setMinPriceStr] = useState<string>('');
+  const [maxPriceStr, setMaxPriceStr] = useState<string>('');
+  const [minAreaStr, setMinAreaStr] = useState<string>('');
+  const [maxAreaStr, setMaxAreaStr] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc'>('newest');
+  const [limit, setLimit] = useState<number>(20);
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [mapFocusProperty, setMapFocusProperty] = useState<Property | null>(null);
   const [showMap, setShowMap] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const { isDark, colors } = useTheme();
 
-  useEffect(() => {
-    fetchFilteredProperties();
-  }, [selectedSegment, selectedType, selectedCity, selectedBedrooms, minPrice, maxPrice]);
-
-  const fetchFilteredProperties = async () => {
+  const fetchFilteredProperties = useCallback(async () => {
     setLoading(true);
-    let minBeds: number | undefined;
-    if (selectedBedrooms === '1+') minBeds = 1;
-    if (selectedBedrooms === '2+') minBeds = 2;
-    if (selectedBedrooms === '3+') minBeds = 3;
-    if (selectedBedrooms === '4+') minBeds = 4;
+    const parseOpt = (val: string) => {
+      const n = Number(val.trim());
+      return val.trim() && !isNaN(n) && n >= 0 ? n : undefined;
+    };
+
+    const minBeds =
+      selectedBedrooms === '1+' ? 1 : selectedBedrooms === '2+' ? 2 : selectedBedrooms === '3+' ? 3 : selectedBedrooms === '4+' ? 4 : undefined;
+    const minBaths =
+      selectedBathrooms === '1+' ? 1 : selectedBathrooms === '2+' ? 2 : selectedBathrooms === '3+' ? 3 : undefined;
 
     const list = await propertyApiService.getProperties({
       search: searchQuery.trim() || undefined,
-      city: selectedCity && selectedCity !== 'Toutes' ? selectedCity : undefined,
+      governorate: selectedGov || undefined,
       type: selectedType !== 'Tous' ? selectedType : undefined,
       isRental: selectedSegment === 'Louer' ? true : selectedSegment === 'Acheter' ? false : undefined,
       minBedrooms: minBeds,
-      minPrice: minPrice,
-      maxPrice: maxPrice,
+      minBathrooms: minBaths,
+      minPrice: parseOpt(minPriceStr),
+      maxPrice: parseOpt(maxPriceStr),
+      minArea: parseOpt(minAreaStr),
+      maxArea: parseOpt(maxAreaStr),
+      sort: sortBy,
+      limit,
     });
     setProperties(list);
     setLoading(false);
-  };
+  }, [
+    searchQuery,
+    selectedGov,
+    selectedType,
+    selectedSegment,
+    selectedBedrooms,
+    selectedBathrooms,
+    minPriceStr,
+    maxPriceStr,
+    minAreaStr,
+    maxAreaStr,
+    sortBy,
+    limit,
+  ]);
+
+  useEffect(() => {
+    fetchFilteredProperties();
+  }, [fetchFilteredProperties]);
 
   const handleReset = () => {
     setSearchQuery('');
     setSelectedSegment('Tous');
     setSelectedType('Tous');
-    setSelectedCity('');
+    setSelectedGov('');
     setSelectedBedrooms('Tous');
-    setMinPrice(undefined);
-    setMaxPrice(undefined);
+    setSelectedBathrooms('Tous');
+    setMinPriceStr('');
+    setMaxPriceStr('');
+    setMinAreaStr('');
+    setMaxAreaStr('');
+    setSortBy('newest');
+    setLimit(20);
   };
 
   if (showMap) {
     return (
       <MapScreen
-        onBack={() => setShowMap(false)}
+        initialProperty={mapFocusProperty}
+        onBack={() => {
+          setMapFocusProperty(null);
+          setShowMap(false);
+        }}
         onSelectProperty={(p) => {
+          setMapFocusProperty(null);
           setShowMap(false);
           setSelectedProperty(p);
         }}
@@ -93,17 +140,14 @@ export const SearchScreen: React.FC = () => {
       <PropertyDetailsScreen
         property={selectedProperty}
         onBack={() => setSelectedProperty(null)}
+        onLocateOnMap={(prop) => {
+          setSelectedProperty(null);
+          setMapFocusProperty(prop);
+          setShowMap(true);
+        }}
       />
     );
   }
-
-  const handleApply = () => {
-    fetchFilteredProperties();
-    Alert.alert(
-      'Filtres appliqués',
-      `${properties.length} bien(s) trouvé(s) dans la base de données.`
-    );
-  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -112,53 +156,30 @@ export const SearchScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. BARRE SUPÉRIEURE */}
         <View style={styles.headerBar}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            Recherche de biens
-          </Text>
-
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Recherche avancée</Text>
           <View style={styles.headerRightActions}>
             <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              style={[styles.glassCircleBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => setShowMap(true)}
-              activeOpacity={0.8}
+              accessibilityLabel="Carte"
             >
-              <Text style={styles.circleIcon}>🗺️</Text>
+              <MapIcon size={17} color={colors.accentBlue} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.glassCircleBtn,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
+              style={[styles.glassCircleBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={handleReset}
-              activeOpacity={0.8}
+              accessibilityLabel="Réinitialiser"
             >
-              <Text style={styles.circleIcon}>🔄</Text>
+              <RotateCcw size={17} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 2. CHAMP DE RECHERCHE TEXTUELLE RÉEL (V5) */}
-        <View
-          style={[
-            styles.searchBox,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.searchIconContainer,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
-            ]}
-          >
-            <Text style={styles.searchBoxIcon}>🔍</Text>
+        {/* CHAMP TEXTE */}
+        <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.searchIconContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F2F5' }]}>
+            <Search size={17} color={colors.accentBlue} />
           </View>
           <TextInput
             testID="search_input"
@@ -167,68 +188,30 @@ export const SearchScreen: React.FC = () => {
               { color: colors.textPrimary },
               Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
             ]}
-            placeholder="Rechercher par titre, quartier, mot-clé..."
+            placeholder="Ville, délégation, résidence, mot-clé..."
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-            }}
-            onSubmitEditing={fetchFilteredProperties}
+            onChangeText={setSearchQuery}
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => {
-                setSearchQuery('');
-                fetchFilteredProperties();
-              }}
-              style={styles.clearBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Effacer la recherche"
-            >
-              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>✕</Text>
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
+              <X size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* 3. CONTRÔLEUR SEGMENTÉ : TOUS / ACHETER / LOUER */}
-        <View
-          style={[
-            styles.segmentedControl,
-            {
-              backgroundColor: isDark ? '#181920' : '#E9EBF0',
-              borderColor: colors.border,
-            },
-          ]}
-        >
+        {/* SEGMENT TRANSACTION */}
+        <View style={[styles.segmentedControl, { backgroundColor: isDark ? '#181920' : '#E9EBF0', borderColor: colors.border }]}>
           {SEGMENTS.map((seg) => {
             const isSelected = selectedSegment === seg;
             return (
               <TouchableOpacity
                 key={seg}
-                style={[
-                  styles.segmentButton,
-                  isSelected && {
-                    backgroundColor: colors.accentBlue,
-                    shadowColor: colors.accentBlue,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 6,
-                    elevation: 3,
-                  },
-                ]}
+                style={[styles.segmentButton, isSelected && { backgroundColor: colors.accentBlue }]}
                 onPress={() => setSelectedSegment(seg)}
-                activeOpacity={0.85}
               >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    {
-                      color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                      fontWeight: isSelected ? '800' : '600',
-                    },
-                  ]}
-                >
+                <Text style={[styles.segmentText, { color: isSelected ? '#FFFFFF' : colors.textSecondary, fontWeight: isSelected ? '800' : '600' }]}>
                   {seg}
                 </Text>
               </TouchableOpacity>
@@ -236,36 +219,56 @@ export const SearchScreen: React.FC = () => {
           })}
         </View>
 
-        {/* 4. SÉLECTION TYPE DE BIEN */}
+        {/* 24 GOUVERNORATS DE TUNISIE */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Type de bien
-          </Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Gouvernorat (24)</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            <TouchableOpacity
+              style={[
+                styles.pillButton,
+                { backgroundColor: !selectedGov ? colors.accentBlue : colors.surface, borderColor: !selectedGov ? colors.accentBlue : colors.border },
+              ]}
+              onPress={() => setSelectedGov('')}
+            >
+              <Text style={[styles.pillText, { color: !selectedGov ? '#FFFFFF' : colors.textSecondary, fontWeight: '600' }]}>
+                Tous
+              </Text>
+            </TouchableOpacity>
+            {TUNISIA_GOVERNORATES.map((g) => {
+              const active = selectedGov === g.nameFr;
+              return (
+                <TouchableOpacity
+                  key={g.code}
+                  style={[
+                    styles.pillButton,
+                    styles.cityPill,
+                    { backgroundColor: active ? colors.accentBlue : colors.surface, borderColor: active ? colors.accentBlue : colors.border },
+                  ]}
+                  onPress={() => setSelectedGov(active ? '' : g.nameFr)}
+                >
+                  <MapPin size={12} color={active ? '#FFFFFF' : colors.accentBlue} />
+                  <Text style={[styles.pillText, { color: active ? '#FFFFFF' : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>
+                    {g.nameFr}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* TYPE DE BIEN */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Type de bien</Text>
           <View style={styles.pillsRow}>
             {PROPERTY_TYPES.map((type) => {
-              const isSelected = selectedType === type;
+              const active = selectedType === type;
               return (
                 <TouchableOpacity
                   key={type}
-                  style={[
-                    styles.pillButton,
-                    {
-                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
-                      borderColor: isSelected ? colors.accentBlue : colors.border,
-                    },
-                  ]}
+                  style={[styles.pillButton, { backgroundColor: active ? colors.accentBlue : colors.surface, borderColor: active ? colors.accentBlue : colors.border }]}
                   onPress={() => setSelectedType(type)}
-                  activeOpacity={0.8}
                 >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      {
-                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                        fontWeight: isSelected ? '700' : '500',
-                      },
-                    ]}
-                  >
+                  <Text style={[styles.pillText, { color: active ? '#FFFFFF' : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>
                     {type}
                   </Text>
                 </TouchableOpacity>
@@ -274,39 +277,87 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* 5. VILLES POPULAIRES EN TUNISIE */}
+        {/* BUDGET & SURFACE MIN/MAX */}
+        <View style={styles.rangeGrid}>
+          <TextInput
+            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+            placeholder="Prix min (DT)"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numeric"
+            value={minPriceStr}
+            onChangeText={setMinPriceStr}
+          />
+          <TextInput
+            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+            placeholder="Prix max (DT)"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numeric"
+            value={maxPriceStr}
+            onChangeText={setMaxPriceStr}
+          />
+        </View>
+        <View style={styles.rangeGrid}>
+          <TextInput
+            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+            placeholder="Surface min (m²)"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numeric"
+            value={minAreaStr}
+            onChangeText={setMinAreaStr}
+          />
+          <TextInput
+            style={[styles.rangeInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+            placeholder="Surface max (m²)"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="numeric"
+            value={maxAreaStr}
+            onChangeText={setMaxAreaStr}
+          />
+        </View>
+
+        {/* CHAMBRES & SALLES DE BAIN */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Villes populaires en Tunisie
-          </Text>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Chambres & Salles de bain</Text>
           <View style={styles.pillsRow}>
-            {CITIES.map((city) => {
-              const isSelected = selectedCity === city;
+            {BEDROOMS.map((b) => (
+              <TouchableOpacity
+                key={'bed_' + b}
+                style={[styles.pillButton, { backgroundColor: selectedBedrooms === b ? colors.accentBlue : colors.surface, borderColor: selectedBedrooms === b ? colors.accentBlue : colors.border }]}
+                onPress={() => setSelectedBedrooms(b)}
+              >
+                <Text style={[styles.pillText, { color: selectedBedrooms === b ? '#FFFFFF' : colors.textSecondary }]}>
+                  {b === 'Tous' ? 'Ch: Toutes' : `Ch: ${b}`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {BATHROOMS.map((b) => (
+              <TouchableOpacity
+                key={'bath_' + b}
+                style={[styles.pillButton, { backgroundColor: selectedBathrooms === b ? colors.accentBlue : colors.surface, borderColor: selectedBathrooms === b ? colors.accentBlue : colors.border }]}
+                onPress={() => setSelectedBathrooms(b)}
+              >
+                <Text style={[styles.pillText, { color: selectedBathrooms === b ? '#FFFFFF' : colors.textSecondary }]}>
+                  {b === 'Tous' ? 'SDB: Toutes' : `SDB: ${b}`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* TRI */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Trier par</Text>
+          <View style={styles.pillsRow}>
+            {SORT_OPTIONS.map((opt) => {
+              const active = sortBy === opt.key;
               return (
                 <TouchableOpacity
-                  key={city}
-                  style={[
-                    styles.pillButton,
-                    styles.cityPill,
-                    {
-                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
-                      borderColor: isSelected ? colors.accentBlue : colors.border,
-                    },
-                  ]}
-                  onPress={() => setSelectedCity(isSelected ? '' : city)}
-                  activeOpacity={0.8}
+                  key={opt.key}
+                  style={[styles.pillButton, { backgroundColor: active ? colors.accentBlue : colors.surface, borderColor: active ? colors.accentBlue : colors.border }]}
+                  onPress={() => setSortBy(opt.key)}
                 >
-                  <Text style={[styles.cityPin, isSelected && { color: '#FFFFFF' }]}>📍</Text>
-                  <Text
-                    style={[
-                      styles.pillText,
-                      {
-                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                        fontWeight: isSelected ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {city}
+                  <Text style={[styles.pillText, { color: active ? '#FFFFFF' : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>
+                    {opt.label}
                   </Text>
                 </TouchableOpacity>
               );
@@ -314,198 +365,56 @@ export const SearchScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* 6. NOMBRE DE CHAMBRES */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Nombre de chambres
-          </Text>
-          <View style={styles.pillsRow}>
-            {BEDROOMS.map((bed) => {
-              const isSelected = selectedBedrooms === bed;
-              return (
-                <TouchableOpacity
-                  key={bed}
-                  style={[
-                    styles.pillButton,
-                    {
-                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
-                      borderColor: isSelected ? colors.accentBlue : colors.border,
-                    },
-                  ]}
-                  onPress={() => setSelectedBedrooms(bed)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      {
-                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                        fontWeight: isSelected ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {bed}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* 7. FOURCHETTE DE PRIX */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Budget (DT)
-          </Text>
-          <View style={styles.pillsRow}>
-            {[
-              { label: 'Tous prix', min: undefined, max: undefined },
-              { label: '< 300k DT', min: undefined, max: 300000 },
-              { label: '300k - 600k DT', min: 300000, max: 600000 },
-              { label: '> 600k DT', min: 600000, max: undefined },
-            ].map((budget, i) => {
-              const isSelected = minPrice === budget.min && maxPrice === budget.max;
-              return (
-                <TouchableOpacity
-                  key={i}
-                  style={[
-                    styles.pillButton,
-                    {
-                      backgroundColor: isSelected ? colors.accentBlue : colors.surface,
-                      borderColor: isSelected ? colors.accentBlue : colors.border,
-                    },
-                  ]}
-                  onPress={() => {
-                    setMinPrice(budget.min);
-                    setMaxPrice(budget.max);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      {
-                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                        fontWeight: isSelected ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {budget.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* 8. RÉSULTATS DYNAMIQUES EN TEMPS RÉEL */}
+        {/* RÉSULTATS */}
         <View style={styles.resultsHeaderRow}>
           <Text style={[styles.resultsCountText, { color: colors.textPrimary }]}>
-            Résultats correspondants ({properties.length})
+            Résultats ({properties.length})
           </Text>
-          {(selectedCity || selectedType !== 'Tous' || selectedBedrooms !== 'Tous' || selectedSegment !== 'Tous' || searchQuery || minPrice !== undefined) && (
-            <TouchableOpacity onPress={handleReset}>
-              <Text style={{ color: colors.accentBlue, fontWeight: '700', fontSize: 13 }}>
-                Réinitialiser
-              </Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={handleReset}>
+            <Text style={{ color: colors.accentBlue, fontWeight: '700', fontSize: 13 }}>Réinitialiser</Text>
+          </TouchableOpacity>
         </View>
 
-        {properties.length === 0 ? (
-          <View
-            style={[
-              styles.emptyStateBox,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-              Aucun bien ne correspond à ces critères
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Essayez de réinitialiser la recherche ou de sélectionner une autre ville.
-            </Text>
-            <TouchableOpacity
-              style={[styles.resetButton, { backgroundColor: colors.accentBlue }]}
-              onPress={handleReset}
-            >
-              <Text style={styles.resetButtonText}>Tout réinitialiser</Text>
-            </TouchableOpacity>
-          </View>
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.accentBlue} style={{ marginVertical: 24 }} />
+        ) : properties.length === 0 ? (
+          <EmptyStateView
+            title="Aucun bien trouvé"
+            message="Modifiez vos filtres (gouvernorat, prix, surface) ou réinitialisez la recherche."
+            actionLabel="Tout réinitialiser"
+            onAction={handleReset}
+          />
         ) : (
-          properties.map((prop) => (
-            <View key={prop.id} style={styles.cardWrapper}>
-              <PropertyCard
-                property={prop}
-                onPress={() => setSelectedProperty(prop)}
-              />
-            </View>
-          ))
+          <>
+            {properties.map((prop) => (
+              <View key={prop.id} style={styles.cardWrapper}>
+                <PropertyCard property={prop} onPress={() => setSelectedProperty(prop)} />
+              </View>
+            ))}
+            {properties.length >= limit && (
+              <TouchableOpacity
+                style={[styles.loadMoreBtn, { borderColor: colors.accentBlue }]}
+                onPress={() => setLimit((l) => l + 20)}
+              >
+                <Text style={{ color: colors.accentBlue, fontWeight: '700' }}>Charger plus d’annonces</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
-
-      {/* DOCK FLOTTANT EN BAS */}
-      <View
-        style={[
-          styles.bottomDock,
-          {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={[styles.dockOutlinedBtn, { borderColor: colors.border }]}
-          onPress={handleReset}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.dockOutlinedText, { color: colors.textPrimary }]}>
-            Réinitialiser
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.dockFilledBtn, { backgroundColor: colors.accentBlue }]}
-          onPress={handleApply}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.dockFilledText}>Appliquer les filtres</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 116,
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  headerRightActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  safeArea: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 110 },
+  headerBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  headerTitle: { fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
+  headerRightActions: { flexDirection: 'row', gap: 8 },
   glassCircleBtn: {
     width: 40,
     height: 40,
@@ -514,169 +423,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circleIcon: {
-    fontSize: 16,
-  },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
-    borderRadius: 26,
+    height: 50,
+    borderRadius: 25,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
+    paddingHorizontal: 10,
+    marginBottom: 14,
   },
   searchIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
-    overflow: 'hidden',
+    marginRight: 8,
   },
-  searchBoxIcon: {
-    fontSize: 16,
-  },
-  searchInput: {
+  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
+  clearBtn: { padding: 6 },
+  segmentedControl: { flexDirection: 'row', borderRadius: 22, borderWidth: 1, padding: 4, marginBottom: 18 },
+  segmentButton: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 18 },
+  segmentText: { fontSize: 13 },
+  sectionContainer: { marginBottom: 16 },
+  sectionLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
+  pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pillButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, borderWidth: 1 },
+  cityPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  pillText: { fontSize: 12.5 },
+  rangeGrid: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  rangeInput: {
     flex: 1,
-    fontSize: 14,
-    paddingVertical: 0,
-    backgroundColor: 'transparent',
-  },
-  clearBtn: {
-    padding: 6,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    borderRadius: 24,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
-    padding: 4,
-    marginBottom: 20,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 20,
-  },
-  segmentText: {
-    fontSize: 13,
-  },
-  sectionContainer: {
-    marginBottom: 20,
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  pillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  pillButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  cityPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  cityPin: {
-    fontSize: 12,
-  },
-  pillText: {
+    paddingHorizontal: 12,
     fontSize: 13,
   },
   resultsHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  resultsCountText: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  emptyStateBox: {
-    padding: 30,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  emptyIcon: {
-    fontSize: 40,
+    marginTop: 6,
     marginBottom: 12,
   },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  resetButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  resetButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  cardWrapper: {
-    marginBottom: 16,
-  },
-  bottomDock: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 24,
-    borderWidth: 1,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  dockOutlinedBtn: {
-    flex: 4,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
+  resultsCountText: { fontSize: 16, fontWeight: '800' },
+  cardWrapper: { marginBottom: 4 },
+  loadMoreBtn: {
+    marginTop: 8,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dockOutlinedText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  dockFilledBtn: {
-    flex: 5,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dockFilledText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
   },
 });
