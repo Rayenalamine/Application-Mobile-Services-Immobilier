@@ -627,7 +627,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  contentContainer: { padding: 20, paddingBottom: 60 },
+  contentContainer: { padding: 20, paddingBottom: 120 },
   authContainer: { alignItems: 'stretch', marginTop: 10 },
   authIconCircle: {
     width: 64,

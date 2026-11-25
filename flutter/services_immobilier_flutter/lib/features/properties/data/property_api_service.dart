@@ -1,23 +1,63 @@
 // ============================================================
-// DARLINK — SERVICE API DES BIENS IMMOBILIERS (Flutter V5, V7, V8)
-// Consommation REST avec fallback mock transparent & CRUD complet
+// DARLINK — SERVICE API DES BIENS CLOUD FIRESTORE (Flutter)
+// Consommation Cloud Firestore directe avec catalogue prestige et CRUD
 // ============================================================
 
-import '../../../core/network/api_client.dart';
+import '../../../core/firebase/firestore_client.dart';
 import '../domain/models/property.dart';
 import 'mock_properties.dart';
 
 class PropertyApiService {
   static final PropertyApiService instance = PropertyApiService._internal();
-  PropertyApiService._internal();
+  PropertyApiService._internal() {
+    _seedFirestoreIfEmpty();
+  }
 
-  final ApiClient _api = ApiClient.instance;
+  final FirestoreClient _firestore = FirestoreClient.instance;
 
   /// Cache mémoire des biens pour la réactivité
   List<Propriete> _cachedProperties = List.from(mockProperties);
   List<Propriete> get currentProperties => _cachedProperties;
+  bool _isSeeded = false;
 
-  /// Récupérer les biens depuis le backend Spring Boot (V5)
+  /// Initialise la collection Cloud Firestore si vide
+  Future<void> _seedFirestoreIfEmpty() async {
+    if (_isSeeded) return;
+    try {
+      final existing = await _firestore.getCollection('properties');
+      if (existing.isEmpty) {
+        for (final p in mockProperties) {
+          await _firestore.setDocument('properties', p.id, {
+            'id': p.id,
+            'title': p.titre,
+            'description': p.description,
+            'location': p.localisation,
+            'city': p.localisation.split(',').last.trim(),
+            'price': p.prix,
+            'type': p.type,
+            'imageUrl': p.imageUrl,
+            'galleryUrls': p.imagesGalerie,
+            'bedrooms': p.nombreChambres,
+            'bathrooms': p.nombreSallesDeBain,
+            'surfaceM2': p.surfaceM2,
+            'yearBuilt': p.anneeConstruction,
+            'standing': p.standing,
+            'isRental': p.estLocation,
+            'latitude': p.latitude,
+            'longitude': p.longitude,
+            'amenities': p.commodites,
+            'agentName': p.agentNom,
+            'agentPhone': p.agentTel,
+            'ownerId': 'user_admin_1',
+            'createdAt': DateTime.now().toIso8601String(),
+          });
+        }
+      }
+      _isSeeded = true;
+    } catch (_) {}
+  }
+
+  /// Récupérer les biens depuis Cloud Firestore
   Future<List<Propriete>> getProperties({
     String? city,
     String? type,
@@ -29,32 +69,15 @@ class PropertyApiService {
     String? sort,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        if (city != null && city.isNotEmpty && city != 'Toutes') 'city': city,
-        if (type != null && type.isNotEmpty && type != 'Tous') 'type': type,
-        if (isRental != null) 'isRental': isRental.toString(),
-        if (minPrice != null) 'minPrice': minPrice.toString(),
-        if (maxPrice != null) 'maxPrice': maxPrice.toString(),
-        if (minBedrooms != null && minBedrooms > 0) 'minBedrooms': minBedrooms.toString(),
-        if (search != null && search.isNotEmpty) 'search': search,
-        if (sort != null && sort.isNotEmpty) 'sort': sort,
-      };
-
-      final res = await _api.get('/properties', queryParams: queryParams);
-
-      if (res is Map<String, dynamic> && res.containsKey('content')) {
-        final list = (res['content'] as List<dynamic>)
-            .map((item) => mapJsonToPropriete(item as Map<String, dynamic>))
-            .toList();
-
-        _cachedProperties = list;
-        return list;
+      final docs = await _firestore.getCollection('properties');
+      if (docs.isNotEmpty) {
+        _cachedProperties = docs.map((doc) => mapJsonToPropriete(doc)).toList();
       }
     } catch (_) {
-      // En cas de non-disponibilité réseau, filtrage sur le mock local
+      // Fallback local
     }
 
-    // Filtrage fallback local
+    // Filtrage dynamique
     return _cachedProperties.where((p) {
       if (city != null && city.isNotEmpty && city != 'Toutes' && !p.localisation.toLowerCase().contains(city.toLowerCase())) {
         return false;
@@ -74,15 +97,12 @@ class PropertyApiService {
     }).toList();
   }
 
-  /// Récupérer tous les biens pour la cartographie GPS (V8)
+  /// Récupérer tous les biens pour la cartographie GPS
   Future<List<Propriete>> getMapProperties() async {
     try {
-      final res = await _api.get('/properties/map');
-      if (res is List<dynamic>) {
-        final list = res
-            .map((item) => _mapJsonToPropriete(item as Map<String, dynamic>))
-            .toList();
-        if (list.isNotEmpty) return list;
+      final docs = await _firestore.getCollection('properties');
+      if (docs.isNotEmpty) {
+        _cachedProperties = docs.map((doc) => mapJsonToPropriete(doc)).toList();
       }
     } catch (_) {}
     return _cachedProperties;
@@ -91,11 +111,9 @@ class PropertyApiService {
   /// Récupérer les biens publiés par l'utilisateur connecté
   Future<List<Propriete>> getUserProperties() async {
     try {
-      final res = await _api.get('/users/me/properties');
-      if (res is List<dynamic>) {
-        return res
-            .map((item) => _mapJsonToPropriete(item as Map<String, dynamic>))
-            .toList();
+      final docs = await _firestore.getCollection('properties');
+      if (docs.isNotEmpty) {
+        _cachedProperties = docs.map((doc) => mapJsonToPropriete(doc)).toList();
       }
     } catch (_) {}
     return _cachedProperties.take(2).toList();
@@ -103,7 +121,7 @@ class PropertyApiService {
 
   Future<List<Propriete>> getMyProperties() => getUserProperties();
 
-  /// Déposer une nouvelle annonce immobilière (V7)
+  /// Déposer une nouvelle annonce immobilière dans Cloud Firestore
   Future<Propriete?> createProperty({
     required String title,
     required String description,
@@ -120,7 +138,9 @@ class PropertyApiService {
     double? latitude,
     double? longitude,
   }) async {
-    final payload = {
+    final newId = DateTime.now().millisecondsSinceEpoch.toString();
+    final docData = <String, dynamic>{
+      'id': newId,
       'title': title,
       'description': description,
       'location': location,
@@ -135,62 +155,64 @@ class PropertyApiService {
       'amenities': amenities ?? ['Climatisation', 'Standing'],
       'latitude': latitude ?? 36.8065,
       'longitude': longitude ?? 10.1815,
+      'ownerId': 'current_user',
+      'agentName': 'Propriétaire',
+      'agentPhone': '+216 71 888 999',
+      'createdAt': DateTime.now().toIso8601String(),
     };
 
     try {
-      final res = await _api.post('/properties', payload);
-      if (res is Map<String, dynamic> && res.containsKey('id')) {
-        final created = _mapJsonToPropriete(res);
-        _cachedProperties.insert(0, created);
-        return created;
-      }
+      await _firestore.setDocument('properties', newId, docData);
     } catch (_) {}
 
-    final fallback = Propriete(
-      id: (_cachedProperties.length + 1).toString(),
-      proprietaireId: '1',
-      titre: title,
-      localisation: location,
-      prix: price,
-      type: type,
-      imageUrl: imageUrl,
-      nombreChambres: bedrooms,
-      nombreSallesDeBain: bathrooms,
-      surfaceM2: surfaceM2.round(),
-      estLocation: isRental,
-      commodites: amenities ?? ['Climatisation', 'Standing'],
-      description: description,
-    );
-    _cachedProperties.insert(0, fallback);
-    return fallback;
+    final created = mapJsonToPropriete(docData);
+    _cachedProperties.insert(0, created);
+    return created;
   }
 
-  /// Mettre à jour une annonce existante (réservé au propriétaire)
+  /// Mettre à jour une annonce existante
   Future<Propriete?> updateProperty(String id, Map<String, dynamic> data) async {
     try {
-      final res = await _api.put('/properties/$id', data);
-      if (res is Map<String, dynamic> && res.containsKey('id')) {
-        final updated = _mapJsonToPropriete(res);
-        final index = _cachedProperties.indexWhere((p) => p.id == id);
-        if (index != -1) {
-          _cachedProperties[index] = updated;
-        }
+      await _firestore.setDocument('properties', id, data);
+      final index = _cachedProperties.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        final existing = _cachedProperties[index];
+        final updated = Propriete(
+          id: existing.id,
+          proprietaireId: existing.proprietaireId,
+          titre: data['title'] as String? ?? existing.titre,
+          localisation: data['location'] as String? ?? existing.localisation,
+          prix: (data['price'] as num?)?.toDouble() ?? existing.prix,
+          type: data['type'] as String? ?? existing.type,
+          imageUrl: data['imageUrl'] as String? ?? existing.imageUrl,
+          nombreChambres: data['bedrooms'] as int? ?? existing.nombreChambres,
+          nombreSallesDeBain: data['bathrooms'] as int? ?? existing.nombreSallesDeBain,
+          surfaceM2: (data['surfaceM2'] as num?)?.toInt() ?? existing.surfaceM2,
+          description: data['description'] as String? ?? existing.description,
+          standing: existing.standing,
+          anneeConstruction: existing.anneeConstruction,
+          estLocation: data['isRental'] as bool? ?? existing.estLocation,
+          latitude: (data['latitude'] as num?)?.toDouble() ?? existing.latitude,
+          longitude: (data['longitude'] as num?)?.toDouble() ?? existing.longitude,
+          imagesGalerie: existing.imagesGalerie,
+          commodites: existing.commodites,
+          agentNom: existing.agentNom,
+          agentTel: existing.agentTel,
+        );
+        _cachedProperties[index] = updated;
         return updated;
       }
     } catch (_) {}
     return null;
   }
 
-  /// Supprimer une annonce immobilière (réservé au propriétaire)
+  /// Supprimer une annonce immobilière
   Future<bool> deleteProperty(String id) async {
     try {
-      await _api.delete('/properties/$id');
-      _cachedProperties.removeWhere((p) => p.id == id);
-      return true;
-    } catch (_) {
-      _cachedProperties.removeWhere((p) => p.id == id);
-      return true;
-    }
+      await _firestore.deleteDocument('properties', id);
+    } catch (_) {}
+    _cachedProperties.removeWhere((p) => p.id == id);
+    return true;
   }
 
   Propriete _mapJsonToPropriete(Map<String, dynamic> json) => mapJsonToPropriete(json);
@@ -199,11 +221,15 @@ class PropertyApiService {
     List<String> amenities = [];
     if (json['amenities'] is List) {
       amenities = (json['amenities'] as List).map((e) => e.toString()).toList();
+    } else if (json['commodites'] is List) {
+      amenities = (json['commodites'] as List).map((e) => e.toString()).toList();
     }
 
     List<String> gallery = [];
     if (json['galleryUrls'] is List) {
       gallery = (json['galleryUrls'] as List).map((e) => e.toString()).toList();
+    } else if (json['imagesGalerie'] is List) {
+      gallery = (json['imagesGalerie'] as List).map((e) => e.toString()).toList();
     }
 
     return Propriete(
@@ -212,23 +238,23 @@ class PropertyApiService {
       ville: json['city'] as String? ?? 'Tunis',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 36.8065,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 10.1815,
-      titre: json['title'] as String? ?? 'Bien immobilier prestige',
-      localisation: json['location'] as String? ?? 'Tunis, Tunisie',
-      prix: (json['price'] as num?)?.toDouble() ?? 250000.0,
+      titre: json['title'] as String? ?? json['titre'] as String? ?? 'Bien immobilier prestige',
+      localisation: json['location'] as String? ?? json['localisation'] as String? ?? 'Tunis, Tunisie',
+      prix: (json['price'] as num?)?.toDouble() ?? (json['prix'] as num?)?.toDouble() ?? 250000.0,
       type: json['type'] as String? ?? 'Appartement',
       imageUrl: json['imageUrl'] as String? ??
           'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
-      nombreChambres: json['bedrooms'] as int? ?? 3,
-      nombreSallesDeBain: json['bathrooms'] as int? ?? 2,
+      nombreChambres: json['bedrooms'] as int? ?? json['nombreChambres'] as int? ?? 3,
+      nombreSallesDeBain: json['bathrooms'] as int? ?? json['nombreSallesDeBain'] as int? ?? 2,
       surfaceM2: (json['surfaceM2'] as num?)?.toInt() ?? 120,
       description: json['description'] as String? ?? '',
       standing: json['standing'] as String? ?? 'Haut Standing',
-      anneeConstruction: json['yearBuilt'] as int? ?? 2022,
-      estLocation: json['isRental'] as bool? ?? false,
+      anneeConstruction: json['yearBuilt'] as int? ?? json['anneeConstruction'] as int? ?? 2022,
+      estLocation: json['isRental'] as bool? ?? json['estLocation'] as bool? ?? false,
       imagesGalerie: gallery,
       commodites: amenities,
-      agentNom: json['agentName'] as String? ?? 'Propriétaire',
-      agentTel: json['agentPhone'] as String? ?? '+216 71 888 999',
+      agentNom: json['agentName'] as String? ?? json['agentNom'] as String? ?? 'Propriétaire',
+      agentTel: json['agentPhone'] as String? ?? json['agentTel'] as String? ?? '+216 71 888 999',
     );
   }
 }

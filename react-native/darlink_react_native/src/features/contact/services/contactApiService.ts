@@ -1,8 +1,9 @@
 // ============================================================
-// DARLINK — SERVICE API DEMANDES DE CONTACT (React Native)
+// DARLINK — SERVICE DEMANDES DE CONTACT CLOUD FIRESTORE (React Native)
+// Persistance Cloud Firestore sur la collection 'contact_requests'
 // ============================================================
 
-import { api } from '../../../core/network/apiClient';
+import { firestoreEngine } from '../../../core/firebase/firestoreEngine';
 
 export interface ContactRequest {
   id: string;
@@ -22,6 +23,7 @@ export interface CreateContactRequestPayload {
   senderEmail: string;
   senderPhone?: string;
   message: string;
+  senderId?: string;
 }
 
 class ContactApiService {
@@ -37,31 +39,32 @@ class ContactApiService {
   }
 
   public async sendContactRequest(payload: CreateContactRequestPayload): Promise<ContactRequest> {
+    const docId = 'cr_' + Date.now();
+    const requestData: ContactRequest = {
+      id: docId,
+      propertyId: String(payload.propertyId),
+      senderId: payload.senderId || 'guest_' + Date.now(),
+      senderName: payload.senderName,
+      senderEmail: payload.senderEmail,
+      senderPhone: payload.senderPhone || '+216 71 888 999',
+      message: payload.message,
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+    };
+
     try {
-      const res = await api.post<ContactRequest>('/contact-requests', {
-        ...payload,
-        propertyId: Number(payload.propertyId),
-      });
-      return res;
+      // Écriture persistante dans Cloud Firestore
+      await firestoreEngine.setDocument('contact_requests', docId, requestData as unknown as Record<string, unknown>);
+      return requestData;
     } catch {
-      // Fallback local
-      return {
-        id: String(Date.now()),
-        propertyId: String(payload.propertyId),
-        senderName: payload.senderName,
-        senderEmail: payload.senderEmail,
-        senderPhone: payload.senderPhone,
-        message: payload.message,
-        status: 'PENDING',
-        createdAt: new Date().toISOString(),
-      };
+      return requestData;
     }
   }
 
   public async getReceivedRequests(): Promise<ContactRequest[]> {
     try {
-      const res = await api.get<ContactRequest[]>('/contact-requests/received');
-      return Array.isArray(res) ? res : [];
+      const docs = await firestoreEngine.getCollection<ContactRequest>('contact_requests');
+      return Array.isArray(docs) ? docs : [];
     } catch {
       return [];
     }
@@ -69,17 +72,18 @@ class ContactApiService {
 
   public async getSentRequests(): Promise<ContactRequest[]> {
     try {
-      const res = await api.get<ContactRequest[]>('/contact-requests/sent');
-      return Array.isArray(res) ? res : [];
+      const docs = await firestoreEngine.getCollection<ContactRequest>('contact_requests');
+      return Array.isArray(docs) ? docs : [];
     } catch {
       return [];
     }
   }
 
   public async updateStatus(id: string | number, status: string): Promise<{ status: string }> {
+    const docId = String(id);
     try {
-      const res = await api.patch<{ status: string }>(`/contact-requests/${id}/status`, { status });
-      return res;
+      await firestoreEngine.setDocument('contact_requests', docId, { status });
+      return { status };
     } catch {
       return { status };
     }
@@ -87,4 +91,3 @@ class ContactApiService {
 }
 
 export const contactApiService = ContactApiService.getInstance();
-

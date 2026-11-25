@@ -10,7 +10,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { HomeScreen } from '../../../properties/presentation/screens/HomeScreen';
 import { SearchScreen } from './SearchScreen';
 import { FavoritesScreen } from './FavoritesScreen';
@@ -54,7 +57,16 @@ const MainNavigationContent: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        {
+          backgroundColor: colors.background,
+          paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 28) : 0,
+        },
+      ]}
+    >
+      <ExpoStatusBar style={isDark ? 'light' : 'dark'} />
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
       {/* Dock de navigation flottant centré type Glassmorphism adaptatif */}
@@ -142,12 +154,12 @@ const styles = StyleSheet.create({
   },
   dockWrapper: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 16,
+    left: 16,
+    right: 16,
   },
   floatingDock: {
-    height: 70,
+    height: 68,
     flexDirection: 'row',
     borderRadius: 36,
     borderWidth: 1.2,

@@ -1,0 +1,430 @@
+{
+  "properties": [
+    {
+      "id": "1",
+      "title": "Appartement moderne à Tunis",
+      "description": "Bel appartement lumineux situé dans le quartier résidentiel des Berges du Lac. Il dispose d'une grande terrasse avec vue sur le lac, d'une cuisine équipée et d'un parking privé en sous-sol. Idéal pour une famille.",
+      "location": "Les Berges du Lac, Tunis",
+      "city": "Tunis",
+      "price": 320000,
+      "type": "Appartement",
+      "imageUrl": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=600&q=80",
+        "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=600&q=80",
+        "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&q=80"
+      ],
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "surfaceM2": 145,
+      "yearBuilt": 2022,
+      "standing": "Haut standing",
+      "isRental": false,
+      "amenities": [
+        "Terrasse panoramique",
+        "Cuisine équipée",
+        "Place de parking sous-sol",
+        "Climatisation centrale",
+        "Double vitrage phonique"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.8328,
+      "longitude": 10.2345,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "title": "Villa avec piscine à Sousse",
+      "description": "Magnifique villa avec piscine privée dans un quartier calme et sécurisé de Sahloul. Le jardin paysagé offre un cadre de vie agréable. La villa comprend un grand salon, une salle à manger, une cuisine américaine et un garage pour deux voitures.",
+      "location": "Sahloul, Sousse",
+      "city": "Sousse",
+      "price": 850000,
+      "type": "Villa",
+      "imageUrl": "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80",
+        "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=600&q=80",
+        "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&q=80"
+      ],
+      "bedrooms": 5,
+      "bathrooms": 3,
+      "surfaceM2": 380,
+      "yearBuilt": 2022,
+      "standing": "Luxe Prestige",
+      "isRental": false,
+      "amenities": [
+        "Piscine à débordement",
+        "Jardin paysagé 400m²",
+        "Garage double sécurisé",
+        "Suite parentale avec dressing",
+        "Système domotique intégré"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 35.8361,
+      "longitude": 10.5982,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "title": "Maison traditionnelle à Djerba",
+      "description": "Charmante maison traditionnelle au cœur de Houmt Souk, à quelques minutes des plages de Djerba. Architecture typique avec patio central, carrelage artisanal et terrasse sur le toit offrant une vue panoramique sur la ville.",
+      "location": "Houmt Souk, Djerba",
+      "city": "Djerba",
+      "price": 450000,
+      "type": "Maison",
+      "imageUrl": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&q=80",
+        "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&q=80",
+        "https://images.unsplash.com/photo-1540518614846-7ede433c457b?w=600&q=80"
+      ],
+      "bedrooms": 4,
+      "bathrooms": 2,
+      "surfaceM2": 240,
+      "yearBuilt": 2018,
+      "standing": "Houch Authentique",
+      "isRental": false,
+      "amenities": [
+        "Patio central djerbien",
+        "Carrelage artisanal faïence",
+        "Toit terrasse vue mer",
+        "Puits traditionnel & citerne",
+        "Cuisine voûtée authentique"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 33.875,
+      "longitude": 10.8575,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "4",
+      "title": "Appartement vue mer à Hammamet",
+      "description": "Superbe appartement avec vue imprenable sur la mer Méditerranée. Situé dans un immeuble récent et sécurisé, à deux pas des commerces et de la plage de Hammamet. Finitions soignées et balcon agréable.",
+      "location": "Centre-ville, Hammamet",
+      "city": "Hammamet",
+      "price": 275000,
+      "type": "Appartement",
+      "imageUrl": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80",
+        "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&q=80",
+        "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=600&q=80"
+      ],
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "surfaceM2": 95,
+      "yearBuilt": 2020,
+      "standing": "Vue Panoramique",
+      "isRental": true,
+      "amenities": [
+        "Vue imprenable sur le golfe",
+        "Accès plage à 150m",
+        "Ascenseur sécurisé avec badge",
+        "Balcon filant orienté sud",
+        "Chauffage individuel au gaz"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.4,
+      "longitude": 10.6167,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-01T10:00:00.000Z"
+    },
+    {
+      "id": "5",
+      "title": "Penthouse panoramique aux Berges du Lac 2",
+      "description": "Somptueux penthouse au dernier étage d'une résidence ultra-moderne avec vue à 360° sur le lac et la marina. Terrasses multiples et prestations d'exception.",
+      "location": "Les Berges du Lac 2, Tunis",
+      "city": "Tunis",
+      "price": 650000,
+      "type": "Appartement",
+      "imageUrl": "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80",
+        "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=600&q=80"
+      ],
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "surfaceM2": 280,
+      "yearBuilt": 2023,
+      "standing": "Luxe Exceptionnel",
+      "isRental": false,
+      "amenities": [
+        "Terrasse 360°",
+        "Jacuzzi privé",
+        "Domotique complète",
+        "3 places de parking"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.839,
+      "longitude": 10.245,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-02T10:00:00.000Z"
+    },
+    {
+      "id": "6",
+      "title": "Villa Belle Époque à La Marsa",
+      "description": "Propriété historique réhabilitée avec goût à deux pas de la plage de La Marsa. Grand jardin arboré et dépendance.",
+      "location": "La Marsa, Tunis",
+      "city": "Tunis",
+      "price": 1200000,
+      "type": "Villa",
+      "imageUrl": "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80",
+        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80"
+      ],
+      "bedrooms": 5,
+      "bathrooms": 4,
+      "surfaceM2": 420,
+      "yearBuilt": 2021,
+      "standing": "Prestige Colonial",
+      "isRental": false,
+      "amenities": [
+        "Piscine privée",
+        "Jardin 600m²",
+        "Dépendance de service",
+        "Garage fermé"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.878,
+      "longitude": 10.324,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-02T11:00:00.000Z"
+    },
+    {
+      "id": "7",
+      "title": "Duplex contemporain à Ennasr 2",
+      "description": "Duplex moderne offrant des volumes généreux, proche des commodités et des écoles. Grande pièce à vivre baignée de lumière.",
+      "location": "Ennasr 2, Ariana",
+      "city": "Ariana",
+      "price": 390000,
+      "type": "Appartement",
+      "imageUrl": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80"
+      ],
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "surfaceM2": 185,
+      "yearBuilt": 2022,
+      "standing": "Haut standing",
+      "isRental": false,
+      "amenities": [
+        "Suite parentale",
+        "Balcon filant",
+        "Chauffage central",
+        "Parking sous-sol"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.861,
+      "longitude": 10.156,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-03T09:00:00.000Z"
+    },
+    {
+      "id": "8",
+      "title": "Studio d'architecte à Sidi Bou Saïd",
+      "description": "Studio d'artiste entièrement meublé et décoré avec vue sur la baie de Tunis. Une adresse rare et convoitée.",
+      "location": "Village de Sidi Bou Saïd, Tunis",
+      "city": "Tunis",
+      "price": 1800,
+      "type": "Studio",
+      "imageUrl": "https://images.unsplash.com/photo-1502005229762-ee1b44747209?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80"
+      ],
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "surfaceM2": 60,
+      "yearBuilt": 2020,
+      "standing": "Bohème Chic",
+      "isRental": true,
+      "amenities": [
+        "Meublé haut de gamme",
+        "Vue mer imprenable",
+        "Climatisation réversible"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.87,
+      "longitude": 10.342,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-03T10:00:00.000Z"
+    },
+    {
+      "id": "9",
+      "title": "Résidence Les Oliviers à El Kantaoui",
+      "description": "Appartement de standing dans un quartier calme et sécurisé, à proximité immédiate du parcours de golf d'El Kantaoui.",
+      "location": "Port El Kantaoui, Sousse",
+      "city": "Sousse",
+      "price": 420000,
+      "type": "Appartement",
+      "imageUrl": "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80"
+      ],
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "surfaceM2": 160,
+      "yearBuilt": 2021,
+      "standing": "Résidence Sécurisée",
+      "isRental": false,
+      "amenities": [
+        "Piscine de résidence",
+        "Proche Golf",
+        "Sécurité 24/7",
+        "Ascenseur"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 35.892,
+      "longitude": 10.598,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-04T12:00:00.000Z"
+    },
+    {
+      "id": "10",
+      "title": "Riad d'exception à Nabeul",
+      "description": "Authentique demeure traditionnelle aux finitions artisanales incomparables : céramiques d'art de Nabeul, fontaines et vergers d'agrumes.",
+      "location": "Centre Ancien, Nabeul",
+      "city": "Nabeul",
+      "price": 520000,
+      "type": "Maison",
+      "imageUrl": "https://images.unsplash.com/photo-1540518614846-7ede433c457b?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80"
+      ],
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "surfaceM2": 290,
+      "yearBuilt": 2019,
+      "standing": "Charme Traditionnel",
+      "isRental": false,
+      "amenities": [
+        "Patio avec fontaine",
+        "Céramiques de Nabeul",
+        "Verger d'orangers",
+        "Terrasse panoramique"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.456,
+      "longitude": 10.737,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-04T14:00:00.000Z"
+    },
+    {
+      "id": "11",
+      "title": "Appartement standing à Bizerte Corniche",
+      "description": "Appartement face à la mer avec balcon panoramique sur la corniche de Bizerte. Cadre de vie relaxant et iodé.",
+      "location": "Corniche, Bizerte",
+      "city": "Bizerte",
+      "price": 260000,
+      "type": "Appartement",
+      "imageUrl": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80"
+      ],
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "surfaceM2": 120,
+      "yearBuilt": 2021,
+      "standing": "Front de Mer",
+      "isRental": false,
+      "amenities": [
+        "Front de mer direct",
+        "Balcon vue panoramique",
+        "Ascenseur",
+        "Place de parking"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 37.281,
+      "longitude": 9.873,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-05T09:00:00.000Z"
+    },
+    {
+      "id": "12",
+      "title": "Maison contemporaine à Midoun",
+      "description": "Maison neuve mêlant lignes modernes et inspiration djerbienne, à quelques minutes des plages de la côte est.",
+      "location": "Midoun, Djerba",
+      "city": "Djerba",
+      "price": 380000,
+      "type": "Maison",
+      "imageUrl": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&q=80"
+      ],
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "surfaceM2": 210,
+      "yearBuilt": 2023,
+      "standing": "Design Méditerranéen",
+      "isRental": false,
+      "amenities": [
+        "Jardin aménagé",
+        "Piscine privée",
+        "Toit terrasse",
+        "Chauffe-eau solaire"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 33.808,
+      "longitude": 10.992,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-05T11:00:00.000Z"
+    },
+    {
+      "id": "13",
+      "title": "Villa d'été à Yasmine Hammamet",
+      "description": "Villa de vacances prestigieuse dans un quartier résidentiel huppé, à quelques pas du port de plaisance de Yasmine Hammamet.",
+      "location": "Yasmine Hammamet, Hammamet",
+      "city": "Hammamet",
+      "price": 720000,
+      "type": "Villa",
+      "imageUrl": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80"
+      ],
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "surfaceM2": 320,
+      "yearBuilt": 2022,
+      "standing": "Grand Confort",
+      "isRental": false,
+      "amenities": [
+        "Piscine extérieure",
+        "Barbecue maçonné",
+        "Climatisation générale",
+        "Garage électrique"
+      ],
+      "agentName": "Rayen Lamine",
+      "agentPhone": "+216 71 888 999",
+      "latitude": 36.372,
+      "longitude": 10.551,
+      "ownerId": "user_admin_1",
+      "createdAt": "2026-11-05T15:00:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "user_admin_1",
+      "email": "rayen@darlink.tn",
+      "fullName": "Rayen Lamine",
+      "phone": "+216 71 888 999",
+      "role": "ADMIN",
+      "createdAt": "2026-11-01T00:00:00.000Z"
+    }
+  ]
+}

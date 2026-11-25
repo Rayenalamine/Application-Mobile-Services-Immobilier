@@ -414,7 +414,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
       </View>
 
       {/* 4. ATTRIBUTION LÉGALE OPENSTREETMAP */}
-      <View style={[styles.attributionBadge, { bottom: selectedProperty ? 135 : 16 }]}>
+      <View style={[styles.attributionBadge, { bottom: selectedProperty ? 206 : 102 }]}>
         <Text style={styles.attributionText}>© OpenStreetMap contributors</Text>
       </View>
 
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     position: 'absolute',
-    top: 16,
+    top: 12,
     left: 16,
     right: 16,
   },
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 16,
+    bottom: 102,
     flexDirection: 'row',
     padding: 10,
     borderRadius: 16,

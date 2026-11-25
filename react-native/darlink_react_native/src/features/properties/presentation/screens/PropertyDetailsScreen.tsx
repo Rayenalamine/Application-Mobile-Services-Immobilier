@@ -463,7 +463,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           </Text>
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 185 }} />
       </ScrollView>
 
       {/* 11. DOCK FLOTTANT INFÉRIEUR (CTA) */}
@@ -896,14 +896,21 @@ const styles = StyleSheet.create({
   },
   bottomDock: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 96,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 22,
+    borderWidth: 1,
     borderTopWidth: 1,
-    gap: 12,
+    gap: 10,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
   backButton: {
     paddingHorizontal: 16,

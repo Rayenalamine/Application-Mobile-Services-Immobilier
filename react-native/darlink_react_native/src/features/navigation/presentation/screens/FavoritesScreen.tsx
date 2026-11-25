@@ -174,14 +174,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
-    paddingVertical: 40,
+    paddingTop: 40,
+    paddingBottom: 116,
   },
   listContainer: {
     flex: 1,
   },
   listContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 116,
   },
   iconCircle: {
     width: 96,

@@ -3,7 +3,7 @@
 // Représente une annonce immobilière avec caractéristiques enrichies
 // ============================================================
 
-export type PropertyType = 'Appartement' | 'Maison' | 'Villa';
+export type PropertyType = 'Appartement' | 'Maison' | 'Villa' | 'Studio';
 
 /**
  * Interface immuable représentant un bien immobilier dans l'application DarLink.
