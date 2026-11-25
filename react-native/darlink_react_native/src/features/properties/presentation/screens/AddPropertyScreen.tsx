@@ -13,6 +13,8 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { propertyApiService } from '../../services/propertyApiService';
@@ -373,7 +375,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 12 : 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },

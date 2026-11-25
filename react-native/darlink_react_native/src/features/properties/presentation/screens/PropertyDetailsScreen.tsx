@@ -16,6 +16,8 @@ import {
   Modal,
   TextInput,
   Linking,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { AppColors } from '../../../../core/constants/colors';
 import { Property, formatPrice } from '../../domain/models/property';
@@ -588,6 +590,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 8 : 0,
   },
   scrollView: {
     flex: 1,

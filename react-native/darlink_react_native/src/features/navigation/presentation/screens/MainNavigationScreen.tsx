@@ -10,6 +10,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { HomeScreen } from '../../../properties/presentation/screens/HomeScreen';
 import { SearchScreen } from './SearchScreen';
@@ -136,6 +138,7 @@ export const MainNavigationScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 10 : 12,
   },
   screenContainer: {
     flex: 1,

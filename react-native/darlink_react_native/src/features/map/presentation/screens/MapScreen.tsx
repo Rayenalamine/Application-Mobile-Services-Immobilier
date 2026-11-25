@@ -17,6 +17,8 @@ import {
   PanResponder,
   PanResponderGestureState,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
@@ -504,7 +506,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     position: 'absolute',
-    top: 16,
+    top: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 12 : 36,
     left: 16,
     right: 16,
   },
@@ -549,7 +551,7 @@ const styles = StyleSheet.create({
   controlsContainer: {
     position: 'absolute',
     right: 16,
-    top: 140,
+    top: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 140 : 160,
   },
   fab: {
     width: 40,
