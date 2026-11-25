@@ -1,7 +1,60 @@
-const fs = require('fs');
+// ============================================================
+// DARLINK — SEEDER SÉCURISÉ CLOUD FIRESTORE
+// ============================================================
 
-const API_KEY = 'AIzaSyDbKXIPYXNnE8ZICmVfMXhf6lRGTA--a0A';
-const PROJECT_ID = 'darlink-74715';
+const fs = require('fs');
+const path = require('path');
+
+// Chargement sécurisé des variables d'environnement (process.env ou fichier .env local ignoré par Git)
+function resolveConfig() {
+  const envPaths = [
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../react-native/darlink_react_native/.env'),
+    path.resolve(process.cwd(), '.env'),
+  ];
+
+  const envVars = {};
+  for (const envPath of envPaths) {
+    if (fs.existsSync(envPath)) {
+      const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx > 0) {
+            const k = trimmed.substring(0, eqIdx).trim();
+            const v = trimmed.substring(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+            if (!envVars[k]) envVars[k] = v;
+          }
+        }
+      }
+    }
+  }
+
+  const apiKey =
+    process.env.FIREBASE_API_KEY ||
+    process.env.EXPO_PUBLIC_FIREBASE_API_KEY ||
+    envVars.FIREBASE_API_KEY ||
+    envVars.EXPO_PUBLIC_FIREBASE_API_KEY;
+
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
+    envVars.FIREBASE_PROJECT_ID ||
+    envVars.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
+    'darlink-74715';
+
+  if (!apiKey) {
+    throw new Error(
+      'ERREUR DE SÉCURITÉ : Aucune clé API Firebase configurée.\n' +
+      'Veuillez définir FIREBASE_API_KEY dans vos variables d\'environnement ou dans votre fichier .env local (non versionné).'
+    );
+  }
+
+  return { apiKey, projectId };
+}
+
+const { apiKey: API_KEY, projectId: PROJECT_ID } = resolveConfig();
 
 async function seedLiveFirestore() {
   console.log('--- Connecting to Firebase Auth ---');
@@ -17,7 +70,7 @@ async function seedLiveFirestore() {
   const token = authData.idToken;
   console.log('Authenticated UID:', authData.localId);
 
-  const seedRaw = fs.readFileSync('Application-Mobile-Services-Immobilier/firebase_seed_data.json', 'utf8');
+  const seedRaw = fs.readFileSync(path.resolve(__dirname, '../firebase_seed_data.json'), 'utf8');
   const seedData = JSON.parse(seedRaw);
   const seedProps = seedData.properties || [];
   console.log(`Seeding ${seedProps.length} properties into Cloud Firestore project "${PROJECT_ID}"...`);
@@ -88,4 +141,3 @@ seedLiveFirestore().catch((err) => {
   console.error('Fatal Error:', err);
   process.exit(1);
 });
-

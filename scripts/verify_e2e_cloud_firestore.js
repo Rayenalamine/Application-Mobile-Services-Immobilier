@@ -3,14 +3,65 @@
 // Teste en direct sur le projet Firebase darlink-74715
 // ============================================================
 
-const API_KEY = 'AIzaSyDbKXIPYXNnE8ZICmVfMXhf6lRGTA--a0A';
-const PROJECT_ID = 'darlink-74715';
+const fs = require('fs');
+const path = require('path');
+
+// Chargement sécurisé des variables d'environnement (process.env ou fichier .env local ignoré par Git)
+function resolveConfig() {
+  const envPaths = [
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../react-native/darlink_react_native/.env'),
+    path.resolve(process.cwd(), '.env'),
+  ];
+
+  const envVars = {};
+  for (const envPath of envPaths) {
+    if (fs.existsSync(envPath)) {
+      const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx > 0) {
+            const k = trimmed.substring(0, eqIdx).trim();
+            const v = trimmed.substring(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+            if (!envVars[k]) envVars[k] = v;
+          }
+        }
+      }
+    }
+  }
+
+  const apiKey =
+    process.env.FIREBASE_API_KEY ||
+    process.env.EXPO_PUBLIC_FIREBASE_API_KEY ||
+    envVars.FIREBASE_API_KEY ||
+    envVars.EXPO_PUBLIC_FIREBASE_API_KEY;
+
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
+    envVars.FIREBASE_PROJECT_ID ||
+    envVars.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
+    'darlink-74715';
+
+  if (!apiKey) {
+    throw new Error(
+      'ERREUR DE SÉCURITÉ : Aucune clé API Firebase configurée.\n' +
+      'Veuillez définir FIREBASE_API_KEY dans vos variables d\'environnement ou dans votre fichier .env local (non versionné).'
+    );
+  }
+
+  return { apiKey, projectId };
+}
+
+const { apiKey: API_KEY, projectId: PROJECT_ID } = resolveConfig();
 const BASE_FIRESTORE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 const BASE_AUTH = `https://identitytoolkit.googleapis.com/v1`;
 
 async function runAudit() {
   console.log('============================================================');
-  console.log('   DARLINK — AUDIT LIVE CLOUD FIREBASE : darlink-74715       ');
+  console.log(`   DARLINK — AUDIT LIVE CLOUD FIREBASE : ${PROJECT_ID}       `);
   console.log('============================================================\n');
 
   // TEST 1 : Récupération publique des annonces
@@ -127,4 +178,3 @@ runAudit().catch(err => {
   console.error('\n❌ Erreur Audit :', err);
   process.exit(1);
 });
-
