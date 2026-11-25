@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 98,
+    bottom: 110,
     flexDirection: 'row',
     padding: 12,
     borderRadius: 24,

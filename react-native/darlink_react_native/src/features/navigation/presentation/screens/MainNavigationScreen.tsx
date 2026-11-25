@@ -88,6 +88,12 @@ const MainNavigationContent: React.FC = () => {
                     styles.iconPill,
                     isActive && {
                       backgroundColor: colors.accentBlue,
+                      borderRadius: 16,
+                      borderTopLeftRadius: 16,
+                      borderTopRightRadius: 16,
+                      borderBottomLeftRadius: 16,
+                      borderBottomRightRadius: 16,
+                      overflow: 'hidden',
                     },
                   ]}
                 >
@@ -167,12 +173,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconPill: {
-    width: 44,
-    height: 28,
-    borderRadius: 14,
+    width: 48,
+    height: 30,
+    borderRadius: 16,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
   tabIcon: {
     fontSize: 16,
