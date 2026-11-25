@@ -3,6 +3,10 @@
 // Teste en direct sur le projet Firebase darlink-74715
 // ============================================================
 
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 const fs = require('fs');
 const path = require('path');
 

@@ -132,8 +132,11 @@ async function runAllTests(): Promise<void> {
   // ------------------------------------------------------------
   console.log('\n[SUITE 4] Prise de contact et gestion des visites...');
   try {
+    const catalogProps = await propertyApiService.getProperties();
+    const targetPropId = catalogProps.length > 0 ? String(catalogProps[0].id) : 'darlink-snit-lac2-01';
+
     const contactRes = await contactApiService.sendContactRequest({
-      propertyId: 1,
+      propertyId: targetPropId,
       senderName: 'Sami Khelifi',
       senderEmail: 'sami.khelifi@darlink.tn',
       senderPhone: '+216 20 555 444',
