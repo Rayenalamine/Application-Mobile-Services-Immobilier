@@ -5,6 +5,7 @@
 // ============================================================
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/firebase/firebase_config.dart';
@@ -613,6 +614,18 @@ class AuthService {
     } catch (_) {
       return 'Erreur lors de la suppression du compte.';
     }
+  }
+
+  Map<String, String> getDiagnosticInfo() {
+    final cur = AuthState.instance.currentUser;
+    final uid = cur?.effectiveUid;
+    final displayUid = (uid != null && uid.length >= 6) ? '${uid.substring(0, 6)}...' : (uid ?? 'Guest (Unauthenticated)');
+    return {
+      'projectId': FirebaseConfig.projectId,
+      'platform': 'Flutter ${defaultTargetPlatform.name}',
+      'authUid': displayUid,
+      'databaseId': '(default)',
+    };
   }
 
   Future<void> logout() async {

@@ -4,6 +4,10 @@
 // Marque EXPIRED si indisponible durablement, ou met à jour lastVerifiedAt.
 // ============================================================
 
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 const fs = require('fs');
 const path = require('path');
 

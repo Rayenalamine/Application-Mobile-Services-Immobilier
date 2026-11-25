@@ -97,6 +97,7 @@ class AuthService {
   public lastError: string | null = null;
   private listeners: (() => void)[] = [];
   private isInitialized = false;
+  private initPromise: Promise<void> | null = null;
 
   private get apiKey(): string {
     return defaultFirebaseConfig.apiKey;
@@ -127,7 +128,27 @@ class AuthService {
   }
 
   private constructor() {
-    this.init();
+    this.initPromise = this.init();
+  }
+
+  public waitForInit(): Promise<void> {
+    return this.initPromise ?? Promise.resolve();
+  }
+
+  public getDiagnosticInfo(): {
+    projectId: string;
+    platform: string;
+    authUid: string;
+    databaseId: string;
+  } {
+    const uid = this.currentUser?.id;
+    const displayUid = uid ? `${uid.slice(0, 6)}...` : 'Guest (Unauthenticated)';
+    return {
+      projectId: defaultFirebaseConfig.projectId,
+      platform: 'React Native / Expo Go',
+      authUid: displayUid,
+      databaseId: '(default)',
+    };
   }
 
   public static getInstance(): AuthService {

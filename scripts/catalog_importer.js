@@ -5,6 +5,10 @@
 // 3. Importe uniquement les références institutionnelles vérifiées
 // ============================================================
 
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 const fs = require('fs');
 const path = require('path');
 

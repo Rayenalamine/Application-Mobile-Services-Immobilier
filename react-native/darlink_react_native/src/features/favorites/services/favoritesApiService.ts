@@ -1,16 +1,14 @@
 // ============================================================
-// DARLINK — SERVICE DES FAVORIS CLOUD FIRESTORE (React Native)
+// DARLINK — SERVICE DES FAVORIS CLOUD FIRESTORE RÉACTIF (React Native)
 // Persistance Cloud Firestore sur users/{userId}/favorites/{propertyId}
-// Synchronisation temps réel, isolation stricte et résilience redémarrages
+// Isolation stricte par UID, zéro pollution inter-comptes,
+// écouteur temps réel (synchronisation cross-device).
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firestoreEngine } from '../../../core/firebase/firestoreEngine';
 import { Property } from '../../properties/domain/models/property';
 import { propertyApiService } from '../../properties/services/propertyApiService';
-
-const STORAGE_FAV_IDS = '@darlink_favorites_ids';
-const STORAGE_FAV_PROPS = '@darlink_favorites_properties';
 
 export interface FirestoreFavoriteDoc {
   id?: string;
@@ -26,6 +24,12 @@ class FavoritesApiService {
   private listeners = new Set<() => void>();
   private isInitialized = false;
   private currentUserId: string | null = null;
+  private syncTimer: ReturnType<typeof setInterval> | null = null;
+
+  private getStorageKey(suffix: string): string {
+    const uidScope = this.currentUserId ? `user_${this.currentUserId}` : 'guest';
+    return `@darlink_fav_${uidScope}_${suffix}`;
+  }
 
   private async safeStorageGet(key: string): Promise<string | null> {
     try {
@@ -39,7 +43,7 @@ class FavoritesApiService {
     try {
       await AsyncStorage.setItem(key, value);
     } catch {
-      // Ignore
+      // Ignorer
     }
   }
 
@@ -47,7 +51,7 @@ class FavoritesApiService {
     try {
       await AsyncStorage.removeItem(key);
     } catch {
-      // Ignore
+      // Ignorer
     }
   }
 
@@ -62,35 +66,60 @@ class FavoritesApiService {
     return FavoritesApiService.instance;
   }
 
+  /**
+   * Définit l'identifiant utilisateur courant avec isolation stricte.
+   * Vide immédiatement la mémoire vive et recharge les favoris du compte cible.
+   */
   public setUserId(userId: string | null): void {
-    this.currentUserId = userId;
+    if (this.currentUserId !== userId) {
+      this.favoriteIds.clear();
+      this.cachedFavorites = [];
+      this.currentUserId = userId;
+      this.isInitialized = false;
+      this.notify();
+
+      if (userId) {
+        this.init().then(() => this.syncWithBackend());
+        this.startRealtimeSync();
+      } else {
+        this.stopRealtimeSync();
+      }
+    }
   }
 
   /**
-   * Initialisation : charge les favoris depuis AsyncStorage puis synchronise avec Firestore
+   * Initialisation : charge les favoris scopés par cet utilisateur
    */
   public async init(): Promise<void> {
     if (this.isInitialized) return;
     try {
-      const storedIds = await this.safeStorageGet(STORAGE_FAV_IDS);
-      const storedProps = await this.safeStorageGet(STORAGE_FAV_PROPS);
+      const keyIds = this.getStorageKey('ids');
+      const keyProps = this.getStorageKey('props');
+
+      const storedIds = await this.safeStorageGet(keyIds);
+      const storedProps = await this.safeStorageGet(keyProps);
 
       if (storedIds) {
         const parsedIds = JSON.parse(storedIds) as string[];
         this.favoriteIds = new Set(parsedIds.map(String));
+      } else {
+        this.favoriteIds.clear();
       }
+
       if (storedProps) {
         this.cachedFavorites = JSON.parse(storedProps) as Property[];
+      } else {
+        this.cachedFavorites = [];
       }
+
       this.isInitialized = true;
       this.notify();
-
-      if (this.currentUserId) {
-        await this.syncWithBackend();
-      }
     } catch (e) {
-      console.warn('[DarLink Favorites] Erreur chargement local :', e);
+      console.warn('[DarLink Favorites] Erreur chargement local scopé :', e);
+      this.favoriteIds.clear();
+      this.cachedFavorites = [];
       this.isInitialized = true;
+      this.notify();
     }
   }
 
@@ -106,48 +135,104 @@ class FavoritesApiService {
       try {
         listener();
       } catch {
-        // Ignorer les erreurs d'écouteurs détachés
+        // Ignorer
       }
     });
   }
 
   private async persistLocally(): Promise<void> {
-    await this.safeStorageSet(STORAGE_FAV_IDS, JSON.stringify(Array.from(this.favoriteIds)));
-    await this.safeStorageSet(STORAGE_FAV_PROPS, JSON.stringify(this.cachedFavorites));
+    const keyIds = this.getStorageKey('ids');
+    const keyProps = this.getStorageKey('props');
+    await this.safeStorageSet(keyIds, JSON.stringify(Array.from(this.favoriteIds)));
+    await this.safeStorageSet(keyProps, JSON.stringify(this.cachedFavorites));
   }
 
   /**
-   * Synchronisation avec Cloud Firestore : users/{userId}/favorites
+   * Démarre la synchronisation réactive en tâche de fond (toutes les 6 secondes)
+   */
+  public startRealtimeSync(): void {
+    this.stopRealtimeSync();
+    if (!this.currentUserId) return;
+
+    this.syncTimer = setInterval(() => {
+      if (this.currentUserId) {
+        this.syncWithBackend().catch(() => {});
+      }
+    }, 6000);
+  }
+
+  public stopRealtimeSync(): void {
+    if (this.syncTimer) {
+      clearInterval(this.syncTimer);
+      this.syncTimer = null;
+    }
+  }
+
+  /**
+   * Synchronisation bidirectionnelle stricte avec Cloud Firestore : users/{userId}/favorites
    */
   public async syncWithBackend(): Promise<void> {
     const uid = this.currentUserId;
-    if (!uid) return;
+    if (!uid) {
+      this.favoriteIds.clear();
+      this.cachedFavorites = [];
+      this.notify();
+      return;
+    }
 
     try {
       const subcollectionPath = `users/${uid}/favorites`;
       const docs = await firestoreEngine.getCollection<FirestoreFavoriteDoc>(subcollectionPath);
 
-      if (Array.isArray(docs)) {
-        const remoteIds = new Set(docs.map((d) => String(d.propertyId || d.id)));
-        this.favoriteIds = remoteIds;
+      // Si l'utilisateur n'a aucun favori en base, TOUJOURS réinitialiser la liste (ne jamais laisser traîner un ancien compte)
+      if (!Array.isArray(docs) || docs.length === 0) {
+        const hadFavorites = this.favoriteIds.size > 0;
+        this.favoriteIds.clear();
+        this.cachedFavorites = [];
+        await this.persistLocally();
+        if (hadFavorites) this.notify();
+        return;
+      }
 
+      const remoteIds = new Set(docs.map((d) => String(d.propertyId || d.id)));
+
+      // Vérifier s'il y a eu des changements avant de déclencher des re-rendus
+      const isDifferent =
+        remoteIds.size !== this.favoriteIds.size ||
+        Array.from(remoteIds).some((id) => !this.favoriteIds.has(id));
+
+      if (isDifferent) {
+        this.favoriteIds = remoteIds;
         const allProps = await propertyApiService.getProperties();
         this.cachedFavorites = allProps.filter((p) => this.favoriteIds.has(String(p.id)));
 
         await this.persistLocally();
         this.notify();
       }
-    } catch {
-      // Conserver les favoris locaux en cas de coupure réseau
+    } catch (err) {
+      console.warn('[DarLink Favorites] Synchronisation distante impossible (mode hors-ligne) :', err);
     }
   }
 
+  /**
+   * Réinitialisation intégrale lors de la déconnexion
+   */
   public async clear(): Promise<void> {
+    this.stopRealtimeSync();
+    const oldKeyIds = this.getStorageKey('ids');
+    const oldKeyProps = this.getStorageKey('props');
+
     this.favoriteIds.clear();
     this.cachedFavorites = [];
     this.currentUserId = null;
-    await this.safeStorageRemove(STORAGE_FAV_IDS);
-    await this.safeStorageRemove(STORAGE_FAV_PROPS);
+    this.isInitialized = false;
+
+    await this.safeStorageRemove(oldKeyIds);
+    await this.safeStorageRemove(oldKeyProps);
+    // Nettoyer également les anciennes clés globales résiduelles
+    await this.safeStorageRemove('@darlink_favorites_ids');
+    await this.safeStorageRemove('@darlink_favorites_properties');
+
     this.notify();
   }
 
@@ -170,7 +255,7 @@ class FavoritesApiService {
   }
 
   /**
-   * Bascule l'état favori et persiste dans Cloud Firestore
+   * Bascule l'état favori et persiste dans Cloud Firestore avec mise à jour optimiste
    */
   public async toggleFavorite(propertyId: string | number, property?: Property): Promise<boolean> {
     const strId = String(propertyId);
@@ -192,11 +277,11 @@ class FavoritesApiService {
       this.cachedFavorites = this.cachedFavorites.filter((p) => String(p.id) !== strId);
     }
 
-    // Persistance locale immédiate
+    // Persistance locale scopée
     await this.persistLocally();
     this.notify();
 
-    // Persistance distante dans Cloud Firestore sous users/{userId}/favorites/{propertyId}
+    // Persistance Cloud Firestore : users/{userId}/favorites/{propertyId}
     const uid = this.currentUserId;
     if (uid) {
       const subcollectionPath = `users/${uid}/favorites`;

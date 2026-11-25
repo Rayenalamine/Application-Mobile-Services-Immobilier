@@ -1,9 +1,11 @@
 // ============================================================
-// DARLINK — SERVICE DES FAVORIS CLOUD FIRESTORE (Flutter)
+// DARLINK — SERVICE DES FAVORIS CLOUD FIRESTORE RÉACTIF (Flutter)
 // Persistance Cloud Firestore sur users/{userId}/favorites/{propertyId}
-// Synchronisation temps réel, isolation stricte et persistance redémarrage
+// Isolation stricte par UID, zéro fuite cross-user,
+// synchronisation périodique réactive (polling 6s) et persistance locale scopée
 // ============================================================
 
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/firebase/firestore_client.dart';
@@ -20,8 +22,10 @@ class FavoritesApiService extends ChangeNotifier {
   final Set<String> _favoriteIds = <String>{};
   final Map<String, Propriete> _cachedProperties = {};
   String? _currentUserId;
+  Timer? _syncTimer;
 
   Set<String> get favoriteIds => _favoriteIds;
+  String? get currentUserId => _currentUserId;
 
   bool isFavorite(String propertyId) => _favoriteIds.contains(propertyId);
 
@@ -41,14 +45,43 @@ class FavoritesApiService extends ChangeNotifier {
     return map.values.toList();
   }
 
+  String _getStorageKey(String suffix) {
+    final scope = (_currentUserId != null && _currentUserId!.isNotEmpty)
+        ? 'user_$_currentUserId'
+        : 'guest';
+    return 'darlink_fav_${scope}_$suffix';
+  }
+
   void setUserId(String? userId) {
-    _currentUserId = userId;
+    if (_currentUserId != userId) {
+      _syncTimer?.cancel();
+      _syncTimer = null;
+      _favoriteIds.clear();
+      _cachedProperties.clear();
+      _currentUserId = userId;
+      notifyListeners();
+
+      if (userId != null && userId.isNotEmpty) {
+        _loadFromLocalPrefs().then((_) => syncFavorites());
+        _startRealtimeSync();
+      }
+    }
+  }
+
+  void _startRealtimeSync() {
+    _syncTimer?.cancel();
+    if (_currentUserId == null || _currentUserId!.isEmpty) return;
+    _syncTimer = Timer.periodic(const Duration(seconds: 6), (_) {
+      if (_currentUserId != null && _currentUserId!.isNotEmpty) {
+        syncFavorites();
+      }
+    });
   }
 
   Future<void> _loadFromLocalPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final list = prefs.getStringList('darlink_favorite_ids');
+      final list = prefs.getStringList(_getStorageKey('ids'));
       if (list != null) {
         _favoriteIds.clear();
         _favoriteIds.addAll(list);
@@ -60,15 +93,22 @@ class FavoritesApiService extends ChangeNotifier {
   Future<void> _saveToLocalPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('darlink_favorite_ids', _favoriteIds.toList());
+      await prefs.setStringList(_getStorageKey('ids'), _favoriteIds.toList());
     } catch (_) {}
   }
 
-  void clear() {
+  Future<void> clear() async {
+    _syncTimer?.cancel();
+    _syncTimer = null;
+    final oldKey = _getStorageKey('ids');
     _favoriteIds.clear();
     _cachedProperties.clear();
     _currentUserId = null;
-    _saveToLocalPrefs();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(oldKey);
+      await prefs.remove('darlink_favorite_ids');
+    } catch (_) {}
     notifyListeners();
   }
 
@@ -78,16 +118,34 @@ class FavoritesApiService extends ChangeNotifier {
     if (uid != null && uid.isNotEmpty) {
       try {
         final docs = await _firestore.getCollection('users/$uid/favorites');
-        if (docs.isNotEmpty) {
-          _favoriteIds.clear();
+        if (docs.isEmpty) {
+          if (_favoriteIds.isNotEmpty) {
+            _favoriteIds.clear();
+            _cachedProperties.clear();
+            await _saveToLocalPrefs();
+            notifyListeners();
+          }
+        } else {
+          final remoteIds = <String>{};
           for (final doc in docs) {
             final pid = doc['propertyId']?.toString() ?? doc['id']?.toString() ?? '';
             if (pid.isNotEmpty) {
-              _favoriteIds.add(pid);
+              remoteIds.add(pid);
             }
           }
-          await _saveToLocalPrefs();
-          notifyListeners();
+          final isDifferent = remoteIds.length != _favoriteIds.length ||
+              remoteIds.any((id) => !_favoriteIds.contains(id));
+          if (isDifferent) {
+            _favoriteIds.clear();
+            _favoriteIds.addAll(remoteIds);
+            for (final p in PropertyApiService.instance.currentProperties) {
+              if (_favoriteIds.contains(p.id)) {
+                _cachedProperties[p.id] = p;
+              }
+            }
+            await _saveToLocalPrefs();
+            notifyListeners();
+          }
         }
       } catch (_) {}
     }
@@ -112,7 +170,7 @@ class FavoritesApiService extends ChangeNotifier {
       _favoriteIds.remove(propertyId);
       _cachedProperties.remove(propertyId);
     }
-    _saveToLocalPrefs();
+    await _saveToLocalPrefs();
     notifyListeners();
 
     // Persistance distante Cloud Firestore
@@ -131,5 +189,11 @@ class FavoritesApiService extends ChangeNotifier {
         }
       } catch (_) {}
     }
+  }
+
+  @override
+  void dispose() {
+    _syncTimer?.cancel();
+    super.dispose();
   }
 }
