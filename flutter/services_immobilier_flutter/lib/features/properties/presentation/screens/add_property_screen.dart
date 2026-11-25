@@ -32,7 +32,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
 
   String _typeSelectionne = 'Appartement';
   String _gouvernoratSelectionne = 'Tunis';
-  String _statutSelectionne = 'PUBLISHED';
+  String _statutSelectionne = 'PENDING_REVIEW';
   int _nbChambres = 3;
   int _nbSallesDeBain = 2;
   bool _isLocation = false;
@@ -224,7 +224,7 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
                         value: _statutSelectionne,
                         isExpanded: true,
                         items: const [
-                          DropdownMenuItem(value: 'PUBLISHED', child: Text('Publié')),
+                          DropdownMenuItem(value: 'PENDING_REVIEW', child: Text('Soumettre pour validation')),
                           DropdownMenuItem(value: 'DRAFT', child: Text('Brouillon')),
                         ],
                         onChanged: (v) => setState(() => _statutSelectionne = v!),

@@ -94,7 +94,11 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
       >
         <View style={styles.statusDot} />
         <Text style={[styles.statusText, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-          {property.estLocation ? t('for_rent') : t('for_sale')}
+          {property.listingCategory === 'DEVELOPMENT_REFERENCE' || (property.sourceName && !property.republicationAuthorized)
+            ? 'Référence programme'
+            : property.estLocation
+            ? t('for_rent')
+            : t('for_sale')}
         </Text>
       </View>
 

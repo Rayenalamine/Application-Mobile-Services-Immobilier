@@ -53,6 +53,7 @@ firebase-debug.log*
 firestore-debug.log*
 ui-debug.log*
 serviceAccountKey.json
+scripts/backups/
 google-services.json
 GoogleService-Info.plist
 .env

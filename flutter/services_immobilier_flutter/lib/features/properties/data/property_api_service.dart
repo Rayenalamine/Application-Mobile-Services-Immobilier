@@ -4,7 +4,9 @@
 // pagination, filtres multicritères, statuts d'annonce et relations réelles.
 // ============================================================
 
+import 'dart:async';
 import '../../../core/constants/tunisia_locations.dart';
+import '../../../core/firebase/firebase_sdk.dart';
 import '../../../core/firebase/firestore_client.dart';
 import '../../auth/domain/models/auth_state.dart';
 import '../domain/models/property.dart';
@@ -26,6 +28,28 @@ class PropertyApiService {
     if (fixtures != null) {
       _cachedProperties = List.from(fixtures);
     }
+  }
+
+  /// Flux temps réel Cloud Firestore (.snapshots()) des annonces publiées
+  Stream<List<Propriete>> watchPublishedProperties() {
+    final fs = FirebaseSdk.instance.firestore;
+    if (fs == null) {
+      return Stream.fromFuture(getProperties());
+    }
+    return fs
+        .collection('properties')
+        .where('listingStatus', isEqualTo: 'PUBLISHED')
+        .limit(50)
+        .snapshots()
+        .map((snap) {
+      final list = snap.docs.map((d) {
+        final data = Map<String, dynamic>.from(d.data());
+        data['id'] ??= d.id;
+        return mapJsonToPropriete(data);
+      }).toList();
+      _cachedProperties = list;
+      return list;
+    });
   }
 
   /// Recherche structurée côté Cloud Firestore (:runQuery) avec pagination et tri
@@ -296,10 +320,13 @@ class PropertyApiService {
     List<String>? amenities,
     double? latitude,
     double? longitude,
-    String listingStatus = 'PUBLISHED',
+    String listingStatus = 'PENDING_REVIEW',
   }) async {
     final user = AuthState.instance.currentUser;
     if (user == null) return null;
+
+    // Normal users can only submit DRAFT or PENDING_REVIEW; only trusted admin/backend can publish.
+    final safeStatus = (listingStatus == 'DRAFT') ? 'DRAFT' : 'PENDING_REVIEW';
 
     final resolved = resolveFallbackCoordinates(governorate ?? city);
     final hasExplicitCoords = latitude != null && longitude != null;
@@ -341,10 +368,13 @@ class PropertyApiService {
       'agencyId': user.agencyId ?? '',
       'agentName': user.fullName,
       'agentPhone': user.phone ?? '',
-      'listingStatus': listingStatus,
+      'listingStatus': safeStatus,
+      'listingCategory': 'VERIFIED_LISTING',
+      'sourceType': 'OWNER_SUBMISSION',
+      'verificationStatus': 'PENDING_VERIFICATION',
+      'currency': 'TND',
       'republicationAuthorized': true,
       'sourceName': 'DarLink Direct',
-      'publishedAt': nowIso,
       'lastVerifiedAt': nowIso,
       'createdAt': nowIso,
       'updatedAt': nowIso,
@@ -434,6 +464,10 @@ class PropertyApiService {
       agencyId: json['agencyId'] as String?,
       agentId: json['agentId'] as String?,
       listingStatus: ListingStatus.fromString(json['listingStatus'] as String?),
+      listingCategory: ListingCategory.fromString(json['listingCategory'] as String?),
+      sourceType: json['sourceType'] as String? ?? 'OWNER_SUBMISSION',
+      verificationStatus: json['verificationStatus'] as String? ?? 'UNVERIFIED',
+      currency: json['currency'] as String? ?? 'TND',
       publishedAt: json['publishedAt'] as String?,
       lastVerifiedAt: json['lastVerifiedAt'] as String?,
       collectedAt: json['collectedAt'] as String?,

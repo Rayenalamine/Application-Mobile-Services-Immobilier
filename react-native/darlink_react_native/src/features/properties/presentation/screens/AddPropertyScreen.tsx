@@ -43,7 +43,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
   const [bedrooms, setBedrooms] = useState(2);
   const [bathrooms, setBathrooms] = useState(1);
   const [isRental, setIsRental] = useState(false);
-  const [listingStatus, setListingStatus] = useState<ListingStatus>('PUBLISHED');
+  const [listingStatus, setListingStatus] = useState<ListingStatus>('PENDING_REVIEW');
   const [submitting, setSubmitting] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(['Climatisation']);
 
@@ -101,7 +101,10 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
         listingStatus,
       });
 
-      Alert.alert('Annonce enregistrée', `Votre annonce (${listingStatus}) a été publiée dans Cloud Firestore.`, [
+      Alert.alert(
+        'Annonce enregistrée',
+        `Votre annonce (${listingStatus === 'PENDING_REVIEW' ? 'En attente de validation' : 'Brouillon'}) a été enregistrée dans Cloud Firestore.`,
+        [
         {
           text: 'OK',
           onPress: () => {
@@ -155,10 +158,10 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
 
         <View style={[styles.toggleRow, { marginTop: 10 }]}>
           <TouchableOpacity
-            style={[styles.toggleBtn, listingStatus === 'PUBLISHED' ? { backgroundColor: '#10B981' } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
-            onPress={() => setListingStatus('PUBLISHED')}
+            style={[styles.toggleBtn, listingStatus === 'PENDING_REVIEW' ? { backgroundColor: '#2563EB' } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={() => setListingStatus('PENDING_REVIEW')}
           >
-            <Text style={[styles.toggleText, { color: listingStatus === 'PUBLISHED' ? '#FFFFFF' : colors.textSecondary }]}>Publier</Text>
+            <Text style={[styles.toggleText, { color: listingStatus === 'PENDING_REVIEW' ? '#FFFFFF' : colors.textSecondary }]}>Soumettre</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.toggleBtn, listingStatus === 'DRAFT' ? { backgroundColor: '#64748B' } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}

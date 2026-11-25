@@ -4,12 +4,14 @@
 // pagination, filtres multicritères, statuts d'annonce et relations réelles.
 // ============================================================
 
+import { collection, limit as fsLimit, onSnapshot, query, where } from 'firebase/firestore';
 import { resolveFallbackCoordinates } from '../../../core/constants/tunisiaLocations';
 import {
   firestoreEngine,
   StructuredFieldFilter,
   StructuredOrderBy,
 } from '../../../core/firebase/firestoreEngine';
+import { getFirebaseDb } from '../../../core/firebase/firebaseSdk';
 import { authService } from '../../auth/services/authService';
 import { ListingStatus, Property, PropertyType } from '../domain/models/property';
 
@@ -93,6 +95,10 @@ export interface FirestorePropertyDto {
   agencyId?: string;
   agentId?: string;
   listingStatus?: ListingStatus;
+  listingCategory?: 'VERIFIED_LISTING' | 'DEVELOPMENT_REFERENCE';
+  sourceType?: 'OWNER_SUBMISSION' | 'AGENCY_SUBMISSION' | 'INSTITUTIONAL_PORTAL';
+  verificationStatus?: string;
+  currency?: string;
   publishedAt?: string;
   lastVerifiedAt?: string;
   collectedAt?: string;
@@ -123,6 +129,36 @@ class PropertyApiService {
     this.testFixtures = fixtures;
     if (fixtures) {
       this.cachedProperties = [...fixtures];
+    }
+  }
+
+  public subscribeToPublishedProperties(
+    onData: (properties: Property[]) => void,
+    onError?: (err: Error) => void
+  ): () => void {
+    try {
+      const db = getFirebaseDb();
+      const q = query(
+        collection(db, 'properties'),
+        where('listingStatus', '==', 'PUBLISHED'),
+        fsLimit(50)
+      );
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const mapped = snapshot.docs.map((d) =>
+            this.mapDtoToProperty({ ...(d.data() as FirestorePropertyDto), id: d.id })
+          );
+          this.cachedProperties = mapped;
+          onData(mapped);
+        },
+        (err) => {
+          if (onError) onError(err);
+        }
+      );
+    } catch (err) {
+      if (onError && err instanceof Error) onError(err);
+      return () => {};
     }
   }
 
@@ -228,6 +264,13 @@ class PropertyApiService {
     return this.getUserProperties();
   }
 
+  public async getPropertyById(id: string): Promise<Property | null> {
+    const cached = this.cachedProperties.find((p) => p.id === id);
+    if (cached) return cached;
+    const doc = await firestoreEngine.getDocument<FirestorePropertyDto>('properties', id);
+    return doc ? this.mapDtoToProperty(doc) : null;
+  }
+
   public async createProperty(payload: CreatePropertyPayload): Promise<Property> {
     const user = authService.getCurrentUser();
     if (!user) {
@@ -240,6 +283,8 @@ class PropertyApiService {
     const newId = `prop_${Date.now()}`;
     const nowIso = new Date().toISOString();
     const img = (payload.imageUrl || '').trim();
+
+    const safeStatus: ListingStatus = payload.listingStatus === 'DRAFT' ? 'DRAFT' : 'PENDING_REVIEW';
 
     const docData: Record<string, unknown> = {
       id: newId,
@@ -271,10 +316,13 @@ class PropertyApiService {
       agentPhone: user.phone || '',
       ownerId: user.id,
       agencyId: user.agencyId || '',
-      listingStatus: payload.listingStatus || 'PUBLISHED',
+      listingStatus: safeStatus,
+      listingCategory: 'VERIFIED_LISTING',
+      sourceType: 'OWNER_SUBMISSION',
+      verificationStatus: 'PENDING_VERIFICATION',
+      currency: 'TND',
       republicationAuthorized: true,
       sourceName: 'DarLink Direct',
-      publishedAt: nowIso,
       lastVerifiedAt: nowIso,
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -424,7 +472,11 @@ class PropertyApiService {
       ownerId: dto.ownerId || '',
       agencyId: dto.agencyId || '',
       agentId: dto.agentId || '',
-      listingStatus: dto.listingStatus || 'PUBLISHED',
+      listingStatus: dto.listingStatus || 'DRAFT',
+      listingCategory: dto.listingCategory || (dto.sourceName && !dto.republicationAuthorized ? 'DEVELOPMENT_REFERENCE' : 'VERIFIED_LISTING'),
+      sourceType: dto.sourceType || 'OWNER_SUBMISSION',
+      verificationStatus: (dto.verificationStatus as Property['verificationStatus']) || 'UNVERIFIED',
+      currency: dto.currency || 'TND',
       publishedAt: dto.publishedAt,
       lastVerifiedAt: dto.lastVerifiedAt,
       collectedAt: dto.collectedAt,

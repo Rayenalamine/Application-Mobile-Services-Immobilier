@@ -2,7 +2,8 @@
   "metadata": {
     "description": "Catalogue vérifié de références immobilières publiques officielles en Tunisie (SNIT, SNIT Nord, SNIT Sud, SPROLS, AFH)",
     "copyrightNotice": "Toutes ces entrées sont des références institutionnelles vérifiées avec attribution et liens officiels. Aucune photographie protégée tierce n'est copiée sans autorisation (imagePermissionStatus: NONE_PLACEHOLDER_USED). Les prix non publiés publiquement sont marqués priceOnRequest: true.",
-    "collectedAt": "2026-11-25T18:45:00.000Z"
+    "collectedAt": "2026-11-25T18:45:00.000Z",
+    "provenancePolicy": "All entries in this file are institutional development/programme references (DEVELOPMENT_REFERENCE), not individual available listings."
   },
   "properties": [
     {
@@ -22,9 +23,13 @@
       "yearBuilt": 2024,
       "standing": "Économique / FOPROLOS",
       "isRental": false,
-      "amenities": ["Programme FOPROLOS", "Résidence collective", "Promotion publique SNIT"],
+      "amenities": [
+        "Programme FOPROLOS",
+        "Résidence collective",
+        "Promotion publique SNIT"
+      ],
       "latitude": 36.7745,
-      "longitude": 10.1190,
+      "longitude": 10.119,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -38,7 +43,12 @@
       "agentName": "SNIT Mère (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snit_tunis_ibnkhaldoun_s3",
@@ -57,9 +67,12 @@
       "yearBuilt": 2024,
       "standing": "Économique / FOPROLOS",
       "isRental": false,
-      "amenities": ["Programme FOPROLOS", "Promotion publique SNIT"],
-      "latitude": 36.7760,
-      "longitude": 10.1210,
+      "amenities": [
+        "Programme FOPROLOS",
+        "Promotion publique SNIT"
+      ],
+      "latitude": 36.776,
+      "longitude": 10.121,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -73,7 +86,12 @@
       "agentName": "SNIT Mère (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snit_ariana_tanit",
@@ -92,8 +110,11 @@
       "yearBuilt": 2025,
       "standing": "Standing Public SNIT",
       "isRental": false,
-      "amenities": ["Inscription officielle SNIT", "Résidence moderne"],
-      "latitude": 36.8540,
+      "amenities": [
+        "Inscription officielle SNIT",
+        "Résidence moderne"
+      ],
+      "latitude": 36.854,
       "longitude": 10.1415,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
@@ -108,7 +129,12 @@
       "agentName": "SNIT Mère (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_sprols_ariana_borjtouil_s2",
@@ -127,9 +153,12 @@
       "yearBuilt": 2024,
       "standing": "Économique / Social SPROLS",
       "isRental": false,
-      "amenities": ["Éligible FOPROLOS", "Programme public SPROLS"],
-      "latitude": 36.9350,
-      "longitude": 10.1450,
+      "amenities": [
+        "Éligible FOPROLOS",
+        "Programme public SPROLS"
+      ],
+      "latitude": 36.935,
+      "longitude": 10.145,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -143,7 +172,12 @@
       "agentName": "SPROLS (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_sprols_ariana_borjtouil_s3",
@@ -162,9 +196,12 @@
       "yearBuilt": 2024,
       "standing": "Économique / Social SPROLS",
       "isRental": false,
-      "amenities": ["Éligible FOPROLOS", "Programme public SPROLS"],
-      "latitude": 36.9370,
-      "longitude": 10.1480,
+      "amenities": [
+        "Éligible FOPROLOS",
+        "Programme public SPROLS"
+      ],
+      "latitude": 36.937,
+      "longitude": 10.148,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -178,7 +215,12 @@
       "agentName": "SPROLS (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_sprols_benarous_mourouj",
@@ -197,9 +239,13 @@
       "yearBuilt": 2024,
       "standing": "Résidence R+3 SPROLS",
       "isRental": false,
-      "amenities": ["Espaces verts", "Parking résidence", "FOPROLOS"],
-      "latitude": 36.7330,
-      "longitude": 10.2050,
+      "amenities": [
+        "Espaces verts",
+        "Parking résidence",
+        "FOPROLOS"
+      ],
+      "latitude": 36.733,
+      "longitude": 10.205,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -213,7 +259,12 @@
       "agentName": "SPROLS (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_sprols_manouba_douarhicher",
@@ -232,9 +283,11 @@
       "yearBuilt": 2024,
       "standing": "Social / Économique",
       "isRental": false,
-      "amenities": ["Programme public SPROLS"],
-      "latitude": 36.8260,
-      "longitude": 10.0950,
+      "amenities": [
+        "Programme public SPROLS"
+      ],
+      "latitude": 36.826,
+      "longitude": 10.095,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -248,7 +301,12 @@
       "agentName": "SPROLS (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitnord_bizerte_ezzahra",
@@ -267,9 +325,11 @@
       "yearBuilt": 2023,
       "standing": "Standing SNIT Nord",
       "isRental": false,
-      "amenities": ["Promotion publique SNIT Nord"],
-      "latitude": 37.1540,
-      "longitude": 9.7860,
+      "amenities": [
+        "Promotion publique SNIT Nord"
+      ],
+      "latitude": 37.154,
+      "longitude": 9.786,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -283,7 +343,12 @@
       "agentName": "SNIT Nord (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitnord_beja_vaga",
@@ -302,7 +367,9 @@
       "yearBuilt": 2023,
       "standing": "Standing SNIT Nord",
       "isRental": false,
-      "amenities": ["Promotion publique SNIT Nord"],
+      "amenities": [
+        "Promotion publique SNIT Nord"
+      ],
       "latitude": 36.7256,
       "longitude": 9.1817,
       "coordinatePrecision": "CITY_CENTER",
@@ -318,7 +385,12 @@
       "agentName": "SNIT Nord (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitnord_jendouba_montazah",
@@ -337,7 +409,10 @@
       "yearBuilt": 2023,
       "standing": "Économique SNIT Nord",
       "isRental": false,
-      "amenities": ["Maison individuelle", "Promotion publique SNIT Nord"],
+      "amenities": [
+        "Maison individuelle",
+        "Promotion publique SNIT Nord"
+      ],
       "latitude": 36.5011,
       "longitude": 8.7802,
       "coordinatePrecision": "CITY_CENTER",
@@ -353,7 +428,12 @@
       "agentName": "SNIT Nord (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitnord_siliana_narjes",
@@ -372,7 +452,9 @@
       "yearBuilt": 2023,
       "standing": "Standing SNIT Nord",
       "isRental": false,
-      "amenities": ["Promotion publique SNIT Nord"],
+      "amenities": [
+        "Promotion publique SNIT Nord"
+      ],
       "latitude": 36.0849,
       "longitude": 9.3708,
       "coordinatePrecision": "CITY_CENTER",
@@ -388,7 +470,12 @@
       "agentName": "SNIT Nord (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitsud_sfax_azur_s2",
@@ -407,9 +494,12 @@
       "yearBuilt": 2024,
       "standing": "Résidence Collective R+4",
       "isRental": false,
-      "amenities": ["Résidence R+4", "Promotion publique SNIT Sud"],
-      "latitude": 34.7380,
-      "longitude": 10.7420,
+      "amenities": [
+        "Résidence R+4",
+        "Promotion publique SNIT Sud"
+      ],
+      "latitude": 34.738,
+      "longitude": 10.742,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -423,7 +513,12 @@
       "agentName": "SNIT Sud (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitsud_sfax_azur_s3",
@@ -442,9 +537,12 @@
       "yearBuilt": 2024,
       "standing": "Résidence Collective R+4",
       "isRental": false,
-      "amenities": ["Résidence R+4", "Promotion publique SNIT Sud"],
-      "latitude": 34.7410,
-      "longitude": 10.7450,
+      "amenities": [
+        "Résidence R+4",
+        "Promotion publique SNIT Sud"
+      ],
+      "latitude": 34.741,
+      "longitude": 10.745,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -458,7 +556,12 @@
       "agentName": "SNIT Sud (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitsud_sidibouzid_collines",
@@ -477,7 +580,9 @@
       "yearBuilt": 2024,
       "standing": "Collectif R+4 SNIT Sud",
       "isRental": false,
-      "amenities": ["Promotion publique SNIT Sud"],
+      "amenities": [
+        "Promotion publique SNIT Sud"
+      ],
       "latitude": 35.0382,
       "longitude": 9.4849,
       "coordinatePrecision": "CITY_CENTER",
@@ -493,7 +598,12 @@
       "agentName": "SNIT Sud (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_snitsud_medenine_djerba_cactus",
@@ -512,7 +622,10 @@
       "yearBuilt": 2024,
       "standing": "Logement individuel / jumelé",
       "isRental": false,
-      "amenities": ["Jardin privatif", "Promotion publique SNIT Sud"],
+      "amenities": [
+        "Jardin privatif",
+        "Promotion publique SNIT Sud"
+      ],
       "latitude": 33.8075,
       "longitude": 10.8451,
       "coordinatePrecision": "CITY_CENTER",
@@ -528,7 +641,12 @@
       "agentName": "SNIT Sud (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_afh_kairouan_mansoura",
@@ -547,7 +665,11 @@
       "yearBuilt": 2025,
       "standing": "Lotissement viabilisé AFH",
       "isRental": false,
-      "amenities": ["Terrain viabilisé", "Voirie et réseaux", "Attribution AFH"],
+      "amenities": [
+        "Terrain viabilisé",
+        "Voirie et réseaux",
+        "Attribution AFH"
+      ],
       "latitude": 35.6781,
       "longitude": 10.0963,
       "coordinatePrecision": "CITY_CENTER",
@@ -563,7 +685,12 @@
       "agentName": "AFH Tunisie (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_afh_nabeul_mrezga",
@@ -582,9 +709,12 @@
       "yearBuilt": 2024,
       "standing": "Lotissement viabilisé AFH",
       "isRental": false,
-      "amenities": ["Proche littoral", "Terrain viabilisé AFH"],
-      "latitude": 36.4250,
-      "longitude": 10.6780,
+      "amenities": [
+        "Proche littoral",
+        "Terrain viabilisé AFH"
+      ],
+      "latitude": 36.425,
+      "longitude": 10.678,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -598,7 +728,12 @@
       "agentName": "AFH Tunisie (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     },
     {
       "id": "ref_afh_sousse_errayhan",
@@ -617,9 +752,11 @@
       "yearBuilt": 2024,
       "standing": "Lotissement AFH",
       "isRental": false,
-      "amenities": ["Terrain viabilisé AFH"],
-      "latitude": 35.8050,
-      "longitude": 10.6010,
+      "amenities": [
+        "Terrain viabilisé AFH"
+      ],
+      "latitude": 35.805,
+      "longitude": 10.601,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
       "imageUrl": "",
@@ -633,8 +770,12 @@
       "agentName": "AFH / SNIT Centre (Référence Officielle)",
       "agentPhone": "",
       "collectedAt": "2026-11-25T18:45:00.000Z",
-      "lastVerifiedAt": "2026-11-25T18:45:00.000Z"
+      "lastVerifiedAt": "2026-11-25T18:45:00.000Z",
+      "listingCategory": "DEVELOPMENT_REFERENCE",
+      "sourceType": "INSTITUTIONAL_PORTAL",
+      "verificationStatus": "VERIFIED_INSTITUTIONAL_REFERENCE",
+      "availabilityStatus": "PROGRAMME_REFERENCE_ONLY",
+      "currency": "TND"
     }
   ]
 }
-

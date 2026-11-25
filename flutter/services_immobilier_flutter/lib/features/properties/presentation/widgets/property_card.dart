@@ -167,9 +167,11 @@ class _CarteProprieteState extends State<CartePropriete> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            p.estLocation
-                                ? AppLocale.instance.tr('for_rent')
-                                : AppLocale.instance.tr('for_sale'),
+                            p.isInstitutionalReference
+                                ? 'Référence programme'
+                                : (p.estLocation
+                                    ? AppLocale.instance.tr('for_rent')
+                                    : AppLocale.instance.tr('for_sale')),
                             style: TextStyle(
                               color: isDark ? Colors.white : const Color(0xFF111827),
                               fontSize: 12,

@@ -22,6 +22,17 @@ export type ListingStatus =
   | 'RENTED'
   | 'ARCHIVED';
 
+export type ListingCategory = 'VERIFIED_LISTING' | 'DEVELOPMENT_REFERENCE';
+
+export type SourceType = 'OWNER_SUBMISSION' | 'AGENCY_SUBMISSION' | 'INSTITUTIONAL_PORTAL';
+
+export type VerificationStatus =
+  | 'UNVERIFIED'
+  | 'PENDING_VERIFICATION'
+  | 'VERIFIED_LISTING'
+  | 'VERIFIED_INSTITUTIONAL_REFERENCE'
+  | 'ARCHIVED_PLACEHOLDER';
+
 export type CoordinatePrecision =
   | 'VERIFIED'
   | 'APPROXIMATE'
@@ -74,6 +85,11 @@ export interface Property {
 
   // Cycle de vie & traçabilité catalogue
   readonly listingStatus?: ListingStatus;
+  readonly listingCategory?: ListingCategory;
+  readonly sourceType?: SourceType;
+  readonly verificationStatus?: VerificationStatus;
+  readonly availabilityStatus?: string;
+  readonly currency?: string;
   readonly publishedAt?: string;
   readonly lastVerifiedAt?: string;
   readonly collectedAt?: string;

@@ -18,10 +18,26 @@ enum ListingStatus {
   const ListingStatus(this.value);
 
   static ListingStatus fromString(String? raw) {
-    final upper = raw?.toUpperCase().trim() ?? 'PUBLISHED';
+    final upper = raw?.toUpperCase().trim() ?? 'DRAFT';
     return ListingStatus.values.firstWhere(
       (s) => s.value == upper,
-      orElse: () => ListingStatus.published,
+      orElse: () => ListingStatus.draft,
+    );
+  }
+}
+
+enum ListingCategory {
+  verifiedListing('VERIFIED_LISTING'),
+  developmentReference('DEVELOPMENT_REFERENCE');
+
+  final String value;
+  const ListingCategory(this.value);
+
+  static ListingCategory fromString(String? raw) {
+    final upper = raw?.toUpperCase().trim() ?? 'VERIFIED_LISTING';
+    return ListingCategory.values.firstWhere(
+      (c) => c.value == upper,
+      orElse: () => ListingCategory.verifiedListing,
     );
   }
 }
@@ -61,6 +77,10 @@ class Propriete {
 
   // Cycle de vie & traçabilité catalogue
   final ListingStatus listingStatus;
+  final ListingCategory listingCategory;
+  final String sourceType;
+  final String verificationStatus;
+  final String currency;
   final String? publishedAt;
   final String? lastVerifiedAt;
   final String? collectedAt;
@@ -70,6 +90,10 @@ class Propriete {
   final String imagePermissionStatus;
   final String? imageAttribution;
   final String? createdAt;
+
+  bool get isInstitutionalReference =>
+      listingCategory == ListingCategory.developmentReference ||
+      (sourceName != null && sourceName!.isNotEmpty && !republicationAuthorized);
 
   const Propriete({
     this.id = '1',
@@ -107,7 +131,11 @@ class Propriete {
     this.agentTel = '',
     this.agencyId,
     this.agentId,
-    this.listingStatus = ListingStatus.published,
+    this.listingStatus = ListingStatus.draft,
+    this.listingCategory = ListingCategory.verifiedListing,
+    this.sourceType = 'OWNER_SUBMISSION',
+    this.verificationStatus = 'UNVERIFIED',
+    this.currency = 'TND',
     this.publishedAt,
     this.lastVerifiedAt,
     this.collectedAt,
