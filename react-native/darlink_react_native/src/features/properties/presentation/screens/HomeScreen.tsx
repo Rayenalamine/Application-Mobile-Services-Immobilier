@@ -1,9 +1,10 @@
 // ============================================================
-// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (React Native Screen 1)
-// Design adaptatif Clair / Sombre, monogramme initiales épuré
+// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (React Native)
+// Chargement exclusif Cloud Firestore (zéro donnée fictive),
+// icônes vectorielles Lucide, zéro emoji.
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,54 +14,76 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Platform,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import { AppColors } from '../../../../core/constants/colors';
-import { mockProperties } from '../../data/mockProperties';
+import {
+  Sun,
+  Moon,
+  Plus,
+  Map as MapIcon,
+  Search,
+  SlidersHorizontal,
+  X,
+  Building2,
+  Bell,
+} from 'lucide-react-native';
 import { Property } from '../../domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
+import { EmptyStateView } from '../../../../core/components/EmptyStateView';
 import { PropertyDetailsScreen } from './PropertyDetailsScreen';
 import { AddPropertyScreen } from './AddPropertyScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
+import { NotificationScreen } from '../../../notifications/presentation/screens/NotificationScreen';
+import { notificationService } from '../../../notifications/services/notificationService';
 import { propertyApiService } from '../../services/propertyApiService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { authService } from '../../../auth/services/authService';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
 
-const FILTER_PILLS = [
-  'Tous',
-  'Prix',
-  'Appartement',
-  'Villa',
-  'Maison',
-  'Chambres',
-] as const;
+const FILTER_PILLS = ['Tous', 'Appartement', 'Villa', 'Maison', 'Terrain'] as const;
 
 interface HomeScreenProps {
   onNavigateToSearch?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) => {
-  const [currentView, setCurrentView] = useState<'home' | 'map' | 'add'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'map' | 'add' | 'notifications'>('home');
+  const [mapFocusProperty, setMapFocusProperty] = useState<Property | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [properties, setProperties] = useState<Property[]>([...mockProperties]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const { isDark, toggleTheme, colors } = useTheme();
   const { t, language, setLanguage } = useTranslation();
 
-  const getFilterLabel = (pill: string) => {
-    switch (pill) {
-      case 'Tous': return t('filter_all');
-      case 'Prix': return t('filter_price');
-      case 'Appartement': return t('filter_apartment');
-      case 'Villa': return t('filter_villa');
-      case 'Maison': return t('filter_house');
-      case 'Chambres': return t('filter_bedrooms');
-      default: return pill;
+  const refreshNotifCount = useCallback(async () => {
+    try {
+      const count = await notificationService.getUnreadCount();
+      setUnreadNotifCount(count);
+    } catch {
+      setUnreadNotifCount(0);
     }
-  };
+  }, []);
+
+  const loadProperties = useCallback(async () => {
+    try {
+      const list = await propertyApiService.getProperties({ limit: 40 });
+      setProperties(list);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshNotifCount();
+  }, [refreshNotifCount, currentUser]);
 
   useEffect(() => {
     const unsub = authService.subscribe(() => {
@@ -72,47 +95,71 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   useEffect(() => {
     favoritesApiService.init();
     const unsubFav = favoritesApiService.addListener(() => {
-      // Forcer la mise à jour des cartes lors d'un ajout/suppression de favori
       setProperties((prev) => [...prev]);
     });
     return unsubFav;
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const list = await propertyApiService.getProperties();
-      if (isMounted && list.length > 0) {
-        setProperties(list);
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    loadProperties();
+  }, [loadProperties]);
 
-  // Filtrage selon le filtre actif et la recherche textuelle
+  const getFilterLabel = (pill: string) => {
+    switch (pill) {
+      case 'Tous':
+        return t('filter_all');
+      case 'Appartement':
+        return t('filter_apartment');
+      case 'Villa':
+        return t('filter_villa');
+      case 'Maison':
+        return t('filter_house');
+      default:
+        return pill;
+    }
+  };
+
   const filteredProperties = properties.filter((p) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const matchTitle = (p.titre || '').toLowerCase().includes(q);
       const matchLoc = (p.localisation || '').toLowerCase().includes(q);
+      const matchGov = (p.governorate || '').toLowerCase().includes(q);
       const matchType = (p.type || '').toLowerCase().includes(q);
-      if (!matchTitle && !matchLoc && !matchType) return false;
+      if (!matchTitle && !matchLoc && !matchGov && !matchType) return false;
     }
-    if (activeFilter === 'Tous' || activeFilter === 'Prix' || activeFilter === 'Chambres') {
-      return true;
-    }
+    if (activeFilter === 'Tous') return true;
     return p.type.toLowerCase() === activeFilter.toLowerCase();
   });
 
   if (currentView === 'map') {
     return (
       <MapScreen
-        onBack={() => setCurrentView('home')}
+        initialProperty={mapFocusProperty}
+        onBack={() => {
+          setMapFocusProperty(null);
+          setCurrentView('home');
+        }}
         onSelectProperty={(prop) => {
+          setMapFocusProperty(null);
           setSelectedProperty(prop);
           setCurrentView('home');
+        }}
+      />
+    );
+  }
+
+  if (currentView === 'notifications') {
+    return (
+      <NotificationScreen
+        onBack={() => {
+          setCurrentView('home');
+          refreshNotifCount();
+        }}
+        onOpenProperty={(prop) => {
+          setSelectedProperty(prop);
+          setCurrentView('home');
+          refreshNotifCount();
         }}
       />
     );
@@ -129,12 +176,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     );
   }
 
-  // Si un bien est sélectionné, on affiche l'écran de détails luxe (Screen 2)
   if (selectedProperty) {
     return (
       <PropertyDetailsScreen
         property={selectedProperty}
         onBack={() => setSelectedProperty(null)}
+        onLocateOnMap={(prop) => {
+          setSelectedProperty(null);
+          setMapFocusProperty(prop);
+          setCurrentView('map');
+        }}
       />
     );
   }
@@ -145,11 +196,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              loadProperties();
+            }}
+          />
+        }
       >
-        {/* 1. EN-TÊTE UTILISATEUR AVEC MONOGRAMME INITIALES ET BASCULE DU THÈME */}
+        {/* EN-TÊTE */}
         <View style={styles.headerRow}>
           <View style={styles.userInfo}>
-            {/* Monogramme épuré sans photo */}
             <View
               style={[
                 styles.monogramAvatar,
@@ -161,48 +220,56 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             >
               <Text style={[styles.monogramText, { color: colors.textPrimary }]}>
                 {currentUser && currentUser.fullName
-                  ? currentUser.fullName.split(' ').map((e) => (e ? e[0] : '')).slice(0, 2).join('')
-                  : 'IN'}
+                  ? currentUser.fullName
+                      .split(' ')
+                      .map((e) => (e ? e[0] : ''))
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()
+                  : 'DL'}
               </Text>
             </View>
 
             <View style={styles.userTextContainer}>
               <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
-                {currentUser ? 'Bonjour ! 👋' : 'Bienvenue !'}
+                {currentUser ? 'Bonjour' : 'Bienvenue sur DarLink'}
               </Text>
               <Text style={[styles.userNameText, { color: colors.textPrimary }]} numberOfLines={1}>
-                {currentUser ? currentUser.fullName : 'Invité'}
+                {currentUser ? currentUser.fullName : 'Visiteur'}
               </Text>
             </View>
           </View>
 
-          {/* Boutons d'action : Bascule Thème Sombre/Clair + Ajout + Carte */}
           <View style={styles.headerActions}>
             <TouchableOpacity
-              style={[
-                styles.headerActionBtn,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
+              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border, position: 'relative' }]}
+              onPress={() => setCurrentView('notifications')}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Centre de notifications"
+            >
+              <Bell size={17} color={colors.textPrimary} />
+              {unreadNotifCount > 0 && (
+                <View style={styles.notifBadgeCircle}>
+                  <Text style={styles.notifBadgeText}>
+                    {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={toggleTheme}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Basculer le mode sombre ou clair"
+              accessibilityLabel="Basculer le thème"
             >
-              <Text style={styles.actionEmoji}>{isDark ? '☀️' : '🌙'}</Text>
+              {isDark ? <Sun size={17} color={colors.textPrimary} /> : <Moon size={17} color={colors.textPrimary} />}
             </TouchableOpacity>
 
-            {/* Bouton de langue trilingue FR / AR / EN */}
             <TouchableOpacity
-              style={[
-                styles.headerActionBtn,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
+              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => {
                 if (language === 'fr') setLanguage('ar');
                 else if (language === 'ar') setLanguage('en');
@@ -212,55 +279,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               accessibilityRole="button"
               accessibilityLabel="Changer de langue"
             >
-              <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary }}>
-                {language === 'fr' ? 'FR' : language === 'ar' ? 'عربي' : 'EN'}
+              <Text style={{ fontSize: 11.5, fontWeight: '800', color: colors.textPrimary }}>
+                {language === 'fr' ? 'FR' : language === 'ar' ? 'AR' : 'EN'}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.headerActionBtn,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
+              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => setCurrentView('add')}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Déposer une annonce"
             >
-              <Text style={styles.actionEmoji}>➕</Text>
+              <Plus size={18} color={colors.textPrimary} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.headerActionBtn,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
+              style={[styles.headerActionBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => setCurrentView('map')}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Ouvrir la carte"
             >
-              <Text style={styles.actionEmoji}>🗺️</Text>
+              <MapIcon size={17} color={colors.accentBlue} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE */}
+        {/* BARRE DE RECHERCHE */}
         <View
           testID="home_search_bar"
           style={[
             styles.searchBar,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              shadowOpacity: isDark ? 0.2 : 0.04,
-            },
+            { backgroundColor: colors.surface, borderColor: colors.border, shadowOpacity: isDark ? 0.2 : 0.04 },
           ]}
         >
           <View
@@ -269,7 +320,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
             ]}
           >
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Search size={17} color={colors.accentBlue} />
           </View>
           <TextInput
             testID="home_search_input"
@@ -292,7 +343,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               accessibilityRole="button"
               accessibilityLabel="Effacer la recherche"
             >
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: 'bold' }}>✕</Text>
+              <X size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -304,12 +355,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               accessibilityRole="button"
               accessibilityLabel="Filtres avancés"
             >
-              <Text style={styles.tuneIcon}>⚙️</Text>
+              <SlidersHorizontal size={16} color={colors.textPrimary} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* 3. RANGÉE DE JETONS DE FILTRES HORIZONTAUX */}
+        {/* PILLS DE FILTRE */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -324,9 +375,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                 style={[
                   styles.filterPill,
                   {
-                    backgroundColor: isSelected
-                      ? colors.accentBlue
-                      : colors.surface,
+                    backgroundColor: isSelected ? colors.accentBlue : colors.surface,
                     borderColor: isSelected ? colors.accentBlue : colors.border,
                   },
                 ]}
@@ -336,12 +385,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                 <Text
                   style={[
                     styles.filterText,
-                    {
-                      color: isSelected
-                        ? '#FFFFFF'
-                        : colors.textSecondary,
-                      fontWeight: isSelected ? '700' : '500',
-                    },
+                    { color: isSelected ? '#FFFFFF' : colors.textSecondary, fontWeight: isSelected ? '700' : '500' },
                   ]}
                 >
                   {getFilterLabel(filtre)}
@@ -351,7 +395,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           })}
         </ScrollView>
 
-        {/* 4. BANNIÈRE DISCRÈTE & SECTION TITRE */}
+        {/* BANNIÈRE DISCRÈTE */}
         <View
           style={[
             styles.bannerContainer,
@@ -361,58 +405,58 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             },
           ]}
         >
-          <Text style={styles.bannerTitle}>Services Immobilier DarLink</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Building2 size={17} color={colors.accentBlue} />
+            <Text style={styles.bannerTitle}>DarLink Immobilier Tunisie</Text>
+          </View>
           <Text style={[styles.bannerSubtitle, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
-            Trouvez le bien immobilier de vos rêves en Tunisie avec visite guidée.
+            Catalogue connecté en direct à Cloud Firestore : annonces vérifiées et dépôts propriétaires.
           </Text>
         </View>
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Nos biens immobiliers
+            Biens disponibles
           </Text>
           <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
-            {filteredProperties.length} annonces disponibles
+            {filteredProperties.length} annonce(s)
           </Text>
         </View>
 
-        {/* 5. LISTE IMMERSIVE DES CARTES DE BIENS */}
-        {filteredProperties.map((property) => (
-          <PropertyCard
-            key={property.id ?? property.titre}
-            property={property}
-            onPress={(p) => setSelectedProperty(p)}
+        {loading ? (
+          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.accentBlue} />
+          </View>
+        ) : filteredProperties.length === 0 ? (
+          <EmptyStateView
+            title="Aucune annonce disponible"
+            message="Aucun bien publié ne correspond à ce filtre pour le moment."
+            actionLabel="Réinitialiser"
+            onAction={() => {
+              setActiveFilter('Tous');
+              setSearchQuery('');
+            }}
           />
-        ))}
+        ) : (
+          filteredProperties.map((property) => (
+            <PropertyCard
+              key={property.id ?? property.titre}
+              property={property}
+              onPress={(p) => setSelectedProperty(p)}
+            />
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 110,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  userInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
+  safeArea: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 110 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 8 },
   monogramAvatar: {
     width: 42,
     height: 42,
@@ -421,28 +465,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1.5,
   },
-  monogramText: {
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  userTextContainer: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  greetingText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  userNameText: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
+  monogramText: { fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
+  userTextContainer: { flex: 1, marginLeft: 10 },
+  greetingText: { fontSize: 12, fontWeight: '500' },
+  userNameText: { fontSize: 16, fontWeight: '700' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerActionBtn: {
     width: 38,
     height: 38,
@@ -450,9 +477,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-  },
-  actionEmoji: {
-    fontSize: 17,
   },
   searchBar: {
     height: 52,
@@ -475,78 +499,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
-    overflow: 'hidden',
   },
-  searchIcon: {
-    fontSize: 16,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    paddingVertical: 0,
-    backgroundColor: 'transparent',
-  },
-  clearSearchBtn: {
-    padding: 6,
-    marginRight: 4,
-  },
-  tuneButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  tuneIcon: {
-    fontSize: 14,
-  },
-  filterScrollView: {
-    marginBottom: 16,
-    marginHorizontal: -20,
-  },
-  filterContainer: {
-    paddingHorizontal: 20,
-    gap: 8,
-  },
-  filterPill: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 24,
-    borderWidth: 1,
-  },
-  filterText: {
-    fontSize: 13,
-  },
-  bannerContainer: {
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 18,
-  },
-  bannerTitle: {
-    color: '#2563EB',
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  bannerSubtitle: {
-    fontSize: 12,
-    lineHeight: 18,
-  },
+  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0, backgroundColor: 'transparent' },
+  clearSearchBtn: { padding: 6, marginRight: 4 },
+  tuneButton: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
+  filterScrollView: { marginBottom: 16, marginHorizontal: -20 },
+  filterContainer: { paddingHorizontal: 20, gap: 8 },
+  filterPill: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 24, borderWidth: 1 },
+  filterText: { fontSize: 13 },
+  bannerContainer: { borderRadius: 18, padding: 16, borderWidth: 1, marginBottom: 18 },
+  bannerTitle: { color: '#2563EB', fontSize: 15, fontWeight: '700' },
+  bannerSubtitle: { fontSize: 12, lineHeight: 18 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
     marginBottom: 14,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+  sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
+  sectionCount: { fontSize: 12, fontWeight: '500' },
+  notifBadgeCircle: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
   },
-  sectionCount: {
-    fontSize: 12,
-    fontWeight: '500',
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
   },
 });

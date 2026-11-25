@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (Screen 1)
-// Design adaptatif Blanc Luxe par défaut & Dark Mode avec basculeur
+// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (Flutter)
+// Chargement direct Cloud Firestore, zéro donnée fictive.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -12,10 +12,11 @@ import '../../data/property_api_service.dart';
 import '../../domain/models/property.dart';
 import '../../../map/presentation/screens/map_screen.dart';
 import '../../../navigation/presentation/screens/search_screen.dart';
+import '../../../notifications/data/notification_service.dart';
+import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../widgets/property_card.dart';
 import 'add_property_screen.dart';
 
-/// Écran principal reproduisant fidèlement le style moderne de la maquette (Screen 1).
 class EcranAccueil extends StatefulWidget {
   const EcranAccueil({super.key});
 
@@ -30,11 +31,10 @@ class _EcranAccueilState extends State<EcranAccueil> {
 
   final List<String> _filtres = const [
     'Tous',
-    'Prix',
     'Appartement',
     'Villa',
     'Maison',
-    'Chambres',
+    'Terrain',
   ];
 
   @override
@@ -43,12 +43,15 @@ class _EcranAccueilState extends State<EcranAccueil> {
     _chargerBiens();
     AuthState.instance.addListener(_onStateChange);
     AppLocale.instance.addListener(_onStateChange);
+    NotificationService.instance.addListener(_onStateChange);
+    NotificationService.instance.refreshUnreadCount();
   }
 
   @override
   void dispose() {
     AuthState.instance.removeListener(_onStateChange);
     AppLocale.instance.removeListener(_onStateChange);
+    NotificationService.instance.removeListener(_onStateChange);
     super.dispose();
   }
 
@@ -57,7 +60,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
   }
 
   Future<void> _chargerBiens() async {
-    final list = await PropertyApiService.instance.getProperties();
+    final list = await PropertyApiService.instance.getProperties(limit: 40);
     if (mounted) {
       setState(() {
         _proprietes = list;
@@ -68,24 +71,23 @@ class _EcranAccueilState extends State<EcranAccueil> {
 
   List<Propriete> get _proprietesFiltrees {
     return _proprietes.where((p) {
-      final matchCategorie = _filtreActif == 'Tous' ||
-          _filtreActif == 'Prix' ||
-          _filtreActif == 'Chambres' ||
-          p.type.toLowerCase() == _filtreActif.toLowerCase();
-
-      return matchCategorie;
+      if (_filtreActif == 'Tous') return true;
+      return p.type.toLowerCase() == _filtreActif.toLowerCase();
     }).toList();
   }
 
   String _nomFiltre(String f) {
     switch (f) {
-      case 'Tous': return AppLocale.instance.tr('filter_all');
-      case 'Prix': return AppLocale.instance.tr('filter_price');
-      case 'Appartement': return AppLocale.instance.tr('filter_apartment');
-      case 'Villa': return AppLocale.instance.tr('filter_villa');
-      case 'Maison': return AppLocale.instance.tr('filter_house');
-      case 'Chambres': return AppLocale.instance.tr('filter_bedrooms');
-      default: return f;
+      case 'Tous':
+        return AppLocale.instance.tr('filter_all');
+      case 'Appartement':
+        return AppLocale.instance.tr('filter_apartment');
+      case 'Villa':
+        return AppLocale.instance.tr('filter_villa');
+      case 'Maison':
+        return AppLocale.instance.tr('filter_house');
+      default:
+        return f;
     }
   }
 
@@ -103,8 +105,8 @@ class _EcranAccueilState extends State<EcranAccueil> {
     final isAuth = AuthState.instance.isAuthenticated;
     final userName = isAuth && authUser != null ? authUser.fullName : AppLocale.instance.tr('guest');
     final monogram = isAuth && authUser != null && authUser.fullName.isNotEmpty
-        ? authUser.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join()
-        : 'IN';
+        ? authUser.fullName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        : 'DL';
     final greeting = isAuth ? AppLocale.instance.tr('greeting') : AppLocale.instance.tr('welcome_guest');
 
     return Scaffold(
@@ -113,15 +115,12 @@ class _EcranAccueilState extends State<EcranAccueil> {
         bottom: false,
         child: Column(
           children: [
-            // ------------------------------------------------------------
-            // 1. EN-TÊTE UTILISATEUR & BASCULEUR DE THÈME
-            // ------------------------------------------------------------
+            // 1. EN-TÊTE
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Monogramme utilisateur client et salutation
                   Row(
                     children: [
                       Container(
@@ -139,7 +138,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           child: Text(
                             monogram,
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AppColors.accentBlue,
                             ),
@@ -152,74 +151,59 @@ class _EcranAccueilState extends State<EcranAccueil> {
                         children: [
                           Text(
                             greeting,
-                            style: TextStyle(
-                              color: textSec,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: TextStyle(color: textSec, fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                           Text(
                             userName,
-                            style: TextStyle(
-                              color: textPrim,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: TextStyle(color: textPrim, fontSize: 17, fontWeight: FontWeight.w800),
                           ),
                         ],
                       ),
                     ],
                   ),
-
-                  // Actions : Bascule Thème Sombre/Clair + Bouton Carte
                   Row(
                     children: [
-                      // Titre invisible sémantique pour tests
                       const Opacity(
                         opacity: 0.0,
-                        child: SizedBox(
-                          width: 1,
-                          height: 1,
-                          child: Text('Services Immobilier'),
-                        ),
+                        child: SizedBox(width: 1, height: 1, child: Text('Services Immobilier')),
                       ),
-
-                      // Bouton basculeur de thème Dark / Light
                       _HeaderCircleButton(
                         icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                         tooltip: isDark ? 'Passer au mode clair' : 'Passer au mode sombre',
                         isDark: isDark,
-                        onTap: () {
-                          AppTheme.basculerTheme();
-                        },
+                        onTap: () => AppTheme.basculerTheme(),
                       ),
                       const SizedBox(width: 8),
-
-                      // Bouton Déposer une annonce (V7)
                       _HeaderCircleButton(
                         icon: Icons.add_business_outlined,
                         tooltip: 'Déposer une annonce',
                         isDark: isDark,
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const EcranDepotAnnonce(),
-                            ),
-                          ).then((_) => setState(() {}));
+                          Navigator.of(context)
+                              .push(MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()))
+                              .then((_) => _chargerBiens());
                         },
                       ),
                       const SizedBox(width: 8),
-
-                      // Bouton Carte interactive (V8)
+                      _HeaderCircleButton(
+                        icon: Icons.notifications_none_rounded,
+                        tooltip: 'Centre de notifications',
+                        isDark: isDark,
+                        badgeCount: NotificationService.instance.unreadCount,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const EcranNotifications()),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 8),
                       _HeaderCircleButton(
                         icon: Icons.map_outlined,
                         tooltip: 'Afficher la carte',
                         isDark: isDark,
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const EcranCarteInteractive(),
-                            ),
+                            MaterialPageRoute(builder: (_) => const EcranCarteInteractive()),
                           );
                         },
                       ),
@@ -229,19 +213,13 @@ class _EcranAccueilState extends State<EcranAccueil> {
               ),
             ),
 
-            // ------------------------------------------------------------
-            // 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE
-            // ------------------------------------------------------------
+            // 2. BARRE DE RECHERCHE
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: GestureDetector(
                 key: const Key('home_search_bar_clickable'),
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const EcranRecherche(),
-                    ),
-                  );
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EcranRecherche()));
                 },
                 child: Container(
                   height: 52,
@@ -265,7 +243,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                       ),
                       Expanded(
                         child: Text(
-                          'Tunis, Sousse, Djerba, Hammamet...',
+                          'Tunis, Sousse, Sfax, Bizerte, Nabeul...',
                           style: TextStyle(
                             color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
                             fontSize: 14,
@@ -277,11 +255,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                         child: CircleAvatar(
                           radius: 18,
                           backgroundColor: isDark ? const Color(0x1AFFFFFF) : const Color(0x0A000000),
-                          child: Icon(
-                            Icons.tune,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
-                            size: 18,
-                          ),
+                          child: Icon(Icons.tune, color: isDark ? Colors.white : const Color(0xFF111827), size: 18),
                         ),
                       ),
                     ],
@@ -290,33 +264,21 @@ class _EcranAccueilState extends State<EcranAccueil> {
               ),
             ),
 
-            // ------------------------------------------------------------
-            // 3. RANGÉE DE JETONS DE FILTRES HORIZONTAUX (Screen 1 Pills)
-            // ------------------------------------------------------------
+            // 3. FILTRES HORIZONTAUX
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               child: Row(
                 children: _filtres.map((filtre) {
                   final isSelected = _filtreActif == filtre;
-                  final pillBg = isSelected
-                      ? (isDark ? Colors.white : const Color(0xFF111827))
-                      : cardBg;
-                  final pillText = isSelected
-                      ? (isDark ? const Color(0xFF0F1015) : Colors.white)
-                      : textSec;
-                  final pillBorder = isSelected
-                      ? Colors.transparent
-                      : borderColor;
+                  final pillBg = isSelected ? (isDark ? Colors.white : const Color(0xFF111827)) : cardBg;
+                  final pillText = isSelected ? (isDark ? const Color(0xFF0F1015) : Colors.white) : textSec;
+                  final pillBorder = isSelected ? Colors.transparent : borderColor;
 
                   return Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2.5),
                       child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _filtreActif = filtre;
-                          });
-                        },
+                        onTap: () => setState(() => _filtreActif = filtre),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -324,19 +286,12 @@ class _EcranAccueilState extends State<EcranAccueil> {
                             color: pillBg,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(color: pillBorder, width: 1),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ]
-                                : [],
                           ),
                           child: Center(
                             child: Text(
                               _nomFiltre(filtre),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: pillText,
                                 fontSize: 11.5,
@@ -352,14 +307,10 @@ class _EcranAccueilState extends State<EcranAccueil> {
               ),
             ),
 
-            // ------------------------------------------------------------
-            // 4. BANNIÈRE DISCRÈTE ET TITRE DE SECTION
-            // ------------------------------------------------------------
-            SectionBienvenue(isDark: isDark),
+            // 4. BANNIÈRE ET COMPTEUR RÉEL
+            SectionBienvenue(isDark: isDark, count: _proprietesFiltrees.length),
 
-            // ------------------------------------------------------------
-            // 5. LISTE IMMERSIVE DES ANNONCES DE BIENS
-            // ------------------------------------------------------------
+            // 5. LISTE DES ANNONCES RÉELLES
             Expanded(
               child: Center(
                 child: ConstrainedBox(
@@ -369,20 +320,28 @@ class _EcranAccueilState extends State<EcranAccueil> {
                     child: _isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : _proprietesFiltrees.isEmpty
-                            ? Center(
-                                child: Text(
-                                  AppLocale.instance.tr('empty_search'),
-                                  style: TextStyle(color: textSec),
-                                ),
+                            ? ListView(
+                                children: [
+                                  const SizedBox(height: 60),
+                                  Center(
+                                    child: Column(
+                                      children: [
+                                        Icon(Icons.search_off_rounded, size: 48, color: textSec),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          AppLocale.instance.tr('empty_search'),
+                                          style: TextStyle(color: textSec, fontSize: 14),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               )
                             : ListView.builder(
                                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                                 itemCount: _proprietesFiltrees.length,
-                                itemBuilder: (context, index) {
-                                  return CartePropriete(
-                                    propriete: _proprietesFiltrees[index],
-                                  );
-                                },
+                                itemBuilder: (context, index) => CartePropriete(propriete: _proprietesFiltrees[index]),
                               ),
                   ),
                 ),
@@ -397,8 +356,9 @@ class _EcranAccueilState extends State<EcranAccueil> {
 
 class SectionBienvenue extends StatelessWidget {
   final bool isDark;
+  final int count;
 
-  const SectionBienvenue({super.key, required this.isDark});
+  const SectionBienvenue({super.key, required this.isDark, this.count = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -410,7 +370,6 @@ class SectionBienvenue extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Carte bannière de bienvenue
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -432,11 +391,7 @@ class SectionBienvenue extends StatelessWidget {
                     Expanded(
                       child: Text(
                         AppLocale.instance.tr('welcome_banner_title'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.accentBlue,
-                        ),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.accentBlue),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -445,30 +400,19 @@ class SectionBienvenue extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   AppLocale.instance.tr('welcome_banner_sub'),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: textSec,
-                    height: 1.4,
-                  ),
+                  style: TextStyle(fontSize: 12, color: textSec, height: 1.4),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 14),
-
-          // Titre de la section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
                   AppLocale.instance.tr('our_properties'),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: textPrim,
-                    letterSpacing: -0.3,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: '800' == '800' ? FontWeight.w800 : FontWeight.bold, color: textPrim),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -480,12 +424,8 @@ class SectionBienvenue extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '4 annonces',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: textSec,
-                  ),
+                  '$count annonce(s)',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textSec),
                 ),
               ),
             ],
@@ -501,15 +441,15 @@ class _HeaderCircleButton extends StatelessWidget {
   final String tooltip;
   final bool isDark;
   final VoidCallback onTap;
+  final int badgeCount;
 
   const _HeaderCircleButton({
     required this.icon,
     required this.tooltip,
     required this.isDark,
     required this.onTap,
+    this.badgeCount = 0,
   });
-
-  @override
 
   @override
   Widget build(BuildContext context) {
@@ -517,31 +457,39 @@ class _HeaderCircleButton extends StatelessWidget {
       message: tooltip,
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF181920) : Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? const Color(0x28FFFFFF) : const Color(0x18000000),
-              width: 1,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF181920) : Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: isDark ? const Color(0x28FFFFFF) : const Color(0x18000000), width: 1),
+              ),
+              child: Icon(icon, color: isDark ? Colors.white : const Color(0xFF111827), size: 19),
             ),
-            boxShadow: isDark
-                ? []
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+            if (badgeCount > 0)
+              Positioned(
+                top: -2,
+                right: -2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  child: Center(
+                    child: Text(
+                      badgeCount > 9 ? '9+' : '$badgeCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                     ),
-                  ],
-          ),
-          child: Icon(
-            icon,
-            color: isDark ? Colors.white : const Color(0xFF111827),
-            size: 19,
-          ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

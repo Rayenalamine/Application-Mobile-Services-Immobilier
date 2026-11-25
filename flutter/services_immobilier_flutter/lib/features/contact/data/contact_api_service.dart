@@ -1,12 +1,18 @@
 // ============================================================
-// DARLINK — SERVICE API DEMANDES DE CONTACT CLOUD FIRESTORE (Flutter)
+// DARLINK — SERVICE API DEMANDES DE CONTACT & NOTIFICATIONS (Flutter)
+// Intégrité référentielle (propertyId, propertyOwnerId, senderId) et création
+// de notification côté destinataire dans Cloud Firestore.
 // ============================================================
 
 import '../../../core/firebase/firestore_client.dart';
+import '../../auth/domain/models/auth_state.dart';
 
 class ContactRequestModel {
   final String id;
   final String propertyId;
+  final String propertyTitle;
+  final String propertyOwnerId;
+  final String? senderId;
   final String senderName;
   final String senderEmail;
   final String? senderPhone;
@@ -17,6 +23,9 @@ class ContactRequestModel {
   ContactRequestModel({
     required this.id,
     required this.propertyId,
+    this.propertyTitle = '',
+    this.propertyOwnerId = '',
+    this.senderId,
     required this.senderName,
     required this.senderEmail,
     this.senderPhone,
@@ -29,6 +38,9 @@ class ContactRequestModel {
     return ContactRequestModel(
       id: json['id']?.toString() ?? '',
       propertyId: json['propertyId']?.toString() ?? '',
+      propertyTitle: json['propertyTitle'] as String? ?? '',
+      propertyOwnerId: json['propertyOwnerId']?.toString() ?? '',
+      senderId: json['senderId']?.toString(),
       senderName: json['senderName'] as String? ?? 'Visiteur',
       senderEmail: json['senderEmail'] as String? ?? '',
       senderPhone: json['senderPhone'] as String?,
@@ -42,9 +54,12 @@ class ContactRequestModel {
     return {
       'id': id,
       'propertyId': propertyId,
+      if (propertyTitle.isNotEmpty) 'propertyTitle': propertyTitle,
+      if (propertyOwnerId.isNotEmpty) 'propertyOwnerId': propertyOwnerId,
+      if (senderId != null && senderId!.isNotEmpty) 'senderId': senderId,
       'senderName': senderName,
       'senderEmail': senderEmail,
-      'senderPhone': senderPhone,
+      if (senderPhone != null && senderPhone!.isNotEmpty) 'senderPhone': senderPhone,
       'message': message,
       'status': status,
       'createdAt': createdAt,
@@ -60,44 +75,112 @@ class ContactApiService {
 
   Future<ContactRequestModel?> sendContactRequest({
     required String propertyId,
+    String propertyTitle = '',
+    String propertyOwnerId = '',
     required String senderName,
     required String senderEmail,
     String? senderPhone,
     required String message,
   }) async {
+    final cleanEmail = senderEmail.trim();
+    final cleanMsg = message.trim();
+    if (cleanMsg.isEmpty || !RegExp(r'^.+@.+\..+$').hasMatch(cleanEmail)) {
+      return null;
+    }
+
+    final currentUser = AuthState.instance.currentUser;
+    final senderUid = currentUser?.effectiveUid;
     final docId = 'cr_${DateTime.now().millisecondsSinceEpoch}';
+    final nowIso = DateTime.now().toIso8601String();
+
     final request = ContactRequestModel(
       id: docId,
       propertyId: propertyId,
-      senderName: senderName,
-      senderEmail: senderEmail,
-      senderPhone: senderPhone,
-      message: message,
+      propertyTitle: propertyTitle,
+      propertyOwnerId: propertyOwnerId,
+      senderId: senderUid,
+      senderName: senderName.trim(),
+      senderEmail: cleanEmail,
+      senderPhone: senderPhone?.trim(),
+      message: cleanMsg,
       status: 'PENDING',
-      createdAt: DateTime.now().toIso8601String(),
+      createdAt: nowIso,
     );
 
-    try {
-      await _firestore.setDocument('contact_requests', docId, request.toJson());
-      return request;
-    } catch (_) {}
+    final ok = await _firestore.setDocument('contact_requests', docId, request.toJson());
+    if (ok && currentUser != null && propertyOwnerId.isNotEmpty) {
+      final notifId = 'notif_${DateTime.now().millisecondsSinceEpoch}';
+      await _firestore.setDocument('notifications', notifId, {
+        'id': notifId,
+        'recipientUid': propertyOwnerId,
+        'senderUid': currentUser.effectiveUid,
+        'title': 'Nouvelle demande de visite',
+        'body': '${senderName.trim()} s’intéresse à ${propertyTitle.isNotEmpty ? propertyTitle : "votre bien"}.',
+        'type': 'CONTACT_REQUEST',
+        'relatedEntityId': docId,
+        'read': false,
+        'createdAt': nowIso,
+      });
+    }
 
     return request;
   }
 
   Future<List<ContactRequestModel>> getReceivedRequests() async {
-    try {
-      final docs = await _firestore.getCollection('contact_requests');
-      return docs.map((doc) => ContactRequestModel.fromJson(doc)).toList();
-    } catch (_) {}
-    return [];
+    final user = AuthState.instance.currentUser;
+    if (user == null) return [];
+    final docs = await _firestore.runStructuredQuery(
+      collectionId: 'contact_requests',
+      whereFilters: [
+        {
+          'field': {'fieldPath': 'propertyOwnerId'},
+          'op': 'EQUAL',
+          'value': {'stringValue': user.effectiveUid},
+        }
+      ],
+      limit: 50,
+    );
+    return docs.map((d) => ContactRequestModel.fromJson(d)).toList();
   }
 
   Future<List<ContactRequestModel>> getSentRequests() async {
-    try {
-      final docs = await _firestore.getCollection('contact_requests');
-      return docs.map((doc) => ContactRequestModel.fromJson(doc)).toList();
-    } catch (_) {}
-    return [];
+    final user = AuthState.instance.currentUser;
+    if (user == null) return [];
+    final docs = await _firestore.runStructuredQuery(
+      collectionId: 'contact_requests',
+      whereFilters: [
+        {
+          'field': {'fieldPath': 'senderId'},
+          'op': 'EQUAL',
+          'value': {'stringValue': user.effectiveUid},
+        }
+      ],
+      limit: 50,
+    );
+    return docs.map((d) => ContactRequestModel.fromJson(d)).toList();
+  }
+
+  Future<bool> updateStatus(String requestId, String status) async {
+    return _firestore.patchFields('contact_requests', requestId, {'status': status});
+  }
+
+  Future<List<Map<String, dynamic>>> getMyNotifications() async {
+    final user = AuthState.instance.currentUser;
+    if (user == null) return [];
+    return _firestore.runStructuredQuery(
+      collectionId: 'notifications',
+      whereFilters: [
+        {
+          'field': {'fieldPath': 'recipientUid'},
+          'op': 'EQUAL',
+          'value': {'stringValue': user.effectiveUid},
+        }
+      ],
+      limit: 40,
+    );
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    await _firestore.patchFields('notifications', notificationId, {'read': true});
   }
 }
