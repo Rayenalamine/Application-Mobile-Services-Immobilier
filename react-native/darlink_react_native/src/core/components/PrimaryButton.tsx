@@ -13,12 +13,13 @@ import {
   TextStyle,
   View,
 } from 'react-native';
-import { AppColors } from '../constants/colors';
+import { useTheme } from '../theme/ThemeContext';
+import { useTranslation } from '../localization/LocalizationContext';
 
 export interface PrimaryButtonProps {
   readonly label: string;
   readonly onPress: () => void;
-  readonly icon?: React.ReactNode | string;
+  readonly icon?: React.ReactNode;
   readonly isLoading?: boolean;
   readonly disabled?: boolean;
   readonly isFullWidth?: boolean;
@@ -38,16 +39,20 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   textStyle,
   variant = 'primary',
 }) => {
+  const { isDark, colors } = useTheme();
+  const { isRTL } = useTranslation();
+
   const getBackgroundColor = () => {
-    if (disabled) return 'rgba(255, 255, 255, 0.1)';
-    if (variant === 'secondary') return '#FFFFFF';
-    if (variant === 'glass') return 'rgba(255, 255, 255, 0.12)';
-    return AppColors.accentBlue;
+    if (disabled) return colors.surfaceElevated;
+    if (variant === 'secondary') return colors.surface;
+    if (variant === 'glass') return isDark ? 'rgba(255, 255, 255, 0.12)' : colors.surfaceElevated;
+    return colors.accentBlue;
   };
 
   const getTextColor = () => {
-    if (disabled) return AppColors.darkTextTertiary;
-    if (variant === 'secondary') return '#0F1015';
+    if (disabled) return colors.textTertiary;
+    if (variant === 'secondary') return colors.textPrimary;
+    if (variant === 'glass' && !isDark) return colors.textPrimary;
     return '#FFFFFF';
   };
 
@@ -57,7 +62,8 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         styles.button,
         isFullWidth && styles.fullWidth,
         { backgroundColor: getBackgroundColor() },
-        variant === 'glass' && styles.glassBorder,
+        variant === 'secondary' && { borderWidth: 1, borderColor: colors.border },
+        variant === 'glass' && [styles.glassBorder, { borderColor: colors.border }],
         style,
       ]}
       onPress={onPress}
@@ -67,17 +73,10 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       accessibilityState={{ disabled: disabled || isLoading }}
     >
       {isLoading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'secondary' ? '#0F1015' : '#FFFFFF'}
-        />
+        <ActivityIndicator size="small" color={getTextColor()} />
       ) : (
-        <View style={styles.contentRow}>
-          {typeof icon === 'string' ? (
-            <Text style={styles.iconString}>{icon}</Text>
-          ) : (
-            icon
-          )}
+        <View style={[styles.contentRow, isRTL && styles.contentRowRTL]}>
+          {icon && <View style={styles.iconWrapper}>{icon}</View>}
           <Text style={[styles.label, { color: getTextColor() }, textStyle]}>
             {label}
           </Text>
@@ -100,16 +99,19 @@ const styles = StyleSheet.create({
   },
   glassBorder: {
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
-  iconString: {
-    fontSize: 16,
-    marginRight: 8,
+  contentRowRTL: {
+    flexDirection: 'row-reverse',
+  },
+  iconWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   label: {
     fontSize: 14,

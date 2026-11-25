@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DE DÉTAILS DU BIEN LUXE (React Native Screen 2)
-// Adaptatif Clair / Sombre, parité complète avec la maquette Screen 2
+// DARLINK — ÉCRAN DE DÉTAILS DU BIEN LUXE (React Native)
+// Icônes vectorielles Lucide, Design System unifié & support RTL
 // ============================================================
 
 import React, { useState } from 'react';
@@ -11,16 +11,33 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   Modal,
   TextInput,
   Linking,
 } from 'react-native';
+import {
+  Play,
+  Camera,
+  ArrowLeft,
+  ArrowRight,
+  Heart,
+  Trash,
+  MapPin,
+  BedDouble,
+  Bath,
+  Maximize2,
+  House,
+  ShieldCheck,
+  Check,
+  Phone,
+} from 'lucide-react-native';
 import { AppColors } from '../../../../core/constants/colors';
-import { Property, formatPrice } from '../../domain/models/property';
+import { AppShadows } from '../../../../core/constants/spacing';
+import { Property } from '../../domain/models/property';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { useBottomNavClearance } from '../../../../core/components/FloatingBottomNav';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
 import { contactApiService } from '../../../contact/services/contactApiService';
 import { propertyApiService } from '../../services/propertyApiService';
@@ -42,7 +59,8 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
     property.isFavorite ?? favoritesApiService.isFavorite(propId)
   );
   const { isDark, colors } = useTheme();
-  const { t, formatPrice: fmtPrice, translateAmenity } = useTranslation();
+  const { t, formatPrice: fmtPrice, translateAmenity, isRTL } = useTranslation();
+  const bottomClearance = useBottomNavClearance();
 
   const handleCallOwner = async () => {
     const phone = property.agentTel;
@@ -138,13 +156,16 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomClearance + 92 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. HERO IMAGE IMMERSIVE AVEC ARRONDIS INFÉRIEURS */}
+        {/* 1. HERO IMAGE IMMERSIVE */}
         <View style={styles.heroContainer}>
           <Image
             source={{ uri: displayedImage }}
@@ -152,27 +173,33 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             resizeMode="cover"
           />
 
-          {/* Bouton 360 / Visite virtuelle en bas à gauche */}
+          {/* Bouton visite virtuelle */}
           <View style={styles.badge360}>
-            <Text style={styles.badge360Icon}>▶</Text>
+            <Play size={16} color="#FFFFFF" fill="#FFFFFF" strokeWidth={2} />
           </View>
 
-          {/* Compteur d'images en bas à droite (ex: 1/4) */}
+          {/* Compteur d'images (ex: 1/4) */}
           <View style={styles.photoCounter}>
+            <Camera size={13} color="#FFFFFF" strokeWidth={2.2} />
             <Text style={styles.photoCounterText}>
-              📷 {imageIndex + 1}/{allImages.length}
+              {imageIndex + 1}/{allImages.length}
             </Text>
           </View>
         </View>
 
         {/* 2. BARRE D'ACTION SUPÉRIEURE FLOTTANTE */}
-        <View style={styles.topActionsBar}>
+        <View
+          style={[
+            styles.topActionsBar,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <TouchableOpacity
             style={[
               styles.glassCircleBtn,
               {
-                backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.78)' : 'rgba(255, 255, 255, 0.92)',
+                borderColor: isDark ? 'rgba(148, 163, 184, 0.25)' : colors.border,
               },
             ]}
             onPress={onBack}
@@ -180,9 +207,11 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Retour à la liste"
           >
-            <Text style={[styles.circleBtnIcon, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
-              ←
-            </Text>
+            {isRTL ? (
+              <ArrowRight size={19} color={colors.textPrimary} strokeWidth={2.2} />
+            ) : (
+              <ArrowLeft size={19} color={colors.textPrimary} strokeWidth={2.2} />
+            )}
           </TouchableOpacity>
 
           <View style={styles.topRightActions}>
@@ -190,39 +219,46 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
               style={[
                 styles.glassCircleBtn,
                 {
-                  backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: isDark ? 'rgba(15, 23, 42, 0.78)' : 'rgba(255, 255, 255, 0.92)',
+                  borderColor: isDark ? 'rgba(148, 163, 184, 0.25)' : colors.border,
                 },
               ]}
               onPress={handleToggleFavorite}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={isFavorite ? t('removed_from_favorites') : t('added_to_favorites')}
             >
-              <Text style={styles.circleBtnIcon}>{isFavorite ? '❤️' : '🤍'}</Text>
+              <Heart
+                size={19}
+                color={isFavorite ? AppColors.accentRed : colors.textSecondary}
+                fill={isFavorite ? AppColors.accentRed : 'transparent'}
+                strokeWidth={2}
+              />
             </TouchableOpacity>
 
             {/* Suppression réservée au propriétaire légitime */}
             {authService.getCurrentUser() &&
-              String(authService.getCurrentUser()?.id) === String((property as any).proprietaireId || (property as any).ownerId) && (
+              String(authService.getCurrentUser()?.id) === String((property as { proprietaireId?: string; ownerId?: string }).proprietaireId || (property as { proprietaireId?: string; ownerId?: string }).ownerId) && (
                 <TouchableOpacity
                   style={[
                     styles.glassCircleBtn,
                     {
-                      backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.85)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.78)' : 'rgba(255, 255, 255, 0.92)',
+                      borderColor: isDark ? 'rgba(148, 163, 184, 0.25)' : colors.border,
                     },
                   ]}
                   onPress={handleDeleteProperty}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('btn_delete_property')}
                 >
-                  <Text style={[styles.circleBtnIcon, { color: '#EF4444' }]}>
-                    🗑️
-                  </Text>
+                  <Trash size={18} color={AppColors.accentRed} strokeWidth={2} />
                 </TouchableOpacity>
               )}
           </View>
         </View>
 
-        {/* 3. BANDE HORIZONTALE DES MINIATURES DE PIÈCES */}
+        {/* 3. BANDE HORIZONTALE DES MINIATURES */}
         {allImages.length > 1 && (
           <ScrollView
             horizontal
@@ -238,9 +274,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                   style={[
                     styles.thumbnailItem,
                     {
-                      borderColor: isSelected
-                        ? (isDark ? '#FFFFFF' : '#0F1015')
-                        : colors.border,
+                      borderColor: isSelected ? colors.accentBlue : colors.border,
                       borderWidth: isSelected ? 2 : 1,
                     },
                   ]}
@@ -255,11 +289,16 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         )}
 
         {/* 4. STATUT & TAG D'ESTIMATION MENSUELLE */}
-        <View style={styles.statusRow}>
+        <View
+          style={[
+            styles.statusRow,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <View style={styles.statusBadge}>
             <View style={styles.statusDot} />
             <Text style={styles.statusBadgeText}>
-              {property.estLocation ? 'À Louer' : 'À Vendre'}
+              {property.estLocation ? t('for_rent') : t('for_sale')}
             </Text>
           </View>
 
@@ -267,7 +306,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             style={[
               styles.estimatedBadge,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                backgroundColor: colors.surface,
                 borderColor: colors.border,
               },
             ]}
@@ -280,70 +319,93 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
         {/* 5. PRIX & TITRE MAJEUR */}
         <View style={styles.titleSection}>
-          <View style={styles.priceRow}>
+          <View
+            style={[
+              styles.priceRow,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
             <Text style={[styles.hugePrice, { color: colors.textPrimary }]}>
-              {formatPrice(property.prix)}
+              {fmtPrice(property.prix)}
             </Text>
             <Text style={[styles.priceSubtext, { color: colors.textSecondary }]}>
-              {property.estLocation ? '/mois' : `Est. ${formatPrice(Math.round(property.prix / 250))}/mo`}
+              {property.estLocation ? t('per_month') : `Est. ${fmtPrice(Math.round(property.prix / 250))}/mo`}
             </Text>
           </View>
-          <Text style={[styles.mainTitle, { color: colors.textPrimary }]}>
+          <Text
+            style={[
+              styles.mainTitle,
+              { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
             {property.titre}
           </Text>
-          <Text style={[styles.mainAddress, { color: colors.textSecondary }]}>
-            📍 {property.localisation}
-          </Text>
+          <View
+            style={[
+              styles.addressRow,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
+            <MapPin size={15} color={colors.accentBlue} strokeWidth={2} />
+            <Text style={[styles.mainAddress, { color: colors.textSecondary }]}>
+              {property.localisation}
+            </Text>
+          </View>
         </View>
 
-        {/* 6. TROIS GRANDES CARTES DE CARACTÉRISTIQUES */}
-        <View style={styles.specsGrid}>
+        {/* 6. TROIS CARTES DE CARACTÉRISTIQUES */}
+        <View
+          style={[
+            styles.specsGrid,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <View
             style={[
               styles.specBox,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              },
+              AppShadows.subtle,
+              { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Text style={styles.specBoxIcon}>🛏️</Text>
+            <BedDouble size={20} color={colors.accentBlue} strokeWidth={2} />
             <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>
-              {property.nombreChambres} Bed
+              {property.nombreChambres}
             </Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Chambres</Text>
+            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>
+              {t('filter_bedrooms')}
+            </Text>
           </View>
 
           <View
             style={[
               styles.specBox,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              },
+              AppShadows.subtle,
+              { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Text style={styles.specBoxIcon}>🚿</Text>
+            <Bath size={20} color={colors.accentBlue} strokeWidth={2} />
             <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>
-              {property.nombreSallesDeBain} Bath
+              {property.nombreSallesDeBain}
             </Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Salles de bain</Text>
+            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>
+              {t('bathrooms_short')}
+            </Text>
           </View>
 
           <View
             style={[
               styles.specBox,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-              },
+              AppShadows.subtle,
+              { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Text style={styles.specBoxIcon}>📐</Text>
+            <Maximize2 size={20} color={colors.accentBlue} strokeWidth={2} />
             <Text style={[styles.specBoxValue, { color: colors.textPrimary }]}>
-              {property.surfaceM2 ?? 145} m²
+              {property.surfaceM2 ?? 145} {t('area_unit')}
             </Text>
-            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>Surface</Text>
+            <Text style={[styles.specBoxLabel, { color: colors.textSecondary }]}>
+              Surface
+            </Text>
           </View>
         </View>
 
@@ -351,17 +413,26 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         <View
           style={[
             styles.specificationsCard,
+            AppShadows.subtle,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
-          <View style={styles.specItem}>
-            <Text style={styles.specItemIcon}>🏠</Text>
-            <View>
+          <View
+            style={[
+              styles.specItem,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
+            <View style={[styles.specIconBox, { backgroundColor: colors.accentBlueSoft }]}>
+              <House size={18} color={colors.accentBlue} strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.specItemLabel, { color: colors.textSecondary }]}>
-                Type de bien
+                {t('search_property_type')}
               </Text>
               <Text style={[styles.specItemValue, { color: colors.textPrimary }]}>
                 {property.type}
@@ -371,9 +442,16 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
           <View style={[styles.specDivider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.specItem}>
-            <Text style={styles.specItemIcon}>🛡️</Text>
-            <View>
+          <View
+            style={[
+              styles.specItem,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
+            <View style={[styles.specIconBox, { backgroundColor: colors.accentBlueSoft }]}>
+              <ShieldCheck size={18} color={colors.accentBlue} strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.specItemLabel, { color: colors.textSecondary }]}>
                 Année / Standing
               </Text>
@@ -387,10 +465,20 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         {/* 8. ÉQUIPEMENTS & COMMODITÉS */}
         {property.commodites && property.commodites.length > 0 && (
           <View style={styles.amenitiesSection}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+            >
               {t('amenities_title')}
             </Text>
-            <View style={styles.amenitiesGrid}>
+            <View
+              style={[
+                styles.amenitiesGrid,
+                { flexDirection: isRTL ? 'row-reverse' : 'row' },
+              ]}
+            >
               {property.commodites.map((item) => (
                 <View
                   key={item}
@@ -399,10 +487,11 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                     {
                       backgroundColor: colors.surface,
                       borderColor: colors.border,
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
                     },
                   ]}
                 >
-                  <Text style={styles.amenityCheck}>✓</Text>
+                  <Check size={14} color={colors.accentGreen} strokeWidth={2.5} />
                   <Text style={[styles.amenityText, { color: colors.textSecondary }]}>
                     {translateAmenity(item)}
                   </Text>
@@ -416,13 +505,24 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
         <View
           style={[
             styles.agentCard,
+            AppShadows.subtle,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
-          <View style={styles.agentAvatarBox}>
+          <View
+            style={[
+              styles.agentAvatarBox,
+              {
+                backgroundColor: colors.accentBlue,
+                marginRight: isRTL ? 0 : 14,
+                marginLeft: isRTL ? 14 : 0,
+              },
+            ]}
+          >
             <Text style={styles.agentAvatarText}>
               {property.agentNom && property.agentNom.length > 0
                 ? property.agentNom.split(' ').map(e => e ? e[0] : '').slice(0, 2).join('')
@@ -430,49 +530,79 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             </Text>
           </View>
           <View style={styles.agentInfo}>
-            <Text style={[styles.agentName, { color: colors.textPrimary }]}>
+            <Text
+              style={[
+                styles.agentName,
+                { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+            >
               {property.agentNom ?? 'Propriétaire'}
             </Text>
-            <Text style={[styles.agentRole, { color: colors.textSecondary }]}>
+            <Text
+              style={[
+                styles.agentRole,
+                { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+            >
               {t('owner_role')}
             </Text>
             <TouchableOpacity onPress={handleCallOwner} activeOpacity={0.7}>
-              <Text style={[styles.agentPhone, { textDecorationLine: 'underline' }]}>
+              <Text
+                style={[
+                  styles.agentPhone,
+                  {
+                    color: colors.accentBlue,
+                    textDecorationLine: 'underline',
+                    textAlign: isRTL ? 'right' : 'left',
+                  },
+                ]}
+              >
                 {property.agentTel || t('phone_unavailable')}
               </Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity
-            style={styles.agentCallBtn}
+            style={[styles.agentCallBtn, { backgroundColor: colors.accentBlueSoft }]}
             onPress={handleCallOwner}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={t('btn_call')}
           >
-            <Text style={styles.agentCallIcon}>📞</Text>
+            <Phone size={18} color={colors.accentBlue} strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
 
         {/* 10. DESCRIPTION */}
         <View style={styles.descriptionSection}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
             {t('description_title')}
           </Text>
-          <Text style={[styles.descriptionBody, { color: colors.textSecondary }]}>
+          <Text
+            style={[
+              styles.descriptionBody,
+              { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
             {property.description}
           </Text>
         </View>
-
-        <View style={{ height: 185 }} />
       </ScrollView>
 
-      {/* 11. DOCK FLOTTANT INFÉRIEUR (CTA) */}
+      {/* 11. DOCK FLOTTANT INFÉRIEUR (CTA) AU-DESSUS DE LA BARRE DE NAVIGATION */}
       <View
         style={[
           styles.bottomDock,
+          AppShadows.card,
           {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-            borderTopColor: colors.border,
+            bottom: bottomClearance - 4,
+            backgroundColor: isDark ? 'rgba(21, 30, 50, 0.96)' : 'rgba(255, 255, 255, 0.97)',
+            borderColor: colors.border,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
           },
         ]}
       >
@@ -480,34 +610,33 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           style={[
             styles.backButton,
             {
-              backgroundColor: colors.surface,
+              backgroundColor: colors.background,
               borderColor: colors.border,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
           onPress={onBack}
           activeOpacity={0.8}
         >
+          {isRTL ? (
+            <ArrowRight size={15} color={colors.textPrimary} strokeWidth={2.2} />
+          ) : (
+            <ArrowLeft size={15} color={colors.textPrimary} strokeWidth={2.2} />
+          )}
           <Text style={[styles.backButtonText, { color: colors.textPrimary }]}>
-            ← {t('btn_cancel')}
+            {t('btn_cancel')}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
             styles.scheduleButton,
-            {
-              backgroundColor: isDark ? '#FFFFFF' : '#0F1015',
-            },
+            { backgroundColor: colors.accentBlue },
           ]}
           onPress={handleScheduleTour}
           activeOpacity={0.85}
         >
-          <Text
-            style={[
-              styles.scheduleButtonText,
-              { color: isDark ? '#0F1015' : '#FFFFFF' },
-            ]}
-          >
+          <Text style={styles.scheduleButtonText}>
             {t('btn_schedule_visit')}
           </Text>
         </TouchableOpacity>
@@ -581,25 +710,25 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingTop: 0,
   },
   heroContainer: {
-    height: 380,
+    height: 360,
     width: '100%',
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -614,26 +743,25 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(24, 25, 32, 0.75)',
+    backgroundColor: 'rgba(15, 23, 42, 0.78)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.25)',
   },
-  badge360Icon: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
   photoCounter: {
     position: 'absolute',
     bottom: 20,
     right: 20,
-    backgroundColor: 'rgba(24, 25, 32, 0.75)',
-    paddingHorizontal: 14,
+    backgroundColor: 'rgba(15, 23, 42, 0.78)',
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.25)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   photoCounterText: {
     color: '#FFFFFF',
@@ -645,7 +773,6 @@ const styles = StyleSheet.create({
     top: 14,
     left: 20,
     right: 20,
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -660,9 +787,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-  },
-  circleBtnIcon: {
-    fontSize: 16,
   },
   thumbnailStrip: {
     marginTop: 16,
@@ -682,7 +806,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   statusRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginTop: 18,
@@ -690,16 +813,16 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: 'rgba(16, 185, 129, 0.14)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
+    borderColor: 'rgba(16, 185, 129, 0.30)',
   },
   statusDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
     backgroundColor: AppColors.accentGreen,
     marginRight: 6,
@@ -724,17 +847,16 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   priceRow: {
-    flexDirection: 'row',
     alignItems: 'baseline',
+    gap: 8,
   },
   hugePrice: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   priceSubtext: {
-    fontSize: 14,
-    marginLeft: 8,
+    fontSize: 13.5,
     fontWeight: '600',
   },
   mainTitle: {
@@ -742,14 +864,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 6,
   },
+  addressRow: {
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
   mainAddress: {
     fontSize: 14,
-    marginTop: 4,
   },
   specsGrid: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 10,
     marginTop: 20,
   },
   specBox: {
@@ -758,21 +883,17 @@ const styles = StyleSheet.create({
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-  },
-  specBoxIcon: {
-    fontSize: 18,
-    marginBottom: 4,
+    gap: 4,
   },
   specBoxValue: {
     fontSize: 15,
     fontWeight: '700',
+    marginTop: 2,
   },
   specBoxLabel: {
     fontSize: 11,
-    marginTop: 2,
   },
   specificationsCard: {
-    flexDirection: 'row',
     marginHorizontal: 20,
     marginTop: 18,
     borderRadius: 20,
@@ -782,12 +903,15 @@ const styles = StyleSheet.create({
   },
   specItem: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
-  specItemIcon: {
-    fontSize: 20,
-    marginRight: 10,
+  specIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   specItemLabel: {
     fontSize: 11,
@@ -807,31 +931,23 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   amenitiesGrid: {
-    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
     marginTop: 10,
   },
   amenityChip: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 14,
     borderWidth: 1,
-  },
-  amenityCheck: {
-    color: '#10B981',
-    fontWeight: '800',
-    fontSize: 12,
-    marginRight: 6,
+    gap: 6,
   },
   amenityText: {
     fontSize: 12.5,
     fontWeight: '500',
   },
   agentCard: {
-    flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
     marginTop: 22,
@@ -843,10 +959,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#2563EB',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
   },
   agentAvatarText: {
     color: '#FFFFFF',
@@ -866,7 +980,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   agentPhone: {
-    color: '#2563EB',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -874,12 +987,8 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(37, 99, 235, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  agentCallIcon: {
-    fontSize: 18,
   },
   descriptionSection: {
     paddingHorizontal: 20,
@@ -896,29 +1005,22 @@ const styles = StyleSheet.create({
   },
   bottomDock: {
     position: 'absolute',
-    bottom: 96,
     left: 16,
     right: 16,
-    flexDirection: 'row',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 22,
     borderWidth: 1,
-    borderTopWidth: 1,
     gap: 10,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
   },
   backButton: {
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 6,
   },
   backButtonText: {
     fontSize: 13,
@@ -926,14 +1028,15 @@ const styles = StyleSheet.create({
   },
   scheduleButton: {
     flex: 1,
-    borderRadius: 16,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   scheduleButtonText: {
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 });
 
@@ -953,7 +1056,7 @@ const modalStyles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#CCCCCC',
+    backgroundColor: '#CBD5E1',
     alignSelf: 'center',
     marginBottom: 16,
   },

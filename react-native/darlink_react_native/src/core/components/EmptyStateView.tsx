@@ -1,6 +1,6 @@
 // ============================================================
 // DARLINK — VUE D'ÉTAT VIDE (EmptyStateView)
-// Conforme à docs/UI_COMPONENTS_SPEC.md (Membre 1)
+// Icônes vectorielles Lucide & support thèmes Clair / Sombre
 // ============================================================
 
 import React from 'react';
@@ -11,12 +11,13 @@ import {
   TouchableOpacity,
   ViewStyle,
 } from 'react-native';
-import { AppColors } from '../constants/colors';
+import { Search } from 'lucide-react-native';
+import { useTheme } from '../theme/ThemeContext';
 
 export interface EmptyStateViewProps {
   readonly title: string;
   readonly message: string;
-  readonly icon?: string;
+  readonly icon?: React.ReactNode;
   readonly actionLabel?: string;
   readonly onAction?: () => void;
   readonly style?: ViewStyle;
@@ -25,25 +26,35 @@ export interface EmptyStateViewProps {
 export const EmptyStateView: React.FC<EmptyStateViewProps> = ({
   title,
   message,
-  icon = '🔍',
+  icon,
   actionLabel,
   onAction,
   style,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.iconCircle}>
-        <Text style={styles.iconText}>{icon}</Text>
+      <View
+        style={[
+          styles.iconCircle,
+          {
+            backgroundColor: colors.accentBlueSoft,
+            borderColor: 'rgba(37, 99, 235, 0.22)',
+          },
+        ]}
+      >
+        {icon ?? <Search size={34} color={colors.accentBlue} strokeWidth={2} />}
       </View>
 
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+      <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
 
       {actionLabel && onAction && (
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, { backgroundColor: colors.accentBlue }]}
           onPress={onAction}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
           <Text style={styles.actionText}>{actionLabel}</Text>
         </TouchableOpacity>
@@ -62,39 +73,31 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(37, 99, 235, 0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.25)',
-  },
-  iconText: {
-    fontSize: 36,
   },
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,
   },
   message: {
     fontSize: 13,
-    color: AppColors.darkTextSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
     maxWidth: 280,
   },
   actionButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
   },
   actionText: {
-    color: '#0F1015',
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
   },

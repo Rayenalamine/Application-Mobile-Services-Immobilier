@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN D'ACCUEIL LUXE MODERNE (React Native Screen 1)
-// Design adaptatif Clair / Sombre, monogramme initiales épuré
+// DARLINK — ÉCRAN D'ACCUEIL MODERNE & LUXE (React Native)
+// Icônes vectorielles Lucide, adaptatif Clair / Sombre & RTL
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
@@ -11,13 +11,26 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
 } from 'react-native';
-import { AppColors } from '../../../../core/constants/colors';
+import {
+  User,
+  Moon,
+  Sun,
+  Languages,
+  Plus,
+  Settings,
+  Search,
+  X,
+  Map as MapIcon,
+  Building,
+} from 'lucide-react-native';
+import { AppShadows } from '../../../../core/constants/spacing';
 import { mockProperties } from '../../data/mockProperties';
 import { Property } from '../../domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
+import { EmptyStateView } from '../../../../core/components/EmptyStateView';
+import { useBottomNavClearance } from '../../../../core/components/FloatingBottomNav';
 import { PropertyDetailsScreen } from './PropertyDetailsScreen';
 import { AddPropertyScreen } from './AddPropertyScreen';
 import { MapScreen } from '../../../map/presentation/screens/MapScreen';
@@ -38,9 +51,13 @@ const FILTER_PILLS = [
 
 interface HomeScreenProps {
   onNavigateToSearch?: () => void;
+  onNavigateToProfile?: () => void;
 }
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({
+  onNavigateToSearch,
+  onNavigateToProfile,
+}) => {
   const [currentView, setCurrentView] = useState<'home' | 'map' | 'add'>('home');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('Tous');
@@ -48,7 +65,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   const [properties, setProperties] = useState<Property[]>([...mockProperties]);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const { isDark, toggleTheme, colors } = useTheme();
-  const { t, language, setLanguage } = useTranslation();
+  const { t, language, setLanguage, isRTL } = useTranslation();
+  const bottomClearance = useBottomNavClearance();
 
   const getFilterLabel = (pill: string) => {
     switch (pill) {
@@ -72,7 +90,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   useEffect(() => {
     favoritesApiService.init();
     const unsubFav = favoritesApiService.addListener(() => {
-      // Forcer la mise à jour des cartes lors d'un ajout/suppression de favori
       setProperties((prev) => [...prev]);
     });
     return unsubFav;
@@ -129,7 +146,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     );
   }
 
-  // Si un bien est sélectionné, on affiche l'écran de détails luxe (Screen 2)
   if (selectedProperty) {
     return (
       <PropertyDetailsScreen
@@ -139,144 +155,193 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     );
   }
 
+  const cycleLanguage = () => {
+    if (language === 'fr') setLanguage('ar');
+    else if (language === 'ar') setLanguage('en');
+    else setLanguage('fr');
+  };
+
+  const initials =
+    currentUser && currentUser.fullName
+      ? currentUser.fullName
+          .split(' ')
+          .map((e) => (e ? e[0] : ''))
+          .slice(0, 2)
+          .join('')
+          .toUpperCase()
+      : '';
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomClearance },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. EN-TÊTE UTILISATEUR AVEC MONOGRAMME INITIALES ET BASCULE DU THÈME */}
-        <View style={styles.headerRow}>
-          <View style={styles.userInfo}>
-            {/* Monogramme épuré sans photo */}
+        {/* 1. EN-TÊTE : PROFIL, THÈME, LANGUE, AJOUT & PARAMÈTRES */}
+        <View
+          style={[
+            styles.headerRow,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.userInfo,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+              isRTL ? { marginLeft: 8, marginRight: 0 } : { marginRight: 8 },
+            ]}
+            onPress={onNavigateToProfile}
+            activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel={t('nav_profile')}
+          >
             <View
               style={[
-                styles.monogramAvatar,
+                styles.avatarBadge,
                 {
-                  backgroundColor: isDark ? '#22242D' : '#E9EBF0',
-                  borderColor: colors.border,
+                  backgroundColor: currentUser ? colors.accentBlue : colors.surface,
+                  borderColor: currentUser ? colors.accentBlue : colors.border,
                 },
               ]}
             >
-              <Text style={[styles.monogramText, { color: colors.textPrimary }]}>
-                {currentUser && currentUser.fullName
-                  ? currentUser.fullName.split(' ').map((e) => (e ? e[0] : '')).slice(0, 2).join('')
-                  : 'IN'}
-              </Text>
+              {initials ? (
+                <Text style={styles.monogramText}>{initials}</Text>
+              ) : (
+                <User size={19} color={colors.accentBlue} strokeWidth={2} />
+              )}
             </View>
 
-            <View style={styles.userTextContainer}>
+            <View
+              style={[
+                styles.userTextContainer,
+                isRTL ? { marginRight: 10, marginLeft: 0, alignItems: 'flex-end' } : { marginLeft: 10 },
+              ]}
+            >
               <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
-                {currentUser ? 'Bonjour ! 👋' : 'Bienvenue !'}
+                {currentUser ? t('greeting_user') : t('greeting_guest')}
               </Text>
               <Text style={[styles.userNameText, { color: colors.textPrimary }]} numberOfLines={1}>
-                {currentUser ? currentUser.fullName : 'Invité'}
+                {currentUser ? currentUser.fullName : t('guest_name')}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
-          {/* Boutons d'action : Bascule Thème Sombre/Clair + Ajout + Carte */}
-          <View style={styles.headerActions}>
+          <View
+            style={[
+              styles.headerActions,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
             <TouchableOpacity
               style={[
                 styles.headerActionBtn,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
+                AppShadows.subtle,
+                { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
               onPress={toggleTheme}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Basculer le mode sombre ou clair"
+              accessibilityLabel={t('theme_choice')}
             >
-              <Text style={styles.actionEmoji}>{isDark ? '☀️' : '🌙'}</Text>
+              {isDark ? (
+                <Sun size={18} color="#FBBF24" strokeWidth={2} />
+              ) : (
+                <Moon size={18} color={colors.textPrimary} strokeWidth={2} />
+              )}
             </TouchableOpacity>
 
-            {/* Bouton de langue trilingue FR / AR / EN */}
             <TouchableOpacity
               style={[
-                styles.headerActionBtn,
+                styles.langActionBtn,
+                AppShadows.subtle,
                 {
                   backgroundColor: colors.surface,
                   borderColor: colors.border,
+                  flexDirection: isRTL ? 'row-reverse' : 'row',
                 },
               ]}
-              onPress={() => {
-                if (language === 'fr') setLanguage('ar');
-                else if (language === 'ar') setLanguage('en');
-                else setLanguage('fr');
-              }}
+              onPress={cycleLanguage}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Changer de langue"
+              accessibilityLabel={t('language_choice')}
             >
-              <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary }}>
-                {language === 'fr' ? 'FR' : language === 'ar' ? 'عربي' : 'EN'}
+              <Languages size={15} color={colors.accentBlue} strokeWidth={2} />
+              <Text style={[styles.langCodeText, { color: colors.textPrimary }]}>
+                {language === 'fr' ? 'FR' : language === 'ar' ? 'AR' : 'EN'}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.headerActionBtn,
+                AppShadows.subtle,
                 {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  backgroundColor: colors.accentBlue,
+                  borderColor: colors.accentBlue,
                 },
               ]}
               onPress={() => setCurrentView('add')}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               accessibilityRole="button"
-              accessibilityLabel="Déposer une annonce"
+              accessibilityLabel={t('profile_publish')}
             >
-              <Text style={styles.actionEmoji}>➕</Text>
+              <Plus size={18} color="#FFFFFF" strokeWidth={2.4} />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.headerActionBtn,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
+                AppShadows.subtle,
+                { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
-              onPress={() => setCurrentView('map')}
+              onPress={onNavigateToProfile}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Ouvrir la carte"
+              accessibilityLabel={t('app_settings')}
             >
-              <Text style={styles.actionEmoji}>🗺️</Text>
+              <Settings size={18} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 2. BARRE DE RECHERCHE FLOTTANTE TYPE PILULE */}
+        {/* 2. BARRE DE RECHERCHE MODERNE */}
         <View
           testID="home_search_bar"
           style={[
             styles.searchBar,
+            AppShadows.subtle,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              shadowOpacity: isDark ? 0.2 : 0.04,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
           <View
             style={[
               styles.searchIconContainer,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+              {
+                backgroundColor: colors.accentBlueSoft,
+                marginRight: isRTL ? 0 : 10,
+                marginLeft: isRTL ? 10 : 0,
+              },
             ]}
           >
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Search size={17} color={colors.accentBlue} strokeWidth={2.2} />
           </View>
           <TextInput
             testID="home_search_input"
             style={[
               styles.searchInput,
-              { color: colors.textPrimary },
-              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
+              {
+                color: colors.textPrimary,
+                textAlign: isRTL ? 'right' : 'left',
+              },
+              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as object),
             ]}
             placeholder={t('search_placeholder')}
             placeholderTextColor={colors.textSecondary}
@@ -288,33 +353,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           {searchQuery.length > 0 ? (
             <TouchableOpacity
               onPress={() => setSearchQuery('')}
-              style={styles.clearSearchBtn}
+              style={[
+                styles.tuneButton,
+                { backgroundColor: colors.surfaceElevated },
+              ]}
               accessibilityRole="button"
-              accessibilityLabel="Effacer la recherche"
+              accessibilityLabel={t('btn_reset')}
             >
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: 'bold' }}>✕</Text>
+              <X size={16} color={colors.textSecondary} strokeWidth={2.2} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
               onPress={onNavigateToSearch}
               style={[
                 styles.tuneButton,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+                { backgroundColor: colors.surfaceElevated },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Filtres avancés"
+              accessibilityLabel={t('btn_filter')}
             >
-              <Text style={styles.tuneIcon}>⚙️</Text>
+              <Settings size={17} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* 3. RANGÉE DE JETONS DE FILTRES HORIZONTAUX */}
+        {/* 3. RANGÉE DE FILTRES IMMOBILIERS */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.filterScrollView}
-          contentContainerStyle={styles.filterContainer}
+          contentContainerStyle={[
+            styles.filterContainer,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
         >
           {FILTER_PILLS.map((filtre) => {
             const isSelected = activeFilter === filtre;
@@ -324,9 +395,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                 style={[
                   styles.filterPill,
                   {
-                    backgroundColor: isSelected
-                      ? colors.accentBlue
-                      : colors.surface,
+                    backgroundColor: isSelected ? colors.accentBlue : colors.surface,
                     borderColor: isSelected ? colors.accentBlue : colors.border,
                   },
                 ]}
@@ -337,10 +406,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                   style={[
                     styles.filterText,
                     {
-                      color: isSelected
-                        ? '#FFFFFF'
-                        : colors.textSecondary,
-                      fontWeight: isSelected ? '700' : '500',
+                      color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                      fontWeight: isSelected ? '700' : '600',
                     },
                   ]}
                 >
@@ -351,46 +418,105 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           })}
         </ScrollView>
 
-        {/* 4. BANNIÈRE DISCRÈTE & SECTION TITRE */}
+        {/* 4. BANNIÈRE SERVICES DARLINK + ACCÈS CARTE */}
         <View
           style={[
             styles.bannerContainer,
             {
-              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.08)',
-              borderColor: isDark ? 'rgba(37, 99, 235, 0.3)' : 'rgba(37, 99, 235, 0.2)',
+              backgroundColor: colors.accentBlueSoft,
+              borderColor: isDark ? 'rgba(59, 130, 246, 0.30)' : 'rgba(37, 99, 235, 0.20)',
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
-          <Text style={styles.bannerTitle}>Services Immobilier DarLink</Text>
-          <Text style={[styles.bannerSubtitle, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
-            Trouvez le bien immobilier de vos rêves en Tunisie avec visite guidée.
-          </Text>
+          <View
+            style={[
+              styles.bannerIconBox,
+              {
+                backgroundColor: colors.accentBlue,
+                marginRight: isRTL ? 0 : 12,
+                marginLeft: isRTL ? 12 : 0,
+              },
+            ]}
+          >
+            <Building size={20} color="#FFFFFF" strokeWidth={2} />
+          </View>
+          <View style={styles.bannerTextWrap}>
+            <Text
+              style={[
+                styles.bannerTitle,
+                { color: isDark ? '#93C5FD' : colors.accentBlue, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {t('banner_title')}
+            </Text>
+            <Text
+              style={[
+                styles.bannerSubtitle,
+                { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {t('banner_subtitle')}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.mapPillBtn,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+            onPress={() => setCurrentView('map')}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir la carte"
+          >
+            <MapIcon size={17} color={colors.accentBlue} strokeWidth={2} />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.sectionHeader}>
+        <View
+          style={[
+            styles.sectionHeader,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Nos biens immobiliers
+            {t('listings_title')}
           </Text>
           <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
-            {filteredProperties.length} annonces disponibles
+            {t('listings_count', { count: filteredProperties.length })}
           </Text>
         </View>
 
-        {/* 5. LISTE IMMERSIVE DES CARTES DE BIENS */}
-        {filteredProperties.map((property) => (
-          <PropertyCard
-            key={property.id ?? property.titre}
-            property={property}
-            onPress={(p) => setSelectedProperty(p)}
+        {/* 5. LISTE DES CARTES DE BIENS */}
+        {filteredProperties.length === 0 ? (
+          <EmptyStateView
+            title={t('search_empty_title')}
+            message={t('search_empty_sub')}
+            actionLabel={t('search_reset_all')}
+            onAction={() => {
+              setSearchQuery('');
+              setActiveFilter('Tous');
+            }}
           />
-        ))}
+        ) : (
+          filteredProperties.map((property) => (
+            <PropertyCard
+              key={property.id ?? property.titre}
+              property={property}
+              onPress={(p) => setSelectedProperty(p)}
+            />
+          ))
+        )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
   scrollView: {
@@ -399,21 +525,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 110,
   },
   headerRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
   userInfo: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 8,
   },
-  monogramAvatar: {
+  avatarBadge: {
     width: 42,
     height: 42,
     borderRadius: 21,
@@ -422,13 +544,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   monogramText: {
-    fontSize: 15,
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   userTextContainer: {
     flex: 1,
-    marginLeft: 10,
   },
   greetingText: {
     fontSize: 12,
@@ -439,46 +561,46 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   headerActions: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   headerActionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  actionEmoji: {
-    fontSize: 17,
-  },
-  searchBar: {
-    height: 52,
-    borderRadius: 26,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  searchIconContainer: {
     width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    borderWidth: 1,
+  },
+  langActionBtn: {
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    gap: 4,
+  },
+  langCodeText: {
+    fontSize: 11.5,
+    fontWeight: '800',
+  },
+  searchBar: {
+    height: 54,
+    borderRadius: 22,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    marginBottom: 16,
     overflow: 'hidden',
   },
-  searchIcon: {
-    fontSize: 16,
+  searchIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   searchInput: {
     flex: 1,
@@ -486,20 +608,13 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     backgroundColor: 'transparent',
   },
-  clearSearchBtn: {
-    padding: 6,
-    marginRight: 4,
-  },
   tuneButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-  },
-  tuneIcon: {
-    fontSize: 14,
   },
   filterScrollView: {
     marginBottom: 16,
@@ -520,22 +635,40 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     borderRadius: 18,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     marginBottom: 18,
+    alignItems: 'center',
+  },
+  bannerIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerTextWrap: {
+    flex: 1,
   },
   bannerTitle: {
-    color: '#2563EB',
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   bannerSubtitle: {
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 17,
+  },
+  mapPillBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   sectionHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
     marginBottom: 14,
@@ -547,6 +680,6 @@ const styles = StyleSheet.create({
   },
   sectionCount: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

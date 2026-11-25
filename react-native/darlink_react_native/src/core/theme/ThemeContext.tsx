@@ -19,6 +19,8 @@ export interface ThemeColors {
   readonly textTertiary: string;
   readonly accentGreen: string;
   readonly accentBlue: string;
+  readonly accentBlueSecondary: string;
+  readonly accentBlueSoft: string;
   readonly accentRed: string;
   readonly segmentedBg: string;
   readonly activeSegmentBg: string;

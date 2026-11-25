@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DE RECHERCHE & FILTRES MULTICRITÈRES (React Native V5-T02)
-// Recherche textuelle réelle, filtres dynamiques, budget & thèmes
+// DARLINK — ÉCRAN DE RECHERCHE & FILTRES MULTICRITÈRES (React Native)
+// Icônes vectorielles Lucide, Design System unifié & support RTL
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
@@ -11,11 +11,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Alert,
   Platform,
 } from 'react-native';
+import {
+  Map as MapIcon,
+  RotateCcw,
+  Search,
+  X,
+  MapPin,
+} from 'lucide-react-native';
+import { AppShadows } from '../../../../core/constants/spacing';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { EmptyStateView } from '../../../../core/components/EmptyStateView';
+import { useBottomNavClearance } from '../../../../core/components/FloatingBottomNav';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
@@ -40,6 +50,8 @@ export const SearchScreen: React.FC = () => {
   const [showMap, setShowMap] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const { isDark, colors } = useTheme();
+  const { t, isRTL } = useTranslation();
+  const bottomClearance = useBottomNavClearance();
 
   useEffect(() => {
     fetchFilteredProperties();
@@ -105,69 +117,109 @@ export const SearchScreen: React.FC = () => {
     );
   };
 
+  const getSegmentLabel = (seg: string) => {
+    if (seg === 'Tous') return t('filter_all');
+    if (seg === 'Acheter') return t('search_buy');
+    if (seg === 'Louer') return t('search_rent');
+    return seg;
+  };
+
+  const getTypeLabel = (type: string) => {
+    if (type === 'Tous') return t('filter_all');
+    if (type === 'Appartement') return t('filter_apartment');
+    if (type === 'Villa') return t('filter_villa');
+    if (type === 'Maison') return t('filter_house');
+    return type;
+  };
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomClearance + 84 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* 1. BARRE SUPÉRIEURE */}
-        <View style={styles.headerBar}>
+        <View
+          style={[
+            styles.headerBar,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            Recherche de biens
+            {t('search_title')}
           </Text>
 
-          <View style={styles.headerRightActions}>
+          <View
+            style={[
+              styles.headerRightActions,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
             <TouchableOpacity
               style={[
                 styles.glassCircleBtn,
+                AppShadows.subtle,
                 { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
               onPress={() => setShowMap(true)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Ouvrir la carte"
             >
-              <Text style={styles.circleIcon}>🗺️</Text>
+              <MapIcon size={18} color={colors.accentBlue} strokeWidth={2} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.glassCircleBtn,
+                AppShadows.subtle,
                 { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
               onPress={handleReset}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t('btn_reset')}
             >
-              <Text style={styles.circleIcon}>🔄</Text>
+              <RotateCcw size={17} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 2. CHAMP DE RECHERCHE TEXTUELLE RÉEL (V5) */}
+        {/* 2. CHAMP DE RECHERCHE TEXTUELLE */}
         <View
           style={[
             styles.searchBox,
+            AppShadows.subtle,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
           <View
             style={[
               styles.searchIconContainer,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F0F2F5' },
+              {
+                backgroundColor: colors.accentBlueSoft,
+                marginRight: isRTL ? 0 : 10,
+                marginLeft: isRTL ? 10 : 0,
+              },
             ]}
           >
-            <Text style={styles.searchBoxIcon}>🔍</Text>
+            <Search size={17} color={colors.accentBlue} strokeWidth={2.2} />
           </View>
           <TextInput
             testID="search_input"
             style={[
               styles.searchInput,
-              { color: colors.textPrimary },
-              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as any),
+              { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+              Platform.OS === 'web' && ({ outlineWidth: 0, outlineStyle: 'none' } as object),
             ]}
-            placeholder="Rechercher par titre, quartier, mot-clé..."
+            placeholder={t('search_placeholder')}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={(text) => {
@@ -182,11 +234,11 @@ export const SearchScreen: React.FC = () => {
                 setSearchQuery('');
                 fetchFilteredProperties();
               }}
-              style={styles.clearBtn}
+              style={[styles.clearBtn, { backgroundColor: colors.surfaceElevated }]}
               accessibilityRole="button"
-              accessibilityLabel="Effacer la recherche"
+              accessibilityLabel={t('btn_reset')}
             >
-              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>✕</Text>
+              <X size={15} color={colors.textSecondary} strokeWidth={2.2} />
             </TouchableOpacity>
           )}
         </View>
@@ -196,8 +248,9 @@ export const SearchScreen: React.FC = () => {
           style={[
             styles.segmentedControl,
             {
-              backgroundColor: isDark ? '#181920' : '#E9EBF0',
+              backgroundColor: colors.segmentedBg,
               borderColor: colors.border,
+              flexDirection: isRTL ? 'row-reverse' : 'row',
             },
           ]}
         >
@@ -212,7 +265,7 @@ export const SearchScreen: React.FC = () => {
                     backgroundColor: colors.accentBlue,
                     shadowColor: colors.accentBlue,
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.3,
+                    shadowOpacity: 0.28,
                     shadowRadius: 6,
                     elevation: 3,
                   },
@@ -225,11 +278,11 @@ export const SearchScreen: React.FC = () => {
                     styles.segmentText,
                     {
                       color: isSelected ? '#FFFFFF' : colors.textSecondary,
-                      fontWeight: isSelected ? '800' : '600',
+                      fontWeight: isSelected ? '700' : '600',
                     },
                   ]}
                 >
-                  {seg}
+                  {getSegmentLabel(seg)}
                 </Text>
               </TouchableOpacity>
             );
@@ -238,10 +291,20 @@ export const SearchScreen: React.FC = () => {
 
         {/* 4. SÉLECTION TYPE DE BIEN */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Type de bien
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {t('search_property_type')}
           </Text>
-          <View style={styles.pillsRow}>
+          <View
+            style={[
+              styles.pillsRow,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
             {PROPERTY_TYPES.map((type) => {
               const isSelected = selectedType === type;
               return (
@@ -266,7 +329,7 @@ export const SearchScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    {type}
+                    {getTypeLabel(type)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -276,10 +339,20 @@ export const SearchScreen: React.FC = () => {
 
         {/* 5. VILLES POPULAIRES EN TUNISIE */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Villes populaires en Tunisie
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {t('search_popular_cities')}
           </Text>
-          <View style={styles.pillsRow}>
+          <View
+            style={[
+              styles.pillsRow,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
             {CITIES.map((city) => {
               const isSelected = selectedCity === city;
               return (
@@ -291,12 +364,17 @@ export const SearchScreen: React.FC = () => {
                     {
                       backgroundColor: isSelected ? colors.accentBlue : colors.surface,
                       borderColor: isSelected ? colors.accentBlue : colors.border,
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
                     },
                   ]}
                   onPress={() => setSelectedCity(isSelected ? '' : city)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.cityPin, isSelected && { color: '#FFFFFF' }]}>📍</Text>
+                  <MapPin
+                    size={13}
+                    color={isSelected ? '#FFFFFF' : colors.accentBlue}
+                    strokeWidth={2}
+                  />
                   <Text
                     style={[
                       styles.pillText,
@@ -316,10 +394,20 @@ export const SearchScreen: React.FC = () => {
 
         {/* 6. NOMBRE DE CHAMBRES */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Nombre de chambres
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {t('search_bedrooms')}
           </Text>
-          <View style={styles.pillsRow}>
+          <View
+            style={[
+              styles.pillsRow,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
             {BEDROOMS.map((bed) => {
               const isSelected = selectedBedrooms === bed;
               return (
@@ -344,7 +432,7 @@ export const SearchScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    {bed}
+                    {bed === 'Tous' ? t('filter_all') : bed}
                   </Text>
                 </TouchableOpacity>
               );
@@ -354,12 +442,22 @@ export const SearchScreen: React.FC = () => {
 
         {/* 7. FOURCHETTE DE PRIX */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-            Budget (DT)
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {t('search_budget')}
           </Text>
-          <View style={styles.pillsRow}>
+          <View
+            style={[
+              styles.pillsRow,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
             {[
-              { label: 'Tous prix', min: undefined, max: undefined },
+              { label: t('filter_all'), min: undefined, max: undefined },
               { label: '< 300k DT', min: undefined, max: 300000 },
               { label: '300k - 600k DT', min: 300000, max: 600000 },
               { label: '> 600k DT', min: 600000, max: undefined },
@@ -399,39 +497,38 @@ export const SearchScreen: React.FC = () => {
         </View>
 
         {/* 8. RÉSULTATS DYNAMIQUES EN TEMPS RÉEL */}
-        <View style={styles.resultsHeaderRow}>
+        <View
+          style={[
+            styles.resultsHeaderRow,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <Text style={[styles.resultsCountText, { color: colors.textPrimary }]}>
-            Résultats correspondants ({properties.length})
+            {t('search_results_count', { count: properties.length })}
           </Text>
           {(selectedCity || selectedType !== 'Tous' || selectedBedrooms !== 'Tous' || selectedSegment !== 'Tous' || searchQuery || minPrice !== undefined) && (
             <TouchableOpacity onPress={handleReset}>
               <Text style={{ color: colors.accentBlue, fontWeight: '700', fontSize: 13 }}>
-                Réinitialiser
+                {t('btn_reset')}
               </Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {properties.length === 0 ? (
+        {properties.length === 0 && !loading ? (
           <View
             style={[
               styles.emptyStateBox,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-              Aucun bien ne correspond à ces critères
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Essayez de réinitialiser la recherche ou de sélectionner une autre ville.
-            </Text>
-            <TouchableOpacity
-              style={[styles.resetButton, { backgroundColor: colors.accentBlue }]}
-              onPress={handleReset}
-            >
-              <Text style={styles.resetButtonText}>Tout réinitialiser</Text>
-            </TouchableOpacity>
+            <EmptyStateView
+              title={t('search_empty_title')}
+              message={t('search_empty_sub')}
+              actionLabel={t('search_reset_all')}
+              onAction={handleReset}
+              style={{ padding: 8 }}
+            />
           </View>
         ) : (
           properties.map((prop) => (
@@ -443,17 +540,18 @@ export const SearchScreen: React.FC = () => {
             </View>
           ))
         )}
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* DOCK FLOTTANT EN BAS */}
+      {/* DOCK D'ACTION AU-DESSUS DE LA BARRE DE NAVIGATION FLOTTANTE */}
       <View
         style={[
           styles.bottomDock,
+          AppShadows.card,
           {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+            bottom: bottomClearance - 4,
+            backgroundColor: isDark ? 'rgba(21, 30, 50, 0.96)' : 'rgba(255, 255, 255, 0.97)',
             borderColor: colors.border,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
           },
         ]}
       >
@@ -463,24 +561,24 @@ export const SearchScreen: React.FC = () => {
           activeOpacity={0.8}
         >
           <Text style={[styles.dockOutlinedText, { color: colors.textPrimary }]}>
-            Réinitialiser
+            {t('btn_reset')}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.dockFilledBtn, { backgroundColor: colors.accentBlue }]}
           onPress={handleApply}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <Text style={styles.dockFilledText}>Appliquer les filtres</Text>
+          <Text style={styles.dockFilledText}>{t('btn_apply_filters')}</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
   scrollView: {
@@ -489,21 +587,18 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 116,
   },
   headerBar: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
   headerRightActions: {
-    flexDirection: 'row',
     gap: 8,
   },
   glassCircleBtn: {
@@ -514,30 +609,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circleIcon: {
-    fontSize: 16,
-  },
   searchBox: {
-    flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
-    borderRadius: 26,
+    height: 54,
+    borderRadius: 22,
     borderWidth: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     marginBottom: 16,
     overflow: 'hidden',
   },
   searchIconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
     overflow: 'hidden',
-  },
-  searchBoxIcon: {
-    fontSize: 16,
   },
   searchInput: {
     flex: 1,
@@ -546,11 +633,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   clearBtn: {
-    padding: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   segmentedControl: {
-    flexDirection: 'row',
-    borderRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
     padding: 4,
     marginBottom: 20,
@@ -560,7 +650,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
+    borderRadius: 18,
   },
   segmentText: {
     fontSize: 13,
@@ -574,7 +664,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   pillsRow: {
-    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
@@ -585,18 +674,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   cityPill: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  cityPin: {
-    fontSize: 12,
+    gap: 5,
   },
   pillText: {
     fontSize: 13,
   },
   resultsHeaderRow: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 14,
@@ -606,59 +690,27 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   emptyStateBox: {
-    padding: 30,
+    padding: 16,
     borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
   },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  resetButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  resetButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
   cardWrapper: {
-    marginBottom: 16,
+    marginBottom: 4,
   },
   bottomDock: {
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 16,
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 24,
+    padding: 10,
+    borderRadius: 22,
     borderWidth: 1,
     gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
   },
   dockOutlinedBtn: {
     flex: 4,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -669,8 +721,8 @@ const styles = StyleSheet.create({
   },
   dockFilledBtn: {
     flex: 5,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },

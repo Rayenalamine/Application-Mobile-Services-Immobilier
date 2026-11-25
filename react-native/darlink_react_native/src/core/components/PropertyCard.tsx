@@ -1,17 +1,28 @@
 // ============================================================
-// DARLINK — CARTE DE PROPRIÉTÉ LUXE GLASSMORPHISM (React Native)
-// Adaptatif Clair / Sombre, parité exacte avec le composant Flutter
+// DARLINK — CARTE DE PROPRIÉTÉ MODERNE (React Native)
+// Icônes vectorielles Lucide, adaptatif Clair / Sombre & RTL
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Image,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
+import {
+  Heart,
+  MapPin,
+  BedDouble,
+  Bath,
+  Maximize2,
+  ArrowRight,
+  ArrowLeft,
+} from 'lucide-react-native';
 import { AppColors } from '../constants/colors';
+import { AppShadows } from '../constants/spacing';
 import { Property } from '../../features/properties/domain/models/property';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from '../localization/LocalizationContext';
@@ -27,7 +38,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
     property.id ? favoritesApiService.isFavorite(property.id) : (property.isFavorite ?? false)
   );
   const { isDark, colors } = useTheme();
-  const { t, formatPrice } = useTranslation();
+  const { t, formatPrice, isRTL } = useTranslation();
+  const heartScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const propId = property.id;
@@ -41,17 +53,34 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
 
   const handleToggleFavorite = () => {
     if (!property.id) return;
+    Animated.sequence([
+      Animated.spring(heartScale, {
+        toValue: 1.25,
+        useNativeDriver: true,
+        tension: 200,
+        friction: 10,
+      }),
+      Animated.spring(heartScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 160,
+        friction: 12,
+      }),
+    ]).start();
     favoritesApiService.toggleFavorite(property.id, property);
   };
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.95}
+      onPress={() => onPress(property)}
       style={[
         styles.cardContainer,
+        AppShadows.card,
         {
           backgroundColor: colors.surface,
           borderColor: colors.border,
-          shadowOpacity: isDark ? 0.35 : 0.06,
+          shadowOpacity: isDark ? 0.35 : 0.08,
         },
       ]}
     >
@@ -62,29 +91,41 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
         resizeMode="cover"
       />
 
-      {/* 2. Badge supérieur gauche : Statut (Point vert lumineux + À Vendre) */}
+      {/* 2. Badge supérieur : Statut À vendre / À louer */}
       <View
         style={[
           styles.statusPill,
+          isRTL ? { right: 14, left: undefined } : { left: 14 },
           {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.75)' : 'rgba(255, 255, 255, 0.90)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.82)' : 'rgba(255, 255, 255, 0.94)',
+            borderColor: isDark ? 'rgba(148, 163, 184, 0.25)' : colors.border,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
           },
         ]}
       >
-        <View style={styles.statusDot} />
-        <Text style={[styles.statusText, { color: isDark ? '#FFFFFF' : '#0F1015' }]}>
+        <View
+          style={[
+            styles.statusDot,
+            {
+              backgroundColor: property.estLocation ? colors.accentBlueSecondary : colors.accentGreen,
+              marginRight: isRTL ? 0 : 6,
+              marginLeft: isRTL ? 6 : 0,
+            },
+          ]}
+        />
+        <Text style={[styles.statusText, { color: colors.textPrimary }]}>
           {property.estLocation ? t('for_rent') : t('for_sale')}
         </Text>
       </View>
 
-      {/* 3. Bouton supérieur droit : Bouton de favori verre dépoli */}
+      {/* 3. Bouton favori avec icône Heart vectorielle */}
       <TouchableOpacity
         style={[
           styles.favoriteButton,
+          isRTL ? { left: 14, right: undefined } : { right: 14 },
           {
-            backgroundColor: isDark ? 'rgba(15, 16, 21, 0.65)' : 'rgba(255, 255, 255, 0.90)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.78)' : 'rgba(255, 255, 255, 0.94)',
+            borderColor: isDark ? 'rgba(148, 163, 184, 0.25)' : colors.border,
           },
         ]}
         onPress={handleToggleFavorite}
@@ -92,30 +133,51 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
         accessibilityRole="button"
         accessibilityLabel={isFavorite ? t('removed_from_favorites') : t('added_to_favorites')}
       >
-        <Text style={[styles.favoriteIcon, isFavorite && styles.favoriteIconActive]}>
-          {isFavorite ? '❤️' : '🤍'}
-        </Text>
+        <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+          <Heart
+            size={19}
+            color={isFavorite ? AppColors.accentRed : colors.textSecondary}
+            fill={isFavorite ? AppColors.accentRed : 'transparent'}
+            strokeWidth={2}
+          />
+        </Animated.View>
       </TouchableOpacity>
 
-      {/* 4. Dock inférieur verre dépoli translucide (Glassmorphism) */}
+      {/* 4. Dock inférieur d'informations */}
       <View
         style={[
           styles.glassDock,
           {
-            backgroundColor: isDark ? 'rgba(19, 20, 28, 0.88)' : 'rgba(255, 255, 255, 0.95)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: isDark ? 'rgba(21, 30, 50, 0.94)' : 'rgba(255, 255, 255, 0.97)',
+            borderColor: isDark ? 'rgba(148, 163, 184, 0.22)' : colors.border,
           },
         ]}
       >
         {/* Ligne 1 : Prix + Bouton d'action "Voir détails" */}
-        <View style={styles.dockHeader}>
-          <View style={styles.priceContainer}>
+        <View
+          style={[
+            styles.dockHeader,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
+          <View
+            style={[
+              styles.priceContainer,
+              isRTL ? { marginLeft: 10, marginRight: 0, alignItems: 'flex-end' } : { marginRight: 10 },
+            ]}
+          >
             <Text style={[styles.priceText, { color: colors.textPrimary }]}>
               {property.estLocation
                 ? `${formatPrice(property.prix)} ${t('per_month')}`
                 : formatPrice(property.prix)}
             </Text>
-            <Text style={[styles.propertyTitle, { color: colors.textSecondary }]} numberOfLines={1}>
+            <Text
+              style={[
+                styles.propertyTitle,
+                { color: colors.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+              numberOfLines={1}
+            >
               {property.titre}
             </Text>
           </View>
@@ -124,7 +186,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
             style={[
               styles.actionButton,
               {
-                backgroundColor: isDark ? '#FFFFFF' : AppColors.accentBlue,
+                backgroundColor: colors.accentBlue,
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
             onPress={() => onPress(property)}
@@ -132,45 +195,57 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
             accessibilityRole="button"
             accessibilityLabel={t('btn_details')}
           >
-            <Text
-              style={[
-                styles.actionButtonText,
-                { color: isDark ? '#0F1015' : '#FFFFFF' },
-              ]}
-            >
-              {t('btn_details')}
-            </Text>
-            <Text
-              style={[
-                styles.actionArrow,
-                { color: isDark ? '#0F1015' : '#FFFFFF' },
-              ]}
-            >
-              →
-            </Text>
+            <Text style={styles.actionButtonText}>{t('btn_details')}</Text>
+            {isRTL ? (
+              <ArrowLeft size={14} color="#FFFFFF" strokeWidth={2.4} />
+            ) : (
+              <ArrowRight size={14} color="#FFFFFF" strokeWidth={2.4} />
+            )}
           </TouchableOpacity>
         </View>
 
         {/* Ligne 2 : Localisation */}
-        <View style={styles.locationRow}>
-          <Text style={styles.locationPin}>📍</Text>
-          <Text style={[styles.locationText, { color: colors.textSecondary }]} numberOfLines={1}>
+        <View
+          style={[
+            styles.locationRow,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
+          <MapPin size={14} color={colors.accentBlue} strokeWidth={2} />
+          <Text
+            style={[
+              styles.locationText,
+              {
+                color: colors.textSecondary,
+                textAlign: isRTL ? 'right' : 'left',
+                marginLeft: isRTL ? 0 : 6,
+                marginRight: isRTL ? 6 : 0,
+              },
+            ]}
+            numberOfLines={1}
+          >
             {property.localisation}
           </Text>
         </View>
 
         {/* Ligne 3 : Pilules de caractéristiques (Chambres, Salles de bain, Surface) */}
-        <View style={styles.specsRow}>
+        <View
+          style={[
+            styles.specsRow,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <View
             style={[
               styles.specPill,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.background,
+                borderColor: colors.border,
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
-            <Text style={styles.specIcon}>🛏️</Text>
+            <BedDouble size={13} color={colors.textSecondary} strokeWidth={2} />
             <Text style={[styles.specText, { color: colors.textSecondary }]}>
               {property.nombreChambres} {t('bedrooms_short')}
             </Text>
@@ -180,12 +255,13 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
             style={[
               styles.specPill,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.background,
+                borderColor: colors.border,
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
-            <Text style={styles.specIcon}>🚿</Text>
+            <Bath size={13} color={colors.textSecondary} strokeWidth={2} />
             <Text style={[styles.specText, { color: colors.textSecondary }]}>
               {property.nombreSallesDeBain} {t('bathrooms_short')}
             </Text>
@@ -195,19 +271,20 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
             style={[
               styles.specPill,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : colors.background,
+                borderColor: colors.border,
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
-            <Text style={styles.specIcon}>📐</Text>
+            <Maximize2 size={13} color={colors.textSecondary} strokeWidth={2} />
             <Text style={[styles.specText, { color: colors.textSecondary }]}>
               {property.surfaceM2 ?? 120} {t('area_unit')}
             </Text>
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -216,24 +293,18 @@ const styles = StyleSheet.create({
     height: 380,
     borderRadius: 24,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 18,
     borderWidth: 1,
     position: 'relative',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 14,
-    elevation: 4,
   },
   heroImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E2E8F0',
   },
   statusPill: {
     position: 'absolute',
     top: 14,
-    left: 14,
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -241,11 +312,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: AppColors.accentGreen,
-    marginRight: 6,
   },
   statusText: {
     fontSize: 12,
@@ -254,19 +323,12 @@ const styles = StyleSheet.create({
   favoriteButton: {
     position: 'absolute',
     top: 14,
-    right: 14,
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-  },
-  favoriteIcon: {
-    fontSize: 16,
-  },
-  favoriteIconActive: {
-    color: AppColors.accentRed,
   },
   glassDock: {
     position: 'absolute',
@@ -279,16 +341,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dockHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   priceContainer: {
     flex: 1,
-    marginRight: 10,
   },
   priceText: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '800',
     letterSpacing: -0.4,
   },
@@ -298,29 +358,20 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   actionButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: 16,
+    borderRadius: 14,
+    gap: 6,
   },
   actionButtonText: {
+    color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 13,
-    marginRight: 4,
-  },
-  actionArrow: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 12.5,
   },
   locationRow: {
-    flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
-  },
-  locationPin: {
-    fontSize: 13,
-    marginRight: 4,
   },
   locationText: {
     fontSize: 13,
@@ -328,21 +379,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   specsRow: {
-    flexDirection: 'row',
-    marginTop: 12,
+    marginTop: 11,
     gap: 8,
   },
   specPill: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 0.8,
-  },
-  specIcon: {
-    fontSize: 12,
-    marginRight: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 5,
   },
   specText: {
     fontSize: 12,

@@ -18,7 +18,19 @@ import {
   PanResponderGestureState,
   ActivityIndicator,
 } from 'react-native';
+import {
+  MapPin,
+  Map as MapIcon,
+  Plus,
+  Minus,
+  LocateFixed,
+  ChevronLeft,
+  ArrowRight,
+  ArrowLeft,
+} from 'lucide-react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { useBottomNavClearance } from '../../../../core/components/FloatingBottomNav';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property, formatPrice } from '../../../properties/domain/models/property';
 
@@ -69,6 +81,8 @@ const CITY_COORDS: Record<string, { lat: number; lng: number; zoom: number }> = 
 
 export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }) => {
   const { colors, isDark } = useTheme();
+  const { t, isRTL } = useTranslation();
+  const bottomClearance = useBottomNavClearance();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [containerSize, setContainerSize] = useState({
     width: windowWidth || 390,
@@ -285,7 +299,12 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
                   {((prop.prix || 0) / 1000).toFixed(0)}k DT
                 </Text>
               </View>
-              <Text style={{ fontSize: 20, textAlign: 'center' }}>📍</Text>
+              <MapPin
+                size={22}
+                color={isSelected ? colors.accentBlue : colors.accentRed}
+                fill={isSelected ? colors.accentBlue : colors.accentRed}
+                strokeWidth={1.8}
+              />
             </TouchableOpacity>
           );
         })}
@@ -297,7 +316,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
           style={[
             styles.titleCard,
             {
-              backgroundColor: isDark ? 'rgba(30,32,40,0.95)' : 'rgba(255,255,255,0.95)',
+              backgroundColor: isDark ? 'rgba(21,30,50,0.95)' : 'rgba(255,255,255,0.96)',
               borderColor: colors.border,
               flexDirection: 'row',
               alignItems: 'center',
@@ -307,21 +326,28 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
           <TouchableOpacity
             onPress={onBack}
             style={{
-              paddingVertical: 6,
+              paddingVertical: 7,
               paddingHorizontal: 12,
               borderRadius: 12,
               backgroundColor: colors.accentBlue,
               marginRight: 10,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
             }}
             accessibilityRole="button"
             accessibilityLabel="Retour à l'accueil"
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 13 }}>‹ Accueil</Text>
+            <ChevronLeft size={15} color="#FFFFFF" strokeWidth={2.5} />
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>{t('nav_home')}</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.titleText, { color: colors.textPrimary }]}>
-              🗺️ OpenStreetMap
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <MapIcon size={15} color={colors.accentBlue} strokeWidth={2.2} />
+              <Text style={[styles.titleText, { color: colors.textPrimary }]}>
+                OpenStreetMap
+              </Text>
+            </View>
             <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
               {filteredProperties.length} bien(s) géolocalisé(s)
             </Text>
@@ -348,7 +374,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
                     backgroundColor: isSelected
                       ? colors.accentBlue
                       : isDark
-                      ? 'rgba(30,32,40,0.95)'
+                      ? 'rgba(21,30,50,0.95)'
                       : 'rgba(255,255,255,0.95)',
                     borderColor: isSelected ? colors.accentBlue : colors.border,
                   },
@@ -383,7 +409,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
           ]}
           onPress={() => setZoom((z) => Math.min(18, z + 1))}
         >
-          <Text style={[styles.fabText, { color: colors.textPrimary }]}>+</Text>
+          <Plus size={18} color={colors.textPrimary} strokeWidth={2.4} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -395,7 +421,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
           ]}
           onPress={() => setZoom((z) => Math.max(6, z - 1))}
         >
-          <Text style={[styles.fabText, { color: colors.textPrimary }]}>−</Text>
+          <Minus size={18} color={colors.textPrimary} strokeWidth={2.4} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -407,12 +433,17 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
           ]}
           onPress={handleCenterMyLocation}
         >
-          <Text style={{ fontSize: 16 }}>🎯</Text>
+          <LocateFixed size={18} color={colors.accentBlue} strokeWidth={2.2} />
         </TouchableOpacity>
       </View>
 
       {/* 4. ATTRIBUTION LÉGALE */}
-      <View style={[styles.attributionBadge, { bottom: selectedProperty ? 135 : 16 }]}>
+      <View
+        style={[
+          styles.attributionBadge,
+          { bottom: selectedProperty ? bottomClearance + 104 : bottomClearance },
+        ]}
+      >
         <Text style={styles.attributionText}>© Esri, HERE, Garmin, OpenStreetMap</Text>
       </View>
 
@@ -424,7 +455,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
           style={[
             styles.previewCard,
             {
-              backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+              bottom: bottomClearance - 2,
+              backgroundColor: isDark ? colors.surface : '#FFFFFF',
               borderColor: colors.border,
             },
           ]}
@@ -437,15 +469,23 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
             >
               {selectedProperty.titre}
             </Text>
-            <Text style={[styles.previewLocation, { color: colors.textSecondary }]} numberOfLines={1}>
-              📍 {selectedProperty.localisation}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              <MapPin size={12} color={colors.accentBlue} strokeWidth={2} />
+              <Text style={[styles.previewLocation, { color: colors.textSecondary }]} numberOfLines={1}>
+                {selectedProperty.localisation}
+              </Text>
+            </View>
             <View style={styles.previewFooter}>
               <Text style={[styles.previewPrice, { color: colors.accentBlue }]}>
                 {formatPrice(selectedProperty.prix)}
               </Text>
               <View style={[styles.consultBtn, { backgroundColor: colors.accentBlue }]}>
-                <Text style={styles.consultBtnText}>Consulter →</Text>
+                <Text style={styles.consultBtnText}>{t('btn_details')}</Text>
+                {isRTL ? (
+                  <ArrowLeft size={12} color="#FFFFFF" strokeWidth={2.5} />
+                ) : (
+                  <ArrowRight size={12} color="#FFFFFF" strokeWidth={2.5} />
+                )}
               </View>
             </View>
           </View>
@@ -585,15 +625,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 102,
     flexDirection: 'row',
     padding: 10,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.16,
     shadowRadius: 8,
   },
   previewImage: {
@@ -612,7 +651,7 @@ const styles = StyleSheet.create({
   },
   previewLocation: {
     fontSize: 11,
-    marginTop: 2,
+    flex: 1,
   },
   previewFooter: {
     flexDirection: 'row',
@@ -625,8 +664,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   consultBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 10,
   },
   consultBtnText: {

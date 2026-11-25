@@ -6,4 +6,5 @@ export * from './PropertyCard';
 export * from './PrimaryButton';
 export * from './LoadingSkeleton';
 export * from './EmptyStateView';
+export * from './FloatingBottomNav';
 

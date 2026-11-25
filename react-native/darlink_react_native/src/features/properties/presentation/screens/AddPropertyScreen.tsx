@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DE DÉPÔT D'ANNONCE (React Native V7)
-// Formulaire de création de bien immobilier haut standing
+// DARLINK — ÉCRAN DE DÉPÔT D'ANNONCE (React Native)
+// Icônes vectorielles Lucide, Design System unifié & support RTL
 // ============================================================
 
 import React, { useState } from 'react';
@@ -14,7 +14,11 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { ChevronLeft, ChevronRight, Plus, Minus, Check } from 'lucide-react-native';
+import { AppShadows } from '../../../../core/constants/spacing';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { useBottomNavClearance } from '../../../../core/components/FloatingBottomNav';
 import { propertyApiService } from '../../services/propertyApiService';
 import { Property } from '../../domain/models/property';
 
@@ -24,7 +28,9 @@ interface AddPropertyScreenProps {
 }
 
 export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, onPropertyCreated }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const { t, isRTL } = useTranslation();
+  const bottomClearance = useBottomNavClearance();
 
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
@@ -114,23 +120,61 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* HEADER */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]} onPress={onBack}>
-          <Text style={[styles.backIcon, { color: colors.textPrimary }]}>‹</Text>
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: colors.border,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.iconButton,
+            AppShadows.subtle,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+          onPress={onBack}
+          activeOpacity={0.8}
+        >
+          {isRTL ? (
+            <ChevronRight size={20} color={colors.textPrimary} strokeWidth={2.2} />
+          ) : (
+            <ChevronLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+          )}
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Déposer une annonce</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: bottomClearance + 20 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* TYPE DE TRANSACTION */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Type de transaction</Text>
-        <View style={styles.toggleRow}>
+        <Text
+          style={[
+            styles.sectionLabel,
+            { color: colors.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          Type de transaction
+        </Text>
+        <View
+          style={[
+            styles.toggleRow,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <TouchableOpacity
             style={[
               styles.toggleBtn,
               !isRental
-                ? { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }
+                ? { backgroundColor: colors.accentBlue }
                 : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
             ]}
             onPress={() => setIsRental(false)}
@@ -138,7 +182,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
             <Text
               style={[
                 styles.toggleText,
-                { color: !isRental ? (isDark ? '#0F1015' : '#FFFFFF') : colors.textSecondary },
+                { color: !isRental ? '#FFFFFF' : colors.textSecondary },
               ]}
             >
               Vente
@@ -148,7 +192,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
             style={[
               styles.toggleBtn,
               isRental
-                ? { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }
+                ? { backgroundColor: colors.accentBlue }
                 : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
             ]}
             onPress={() => setIsRental(true)}
@@ -156,7 +200,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
             <Text
               style={[
                 styles.toggleText,
-                { color: isRental ? (isDark ? '#0F1015' : '#FFFFFF') : colors.textSecondary },
+                { color: isRental ? '#FFFFFF' : colors.textSecondary },
               ]}
             >
               Location
@@ -165,28 +209,40 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
         </View>
 
         {/* TYPE DE BIEN */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Type de bien</Text>
-        <View style={styles.chipRow}>
-          {types.map((t) => {
-            const active = type === t;
+        <Text
+          style={[
+            styles.sectionLabel,
+            { color: colors.textPrimary, marginTop: 18, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          Type de bien
+        </Text>
+        <View
+          style={[
+            styles.chipRow,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
+          {types.map((item) => {
+            const active = type === item;
             return (
               <TouchableOpacity
-                key={t}
+                key={item}
                 style={[
                   styles.chip,
                   active
-                    ? { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }
+                    ? { backgroundColor: colors.accentBlue }
                     : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
                 ]}
-                onPress={() => setType(t)}
+                onPress={() => setType(item)}
               >
                 <Text
                   style={[
                     styles.chipText,
-                    { color: active ? (isDark ? '#0F1015' : '#FFFFFF') : colors.textSecondary },
+                    { color: active ? '#FFFFFF' : colors.textSecondary },
                   ]}
                 >
-                  {t}
+                  {item}
                 </Text>
               </TouchableOpacity>
             );
@@ -194,9 +250,24 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
         </View>
 
         {/* TITRE */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Titre de l'annonce</Text>
+        <Text
+          style={[
+            styles.sectionLabel,
+            { color: colors.textPrimary, marginTop: 18, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          Titre de l'annonce
+        </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              borderColor: colors.border,
+              textAlign: isRTL ? 'right' : 'left',
+            },
+          ]}
           placeholder="Ex: Villa contemporaine avec piscine"
           placeholderTextColor={colors.textSecondary}
           value={title}
@@ -204,7 +275,14 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
         />
 
         {/* VILLE & ADRESSE */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Gouvernorat / Ville</Text>
+        <Text
+          style={[
+            styles.sectionLabel,
+            { color: colors.textPrimary, marginTop: 18, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          Gouvernorat / Ville
+        </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cityScroll}>
           {cities.map((c) => {
             const active = city === c;
@@ -227,9 +305,24 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
           })}
         </ScrollView>
 
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Quartier ou Adresse</Text>
+        <Text
+          style={[
+            styles.sectionLabel,
+            { color: colors.textPrimary, marginTop: 18, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          Quartier ou Adresse
+        </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              borderColor: colors.border,
+              textAlign: isRTL ? 'right' : 'left',
+            },
+          ]}
           placeholder="Ex: Les Berges du Lac 2"
           placeholderTextColor={colors.textSecondary}
           value={location}
@@ -270,17 +363,17 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
             <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Chambres</Text>
             <View style={styles.counterRow}>
               <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
+                style={[styles.counterBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setBedrooms(Math.max(1, bedrooms - 1))}
               >
-                <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>-</Text>
+                <Minus size={16} color={colors.textPrimary} strokeWidth={2.2} />
               </TouchableOpacity>
               <Text style={[styles.counterVal, { color: colors.textPrimary }]}>{bedrooms}</Text>
               <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
+                style={[styles.counterBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setBedrooms(bedrooms + 1)}
               >
-                <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>+</Text>
+                <Plus size={16} color={colors.textPrimary} strokeWidth={2.2} />
               </TouchableOpacity>
             </View>
           </View>
@@ -289,25 +382,37 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
             <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Salles de bain</Text>
             <View style={styles.counterRow}>
               <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
+                style={[styles.counterBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setBathrooms(Math.max(1, bathrooms - 1))}
               >
-                <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>-</Text>
+                <Minus size={16} color={colors.textPrimary} strokeWidth={2.2} />
               </TouchableOpacity>
               <Text style={[styles.counterVal, { color: colors.textPrimary }]}>{bathrooms}</Text>
               <TouchableOpacity
-                style={[styles.counterBtn, { backgroundColor: colors.surface }]}
+                style={[styles.counterBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setBathrooms(bathrooms + 1)}
               >
-                <Text style={[styles.counterBtnText, { color: colors.textPrimary }]}>+</Text>
+                <Plus size={16} color={colors.textPrimary} strokeWidth={2.2} />
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
         {/* COMMODITÉS */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Commodités & Atouts</Text>
-        <View style={styles.amenitiesWrap}>
+        <Text
+          style={[
+            styles.sectionLabel,
+            { color: colors.textPrimary, marginTop: 18, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          Commodités & Atouts
+        </Text>
+        <View
+          style={[
+            styles.amenitiesWrap,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           {amenitiesList.map((a) => {
             const active = selectedAmenities.includes(a);
             return (
@@ -315,14 +420,19 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
                 key={a}
                 style={[
                   styles.amenityChip,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
                   active
                     ? { backgroundColor: colors.accentBlue }
                     : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
                 ]}
                 onPress={() => toggleAmenity(a)}
               >
-                <Text style={{ color: active ? '#FFFFFF' : colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
-                  {active ? '✓ ' : '+ '}
+                {active ? (
+                  <Check size={13} color="#FFFFFF" strokeWidth={2.5} />
+                ) : (
+                  <Plus size={13} color={colors.textSecondary} strokeWidth={2.2} />
+                )}
+                <Text style={{ color: active ? '#FFFFFF' : colors.textSecondary, fontSize: 12.5, fontWeight: '600' }}>
                   {a}
                 </Text>
               </TouchableOpacity>
@@ -331,11 +441,23 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
         </View>
 
         {/* DESCRIPTION */}
-        <Text style={[styles.sectionLabel, { color: colors.textPrimary, marginTop: 18 }]}>Description du bien</Text>
+        <Text
+          style={[
+            styles.sectionLabel,
+            { color: colors.textPrimary, marginTop: 18, textAlign: isRTL ? 'right' : 'left' },
+          ]}
+        >
+          Description du bien
+        </Text>
         <TextInput
           style={[
             styles.textArea,
-            { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border },
+            {
+              backgroundColor: colors.surface,
+              color: colors.textPrimary,
+              borderColor: colors.border,
+              textAlign: isRTL ? 'right' : 'left',
+            },
           ]}
           placeholder="Décrivez les atouts, l'orientation, les finitions de votre bien..."
           placeholderTextColor={colors.textSecondary}
@@ -347,15 +469,16 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({ onBack, on
 
         {/* BOUTON DE SOUMISSION */}
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: isDark ? '#FFFFFF' : '#0F1015' }]}
+          style={[styles.submitButton, AppShadows.card, { backgroundColor: colors.accentBlue }]}
           onPress={handleSubmit}
           disabled={submitting}
+          activeOpacity={0.85}
         >
           {submitting ? (
-            <ActivityIndicator color={isDark ? '#0F1015' : '#FFFFFF'} />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={[styles.submitButtonText, { color: isDark ? '#0F1015' : '#FFFFFF' }]}>
-              Publier l'annonce
+            <Text style={styles.submitButtonText}>
+              {t('btn_publish')}
             </Text>
           )}
         </TouchableOpacity>
@@ -369,25 +492,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   iconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  backIcon: {
-    fontSize: 24,
-    fontWeight: '300',
-    marginTop: -2,
   },
   headerTitle: {
     fontSize: 17,
@@ -395,17 +513,15 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   toggleRow: {
-    flexDirection: 'row',
     gap: 12,
   },
   toggleBtn: {
@@ -420,7 +536,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   chipRow: {
-    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   chip: {
@@ -464,33 +580,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 6,
   },
   counterBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  counterBtnText: {
-    fontSize: 20,
-    fontWeight: '600',
   },
   counterVal: {
     fontSize: 16,
     fontWeight: '700',
   },
   amenitiesWrap: {
-    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
   amenityChip: {
+    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
+    gap: 5,
   },
   submitButton: {
     marginTop: 28,
@@ -498,12 +612,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
   },
   submitButtonText: {
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },

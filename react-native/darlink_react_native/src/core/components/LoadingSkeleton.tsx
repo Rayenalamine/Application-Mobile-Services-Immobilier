@@ -10,7 +10,7 @@ import {
   ViewStyle,
   DimensionValue,
 } from 'react-native';
-import { AppColors } from '../constants/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 export interface LoadingSkeletonProps {
   readonly width?: DimensionValue;
@@ -27,18 +27,19 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   isCircle = false,
   style,
 }) => {
-  const opacityAnim = useRef(new Animated.Value(0.3)).current;
+  const { colors } = useTheme();
+  const opacityAnim = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(opacityAnim, {
-          toValue: 0.7,
+          toValue: 0.75,
           duration: 700,
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
-          toValue: 0.3,
+          toValue: 0.35,
           duration: 700,
           useNativeDriver: true,
         }),
@@ -64,6 +65,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
           height,
           borderRadius: computedRadius,
           opacity: opacityAnim,
+          backgroundColor: colors.surfaceElevated,
         },
         style,
       ]}
@@ -74,8 +76,6 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
 };
 
 const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: AppColors.darkSurfaceElevated,
-  },
+  skeleton: {},
 });
 

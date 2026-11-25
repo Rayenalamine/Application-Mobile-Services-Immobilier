@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — ÉCRAN DES FAVORIS LUXE GLASSMORPHISM (React Native)
-// Synchronisation réelle avec Spring Boot & PostgreSQL (V8)
+// DARLINK — ÉCRAN DES FAVORIS LUXE (React Native)
+// Icônes vectorielles Lucide, Design System unifié & support RTL
 // ============================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -8,22 +8,25 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { RefreshCw, Heart, Bookmark } from 'lucide-react-native';
+import { AppShadows } from '../../../../core/constants/spacing';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { useBottomNavClearance } from '../../../../core/components/FloatingBottomNav';
 import { favoritesApiService } from '../../../favorites/services/favoritesApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
 import { PropertyDetailsScreen } from '../../../properties/presentation/screens/PropertyDetailsScreen';
 
 export const FavoritesScreen: React.FC = () => {
-  const { isDark, colors } = useTheme();
-  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const { t, isRTL } = useTranslation();
+  const bottomClearance = useBottomNavClearance();
   const [favorites, setFavorites] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -67,38 +70,46 @@ export const FavoritesScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.containerRoot, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('favorites_title')}</Text>
         <TouchableOpacity
           onPress={onRefresh}
-          style={styles.refreshButton}
+          style={[
+            styles.refreshButton,
+            isRTL ? { left: 16, right: undefined } : { right: 16 },
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('btn_refresh')}
         >
-          <Text style={{ fontSize: 18 }}>🔄</Text>
+          <RefreshCw size={17} color={colors.accentBlue} strokeWidth={2.2} />
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color={colors.accentBlue} />
         </View>
       ) : favorites.length === 0 ? (
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[
+            styles.container,
+            { paddingBottom: bottomClearance },
+          ]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Cercle d'icône avec lueur discrète */}
           <View
             style={[
               styles.iconCircle,
               {
-                backgroundColor: isDark ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.08)',
-                borderColor: isDark ? 'rgba(37, 99, 235, 0.35)' : 'rgba(37, 99, 235, 0.2)',
+                backgroundColor: colors.accentBlueSoft,
+                borderColor: 'rgba(37, 99, 235, 0.25)',
               },
             ]}
           >
-            <Text style={styles.heartIcon}>❤️</Text>
+            <Heart size={40} color={colors.accentBlue} strokeWidth={1.8} />
           </View>
 
           <Text style={[styles.title, { color: colors.textPrimary }]}>
@@ -108,17 +119,18 @@ export const FavoritesScreen: React.FC = () => {
             {t('empty_favorites_hint')}
           </Text>
 
-          {/* Carte note de statut */}
           <View
             style={[
               styles.noticeCard,
+              AppShadows.subtle,
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
+                flexDirection: isRTL ? 'row-reverse' : 'row',
               },
             ]}
           >
-            <Text style={styles.noticeIcon}>🔖</Text>
+            <Bookmark size={16} color={colors.accentBlue} strokeWidth={2} />
             <Text style={[styles.noticeText, { color: colors.textSecondary }]}>
               {t('empty_favorites_sub')}
             </Text>
@@ -127,7 +139,10 @@ export const FavoritesScreen: React.FC = () => {
       ) : (
         <ScrollView
           style={styles.listContainer}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: bottomClearance },
+          ]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {favorites.map((prop) => (
@@ -139,16 +154,16 @@ export const FavoritesScreen: React.FC = () => {
           ))}
         </ScrollView>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  containerRoot: {
     flex: 1,
   },
   header: {
-    height: 56,
+    height: 58,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -162,7 +177,12 @@ const styles = StyleSheet.create({
   },
   refreshButton: {
     position: 'absolute',
-    right: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   centerContainer: {
     flex: 1,
@@ -175,14 +195,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 32,
     paddingTop: 40,
-    paddingBottom: 116,
   },
   listContainer: {
     flex: 1,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 116,
+    padding: 20,
   },
   iconCircle: {
     width: 96,
@@ -192,9 +210,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     borderWidth: 1.5,
-  },
-  heartIcon: {
-    fontSize: 42,
   },
   title: {
     fontSize: 22,
@@ -207,22 +222,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
   },
   noticeCard: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
-  },
-  noticeIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    gap: 8,
   },
   noticeText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '500',
   },
 });
