@@ -196,13 +196,11 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     setZoom(14);
   };
 
-  // Source de tuiles haute disponibilité CartoDB / OSM (non bloquée, rapide, thème adaptatif)
+  // Source de tuiles 100% libre, gratuite et sans clé API OpenStreetMap (aucun filigrane)
   const getTileUri = (tile: { tx: number; ty: number }) => {
-    const subIdx = Math.abs(tile.tx + tile.ty) % 4;
-    const subdomain = ['a', 'b', 'c', 'd'][subIdx];
-    return isDark
-      ? `https://${subdomain}.basemaps.cartocdn.com/dark_all/${zoom}/${tile.tx}/${tile.ty}.png`
-      : `https://${subdomain}.basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tile.tx}/${tile.ty}.png`;
+    const subdomains = ['a', 'b', 'c'];
+    const subdomain = subdomains[Math.abs(tile.tx + tile.ty) % 3];
+    return `https://${subdomain}.tile.openstreetmap.org/${zoom}/${tile.tx}/${tile.ty}.png`;
   };
 
   return (
@@ -212,22 +210,35 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     >
       {/* 1. MOTEUR CARTOGRAPHIQUE SLIPPY MAP */}
       <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers}>
-        {/* A. TUILES OPENSTREETMAP / CARTODB COMPATIBLES EXPO GO & WEB */}
+        {/* A. TUILES OPENSTREETMAP LIBRES SANS CLÉ API NI FILIGRANE */}
         {visibleTiles.map((tile) => (
           <Image
             key={tile.key}
-            source={{ uri: getTileUri(tile) }}
+            source={{
+              uri: getTileUri(tile),
+              headers: { 'User-Agent': 'DarLink-App/2.0' },
+            }}
             style={[
               styles.tile,
               {
                 left: tile.x,
                 top: tile.y,
+                opacity: isDark ? 0.85 : 1.0,
               },
             ]}
             fadeDuration={0}
             resizeMode="cover"
           />
         ))}
+        {isDark && (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: 'rgba(15, 23, 42, 0.25)' },
+            ]}
+            pointerEvents="none"
+          />
+        )}
 
         {/* B. PIN MA POSITION GPS */}
         <View
