@@ -3,10 +3,12 @@
 // Chargement direct Cloud Firestore, zéro donnée fictive.
 // ============================================================
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_locale.dart';
+import '../../../auth/data/auth_service.dart';
 import '../../../auth/domain/models/auth_state.dart';
 import '../../data/property_api_service.dart';
 import '../../domain/models/property.dart';
@@ -28,6 +30,9 @@ class _EcranAccueilState extends State<EcranAccueil> {
   String _filtreActif = 'Tous';
   List<Propriete> _proprietes = [];
   bool _isLoading = true;
+  late final ScrollController _scrollController;
+  bool _headerVisible = true;
+  double _lastScrollOffset = 0.0;
 
   final List<String> _filtres = const [
     'Tous',
@@ -40,6 +45,8 @@ class _EcranAccueilState extends State<EcranAccueil> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     _chargerBiens();
     AuthState.instance.addListener(_onStateChange);
     AppLocale.instance.addListener(_onStateChange);
@@ -47,8 +54,24 @@ class _EcranAccueilState extends State<EcranAccueil> {
     NotificationService.instance.refreshUnreadCount();
   }
 
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final currentOffset = _scrollController.offset;
+    final diff = currentOffset - _lastScrollOffset;
+    if (currentOffset <= 10) {
+      if (!_headerVisible) setState(() => _headerVisible = true);
+    } else if (diff > 12 && currentOffset > 50) {
+      if (_headerVisible) setState(() => _headerVisible = false);
+    } else if (diff < -8) {
+      if (!_headerVisible) setState(() => _headerVisible = true);
+    }
+    _lastScrollOffset = currentOffset;
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     AuthState.instance.removeListener(_onStateChange);
     AppLocale.instance.removeListener(_onStateChange);
     NotificationService.instance.removeListener(_onStateChange);
@@ -91,6 +114,58 @@ class _EcranAccueilState extends State<EcranAccueil> {
     }
   }
 
+  Widget _buildDiagnosticBanner(BuildContext context, bool isDark) {
+    final diag = AuthService.instance.getDiagnosticInfo();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0x331E293B) : const Color(0xCCF1F5F9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? const Color(0x33FFFFFF) : const Color(0x22000000),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF10B981),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${diag['projectId']} • ${diag['platform']}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              'UID: ${diag['authUid']}',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -115,99 +190,110 @@ class _EcranAccueilState extends State<EcranAccueil> {
         bottom: false,
         child: Column(
           children: [
-            // 1. EN-TÊTE
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // 1. BANNIÈRE DEV & EN-TÊTE COLLAPSIBLE AU SCROLL
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 220),
+              crossFadeState: _headerVisible ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              secondChild: const SizedBox.shrink(),
+              firstChild: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isDark ? const Color(0x332563EB) : const Color(0x182563EB),
-                          border: Border.all(
-                            color: AppColors.accentBlue.withValues(alpha: 0.5),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            monogram,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.accentBlue,
+                  if (kDebugMode) _buildDiagnosticBanner(context, isDark),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isDark ? const Color(0x332563EB) : const Color(0x182563EB),
+                                border: Border.all(
+                                  color: AppColors.accentBlue.withValues(alpha: 0.5),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  monogram,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.accentBlue,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  greeting,
+                                  style: TextStyle(color: textSec, fontSize: 12, fontWeight: FontWeight.w500),
+                                ),
+                                Text(
+                                  userName,
+                                  style: TextStyle(color: textPrim, fontSize: 17, fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            greeting,
-                            style: TextStyle(color: textSec, fontSize: 12, fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            userName,
-                            style: TextStyle(color: textPrim, fontSize: 17, fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Opacity(
-                        opacity: 0.0,
-                        child: SizedBox(width: 1, height: 1, child: Text('Services Immobilier')),
-                      ),
-                      _HeaderCircleButton(
-                        icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                        tooltip: isDark ? 'Passer au mode clair' : 'Passer au mode sombre',
-                        isDark: isDark,
-                        onTap: () => AppTheme.basculerTheme(),
-                      ),
-                      const SizedBox(width: 8),
-                      _HeaderCircleButton(
-                        icon: Icons.add_business_outlined,
-                        tooltip: 'Déposer une annonce',
-                        isDark: isDark,
-                        onTap: () {
-                          Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()))
-                              .then((_) => _chargerBiens());
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _HeaderCircleButton(
-                        icon: Icons.notifications_none_rounded,
-                        tooltip: 'Centre de notifications',
-                        isDark: isDark,
-                        badgeCount: NotificationService.instance.unreadCount,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const EcranNotifications()),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _HeaderCircleButton(
-                        icon: Icons.map_outlined,
-                        tooltip: 'Afficher la carte',
-                        isDark: isDark,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const EcranCarteInteractive()),
-                          );
-                        },
-                      ),
-                    ],
+                        Row(
+                          children: [
+                            const Opacity(
+                              opacity: 0.0,
+                              child: SizedBox(width: 1, height: 1, child: Text('Services Immobilier')),
+                            ),
+                            _HeaderCircleButton(
+                              icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                              tooltip: isDark ? 'Passer au mode clair' : 'Passer au mode sombre',
+                              isDark: isDark,
+                              onTap: () => AppTheme.basculerTheme(),
+                            ),
+                            const SizedBox(width: 8),
+                            _HeaderCircleButton(
+                              icon: Icons.add_business_outlined,
+                              tooltip: 'Déposer une annonce',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.of(context)
+                                    .push(MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()))
+                                    .then((_) => _chargerBiens());
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _HeaderCircleButton(
+                              icon: Icons.notifications_none_rounded,
+                              tooltip: 'Centre de notifications',
+                              isDark: isDark,
+                              badgeCount: NotificationService.instance.unreadCount,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const EcranNotifications()),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _HeaderCircleButton(
+                              icon: Icons.map_outlined,
+                              tooltip: 'Afficher la carte',
+                              isDark: isDark,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const EcranCarteInteractive()),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -321,6 +407,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                         ? const Center(child: CircularProgressIndicator())
                         : _proprietesFiltrees.isEmpty
                             ? ListView(
+                                controller: _scrollController,
                                 children: [
                                   const SizedBox(height: 60),
                                   Center(
@@ -339,6 +426,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                                 ],
                               )
                             : ListView.builder(
+                                controller: _scrollController,
                                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                                 itemCount: _proprietesFiltrees.length,
                                 itemBuilder: (context, index) => CartePropriete(propriete: _proprietesFiltrees[index]),

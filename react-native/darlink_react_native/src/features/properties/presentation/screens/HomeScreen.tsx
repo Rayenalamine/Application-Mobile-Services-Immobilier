@@ -4,7 +4,7 @@
 // icônes vectorielles Lucide, zéro emoji.
 // ============================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,8 @@ import {
   Platform,
   RefreshControl,
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import {
   Sun,
@@ -59,6 +61,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [headerVisible, setHeaderVisible] = useState<boolean>(true);
+  const lastScrollY = useRef<number>(0);
   const { isDark, toggleTheme, colors } = useTheme();
   const { t, language, setLanguage } = useTranslation();
 
@@ -132,6 +136,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     return p.type.toLowerCase() === activeFilter.toLowerCase();
   });
 
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentY = event.nativeEvent.contentOffset.y;
+    const diff = currentY - lastScrollY.current;
+    if (currentY <= 10) {
+      setHeaderVisible(true);
+    } else if (diff > 12 && currentY > 50) {
+      setHeaderVisible(false);
+    } else if (diff < -8) {
+      setHeaderVisible(true);
+    }
+    lastScrollY.current = currentY;
+  }, []);
+
   if (currentView === 'map') {
     return (
       <MapScreen
@@ -196,6 +213,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -206,7 +225,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           />
         }
       >
-        {/* EN-TÊTE */}
+        {/* BANNIÈRE DEV DIAGNOSTIC (Expo Go / DarLink) */}
+        {__DEV__ && headerVisible && (
+          <View
+            style={[
+              styles.diagnosticBanner,
+              {
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.70)' : 'rgba(241, 245, 249, 0.85)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              },
+            ]}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={styles.diagLiveDot} />
+              <Text style={[styles.diagText, { color: isDark ? '#94A3B8' : '#475569' }]}>
+                {authService.getDiagnosticInfo().projectId} • {Platform.OS === 'web' ? 'Web' : `Expo Go (${Platform.OS})`}
+              </Text>
+            </View>
+            <Text style={[styles.diagSubText, { color: isDark ? '#64748B' : '#64748B' }]}>
+              UID: {authService.getDiagnosticInfo().authUid}
+            </Text>
+          </View>
+        )}
+
+        {/* EN-TÊTE COLLAPSIBLE AU SCROLL */}
+        {headerVisible && (
         <View style={styles.headerRow}>
           <View style={styles.userInfo}>
             <View
@@ -305,6 +348,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             </TouchableOpacity>
           </View>
         </View>
+        )}
 
         {/* BARRE DE RECHERCHE */}
         <View
@@ -455,6 +499,30 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 110 },
+  diagnosticBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 0.8,
+    marginBottom: 12,
+  },
+  diagLiveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#10B981',
+  },
+  diagText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  diagSubText: {
+    fontSize: 10.5,
+    fontWeight: '500',
+  },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   userInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 8 },
   monogramAvatar: {
