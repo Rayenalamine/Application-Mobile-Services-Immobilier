@@ -22,10 +22,32 @@ function getExpoHostUri(): string | undefined {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const ConstantsModule = require('expo-constants');
     const Constants = ConstantsModule?.default || ConstantsModule;
-    return Constants?.expoConfig?.hostUri;
+    const hostFromConstants =
+      Constants?.expoConfig?.hostUri ||
+      Constants?.expoGoConfig?.debuggerHost ||
+      Constants?.manifest2?.extra?.expoGo?.debuggerHost ||
+      Constants?.manifest?.debuggerHost;
+    if (hostFromConstants) return hostFromConstants;
   } catch {
-    return undefined;
+    // Ignore
   }
+
+  try {
+    // Fallback fiable sur Expo Go / React Native : URL du bundle JS chargé par Metro
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const RN = require('react-native');
+    const scriptURL: string | undefined = RN?.NativeModules?.SourceCode?.scriptURL;
+    if (scriptURL) {
+      const match = scriptURL.match(/^https?:\/\/([^/:]+)/i);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  return undefined;
 }
 
 function resolveBaseUrl(): string {
@@ -49,7 +71,7 @@ function resolveBaseUrl(): string {
   }
 
   // 4. Fallback variable LAN ou IP par défaut du réseau local
-  return process.env.EXPO_PUBLIC_LAN_API_BASE_URL || 'http://172.16.150.192:8085/api/v1';
+  return process.env.EXPO_PUBLIC_LAN_API_BASE_URL || 'http://172.16.160.101:8085/api/v1';
 }
 
 export class ApiClient {
@@ -147,8 +169,16 @@ export class ApiClient {
 
     console.log(`[DarLink API] 🚀 ${method} ${url}`);
 
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : undefined;
+
     try {
-      const response = await fetch(url, { ...options, headers });
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        ...(controller ? { signal: controller.signal } : {}),
+      });
+      if (timeoutId) clearTimeout(timeoutId);
       const contentType = response.headers.get('content-type') || '';
 
       if (!response.ok) {
@@ -180,6 +210,7 @@ export class ApiClient {
 
       return (await response.text()) as unknown as T;
     } catch (err: unknown) {
+      if (timeoutId) clearTimeout(timeoutId);
       if (err instanceof ApiException) throw err;
       const errorMsg = err instanceof Error ? err.message : 'Impossible de contacter le serveur DarLink';
       console.error(`[DarLink API] ⚠️ Échec réseau sur ${method} ${url} : ${errorMsg}`);

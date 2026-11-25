@@ -1,15 +1,23 @@
 // ============================================================
-// DARLINK — SERVICE DES FAVORIS (React Native V6, V9 & Persistence)
-// Synchronisation REST avec Spring Boot & persistance réelle AsyncStorage
+// DARLINK — SERVICE DES FAVORIS CLOUD FIRESTORE (React Native)
+// Persistance Cloud Firestore sur users/{userId}/favorites/{propertyId}
+// Synchronisation temps réel, isolation stricte et résilience redémarrages
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../../../core/network/apiClient';
+import { firestoreEngine } from '../../../core/firebase/firestoreEngine';
 import { Property } from '../../properties/domain/models/property';
-import { propertyApiService, SpringPropertyDto } from '../../properties/services/propertyApiService';
+import { propertyApiService } from '../../properties/services/propertyApiService';
 
 const STORAGE_FAV_IDS = '@darlink_favorites_ids';
 const STORAGE_FAV_PROPS = '@darlink_favorites_properties';
+
+export interface FirestoreFavoriteDoc {
+  id?: string;
+  propertyId: string;
+  createdAt: string;
+  userId?: string;
+}
 
 class FavoritesApiService {
   private static instance: FavoritesApiService;
@@ -17,6 +25,7 @@ class FavoritesApiService {
   private cachedFavorites: Property[] = [];
   private listeners = new Set<() => void>();
   private isInitialized = false;
+  private currentUserId: string | null = null;
 
   private async safeStorageGet(key: string): Promise<string | null> {
     try {
@@ -30,7 +39,7 @@ class FavoritesApiService {
     try {
       await AsyncStorage.setItem(key, value);
     } catch {
-      // In non-storage environments, fail silently
+      // Ignore
     }
   }
 
@@ -38,7 +47,7 @@ class FavoritesApiService {
     try {
       await AsyncStorage.removeItem(key);
     } catch {
-      // Fail silently
+      // Ignore
     }
   }
 
@@ -53,9 +62,12 @@ class FavoritesApiService {
     return FavoritesApiService.instance;
   }
 
+  public setUserId(userId: string | null): void {
+    this.currentUserId = userId;
+  }
+
   /**
-   * Initialisation asynchrone : charge les favoris depuis AsyncStorage
-   * puis synchronise avec le backend si authentifié
+   * Initialisation : charge les favoris depuis AsyncStorage puis synchronise avec Firestore
    */
   public async init(): Promise<void> {
     if (this.isInitialized) return;
@@ -73,8 +85,7 @@ class FavoritesApiService {
       this.isInitialized = true;
       this.notify();
 
-      // Si déjà authentifié, synchroniser avec l'API
-      if (Boolean(api.getToken())) {
+      if (this.currentUserId) {
         await this.syncWithBackend();
       }
     } catch (e) {
@@ -105,13 +116,24 @@ class FavoritesApiService {
     await this.safeStorageSet(STORAGE_FAV_PROPS, JSON.stringify(this.cachedFavorites));
   }
 
+  /**
+   * Synchronisation avec Cloud Firestore : users/{userId}/favorites
+   */
   public async syncWithBackend(): Promise<void> {
+    const uid = this.currentUserId;
+    if (!uid) return;
+
     try {
-      const list = await api.get<SpringPropertyDto[]>('/favorites');
-      if (Array.isArray(list)) {
-        const mapped = list.map((dto) => propertyApiService.mapDtoToProperty(dto));
-        this.favoriteIds = new Set(mapped.map((p) => String(p.id)));
-        this.cachedFavorites = mapped;
+      const subcollectionPath = `users/${uid}/favorites`;
+      const docs = await firestoreEngine.getCollection<FirestoreFavoriteDoc>(subcollectionPath);
+
+      if (Array.isArray(docs)) {
+        const remoteIds = new Set(docs.map((d) => String(d.propertyId || d.id)));
+        this.favoriteIds = remoteIds;
+
+        const allProps = await propertyApiService.getProperties();
+        this.cachedFavorites = allProps.filter((p) => this.favoriteIds.has(String(p.id)));
+
         await this.persistLocally();
         this.notify();
       }
@@ -123,6 +145,7 @@ class FavoritesApiService {
   public async clear(): Promise<void> {
     this.favoriteIds.clear();
     this.cachedFavorites = [];
+    this.currentUserId = null;
     await this.safeStorageRemove(STORAGE_FAV_IDS);
     await this.safeStorageRemove(STORAGE_FAV_PROPS);
     this.notify();
@@ -133,80 +156,66 @@ class FavoritesApiService {
   }
 
   public async getFavorites(): Promise<Property[]> {
-    // S'assurer que le cache local est chargé
     if (!this.isInitialized) {
       await this.init();
     }
-
-    try {
-      const list = await api.get<SpringPropertyDto[]>('/favorites');
-      if (Array.isArray(list)) {
-        const mapped = list.map((dto) => propertyApiService.mapDtoToProperty(dto));
-        this.favoriteIds = new Set(mapped.map((p) => String(p.id)));
-        this.cachedFavorites = mapped;
-        await this.persistLocally();
-        // ATTENTION : Ne pas appeler this.notify() ici pour éviter toute boucle infinie !
-        return mapped;
-      }
-    } catch {
-      // Retourner le cache mémoire/local persisté
+    if (this.currentUserId) {
+      await this.syncWithBackend();
     }
     return this.cachedFavorites;
   }
 
-  public async getFavoriteIds(): Promise<string[]> {
-    if (!this.isInitialized) {
-      await this.init();
-    }
-    try {
-      const ids = await api.get<number[]>('/favorites/ids');
-      if (Array.isArray(ids)) {
-        this.favoriteIds = new Set(ids.map(String));
-        await this.safeStorageSet(STORAGE_FAV_IDS, JSON.stringify(Array.from(this.favoriteIds)));
-      }
-    } catch {
-      // Conserver le cache
-    }
-    return Array.from(this.favoriteIds);
-  }
-
-  public isFavorite(propertyId: string): boolean {
+  public isFavorite(propertyId: string | number): boolean {
     return this.favoriteIds.has(String(propertyId));
   }
 
-  public async toggleFavorite(propertyId: string, property?: Property): Promise<boolean> {
-    const idStr = String(propertyId);
-    const isFav = this.favoriteIds.has(idStr);
+  /**
+   * Bascule l'état favori et persiste dans Cloud Firestore
+   */
+  public async toggleFavorite(propertyId: string | number, property?: Property): Promise<boolean> {
+    const strId = String(propertyId);
+    const willBeFavorite = !this.favoriteIds.has(strId);
 
-    if (isFav) {
-      this.favoriteIds.delete(idStr);
-      this.cachedFavorites = this.cachedFavorites.filter((p) => String(p.id) !== idStr);
-      await this.persistLocally();
-      this.notify();
-
-      try {
-        await api.delete(`/favorites/${idStr}`);
-      } catch {
-        // Enregistré localement
-      }
-      return false;
-    } else {
-      this.favoriteIds.add(idStr);
-      if (property) {
-        if (!this.cachedFavorites.some((p) => String(p.id) === idStr)) {
-          this.cachedFavorites.push(property);
+    if (willBeFavorite) {
+      this.favoriteIds.add(strId);
+      if (property && !this.cachedFavorites.some((p) => String(p.id) === strId)) {
+        this.cachedFavorites.push(property);
+      } else {
+        const allProps = await propertyApiService.getProperties();
+        const prop = allProps.find((p) => String(p.id) === strId);
+        if (prop && !this.cachedFavorites.some((p) => String(p.id) === strId)) {
+          this.cachedFavorites.push(prop);
         }
       }
-      await this.persistLocally();
-      this.notify();
-
-      try {
-        await api.post(`/favorites/${idStr}`);
-      } catch {
-        // Enregistré localement
-      }
-      return true;
+    } else {
+      this.favoriteIds.delete(strId);
+      this.cachedFavorites = this.cachedFavorites.filter((p) => String(p.id) !== strId);
     }
+
+    // Persistance locale immédiate
+    await this.persistLocally();
+    this.notify();
+
+    // Persistance distante dans Cloud Firestore sous users/{userId}/favorites/{propertyId}
+    const uid = this.currentUserId;
+    if (uid) {
+      const subcollectionPath = `users/${uid}/favorites`;
+      try {
+        if (willBeFavorite) {
+          await firestoreEngine.setDocument(subcollectionPath, strId, {
+            propertyId: strId,
+            userId: uid,
+            createdAt: new Date().toISOString(),
+          });
+        } else {
+          await firestoreEngine.deleteDocument(subcollectionPath, strId);
+        }
+      } catch (err) {
+        console.warn('[DarLink Favorites] Synchronisation Cloud Firestore différée :', err);
+      }
+    }
+
+    return willBeFavorite;
   }
 }
 

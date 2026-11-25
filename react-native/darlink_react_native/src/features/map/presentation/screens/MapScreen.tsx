@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 16,
+    bottom: 102,
     flexDirection: 'row',
     padding: 10,
     borderRadius: 16,

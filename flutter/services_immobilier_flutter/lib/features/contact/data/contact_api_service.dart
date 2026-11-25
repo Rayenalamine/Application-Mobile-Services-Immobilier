@@ -1,8 +1,8 @@
 // ============================================================
-// DARLINK — SERVICE API DEMANDES DE CONTACT (Flutter)
+// DARLINK — SERVICE API DEMANDES DE CONTACT CLOUD FIRESTORE (Flutter)
 // ============================================================
 
-import '../../../core/network/api_client.dart';
+import '../../../core/firebase/firestore_client.dart';
 
 class ContactRequestModel {
   final String id;
@@ -37,13 +37,26 @@ class ContactRequestModel {
       createdAt: json['createdAt'] as String? ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'propertyId': propertyId,
+      'senderName': senderName,
+      'senderEmail': senderEmail,
+      'senderPhone': senderPhone,
+      'message': message,
+      'status': status,
+      'createdAt': createdAt,
+    };
+  }
 }
 
 class ContactApiService {
   static final ContactApiService instance = ContactApiService._internal();
   ContactApiService._internal();
 
-  final ApiClient _api = ApiClient.instance;
+  final FirestoreClient _firestore = FirestoreClient.instance;
 
   Future<ContactRequestModel?> sendContactRequest({
     required String propertyId,
@@ -52,23 +65,9 @@ class ContactApiService {
     String? senderPhone,
     required String message,
   }) async {
-    final payload = {
-      'propertyId': int.tryParse(propertyId) ?? 1,
-      'senderName': senderName,
-      'senderEmail': senderEmail,
-      'senderPhone': senderPhone,
-      'message': message,
-    };
-
-    try {
-      final res = await _api.post('/contact-requests', payload);
-      if (res is Map<String, dynamic> && res.containsKey('id')) {
-        return ContactRequestModel.fromJson(res);
-      }
-    } catch (_) {}
-
-    return ContactRequestModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    final docId = 'cr_${DateTime.now().millisecondsSinceEpoch}';
+    final request = ContactRequestModel(
+      id: docId,
       propertyId: propertyId,
       senderName: senderName,
       senderEmail: senderEmail,
@@ -77,30 +76,28 @@ class ContactApiService {
       status: 'PENDING',
       createdAt: DateTime.now().toIso8601String(),
     );
+
+    try {
+      await _firestore.setDocument('contact_requests', docId, request.toJson());
+      return request;
+    } catch (_) {}
+
+    return request;
   }
 
   Future<List<ContactRequestModel>> getReceivedRequests() async {
     try {
-      final res = await _api.get('/contact-requests/received');
-      if (res is List<dynamic>) {
-        return res
-            .map((item) => ContactRequestModel.fromJson(item as Map<String, dynamic>))
-            .toList();
-      }
+      final docs = await _firestore.getCollection('contact_requests');
+      return docs.map((doc) => ContactRequestModel.fromJson(doc)).toList();
     } catch (_) {}
     return [];
   }
 
   Future<List<ContactRequestModel>> getSentRequests() async {
     try {
-      final res = await _api.get('/contact-requests/sent');
-      if (res is List<dynamic>) {
-        return res
-            .map((item) => ContactRequestModel.fromJson(item as Map<String, dynamic>))
-            .toList();
-      }
+      final docs = await _firestore.getCollection('contact_requests');
+      return docs.map((doc) => ContactRequestModel.fromJson(doc)).toList();
     } catch (_) {}
     return [];
   }
 }
-

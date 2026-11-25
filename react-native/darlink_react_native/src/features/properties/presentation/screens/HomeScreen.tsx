@@ -170,7 +170,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               <Text style={[styles.greetingText, { color: colors.textSecondary }]}>
                 {currentUser ? t('greeting_user') : t('greeting_guest')}
               </Text>
-              <Text style={[styles.userNameText, { color: colors.textPrimary }]}>
+              <Text style={[styles.userNameText, { color: colors.textPrimary }]} numberOfLines={1}>
                 {currentUser ? currentUser.fullName : t('guest')}
               </Text>
             </View>
@@ -414,42 +414,45 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   userInfo: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 8,
   },
   monogramAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
   },
   monogramText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   userTextContainer: {
-    marginLeft: 12,
+    flex: 1,
+    marginLeft: 10,
   },
   greetingText: {
     fontSize: 12,
     fontWeight: '500',
   },
   userNameText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   headerActionBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,

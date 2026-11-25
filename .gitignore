@@ -48,6 +48,16 @@
 # --- React Native & Node (pour la future application) ---
 **/node_modules/
 **/.expo/
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+serviceAccountKey.json
+google-services.json
+GoogleService-Info.plist
+.env
+.env.local
+*.local.env
 **/.expo-shared/
 **/npm-debug.log*
 **/yarn-debug.log*
