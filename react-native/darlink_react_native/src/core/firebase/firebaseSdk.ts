@@ -1,18 +1,23 @@
 // ============================================================
 // DARLINK — OFFICIAL FIREBASE JS SDK (React Native / Expo / Web)
 // Provides real Firestore onSnapshot() listeners and Firebase Auth
-// state without requiring native ejecting (compatible with Expo Go
-// and Expo Development Builds).
+// state with React Native AsyncStorage persistence (compatible with
+// Expo Go and Expo Development Builds).
 // ============================================================
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import * as firebaseAuth from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { defaultFirebaseConfig } from './firebaseConfig';
 
 let appInstance: FirebaseApp | null = null;
-let authInstance: Auth | null = null;
+let authInstance: firebaseAuth.Auth | null = null;
 let firestoreInstance: Firestore | null = null;
+
+function isReactNativeRuntime(): boolean {
+  return typeof navigator !== 'undefined' && navigator.product === 'ReactNative';
+}
 
 export function getFirebaseApp(): FirebaseApp {
   if (!appInstance) {
@@ -21,9 +26,24 @@ export function getFirebaseApp(): FirebaseApp {
   return appInstance;
 }
 
-export function getFirebaseAuth(): Auth {
+export function getFirebaseAuth(): firebaseAuth.Auth {
   if (!authInstance) {
-    authInstance = getAuth(getFirebaseApp());
+    const app = getFirebaseApp();
+    const getRnPersistence = (firebaseAuth as unknown as {
+      getReactNativePersistence?: (storage: typeof AsyncStorage) => firebaseAuth.Persistence;
+    }).getReactNativePersistence;
+
+    if (isReactNativeRuntime() && typeof getRnPersistence === 'function') {
+      try {
+        authInstance = firebaseAuth.initializeAuth(app, {
+          persistence: getRnPersistence(AsyncStorage),
+        });
+      } catch {
+        authInstance = firebaseAuth.getAuth(app);
+      }
+    } else {
+      authInstance = firebaseAuth.getAuth(app);
+    }
   }
   return authInstance;
 }
@@ -34,4 +54,3 @@ export function getFirebaseDb(): Firestore {
   }
   return firestoreInstance;
 }
-

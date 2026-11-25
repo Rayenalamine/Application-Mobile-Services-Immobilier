@@ -5,7 +5,9 @@
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { defaultFirebaseConfig } from '../../../core/firebase/firebaseConfig';
+import { getFirebaseAuth } from '../../../core/firebase/firebaseSdk';
 import { firestoreEngine } from '../../../core/firebase/firestoreEngine';
 import { favoritesApiService } from '../../favorites/services/favoritesApiService';
 
@@ -324,6 +326,11 @@ class AuthService {
         agencyId: userDoc.agencyId,
       };
 
+      try {
+        await signInWithEmailAndPassword(getFirebaseAuth(), cleanEmail, password);
+      } catch {
+        // Non-fatal if SDK auth fails in offline/CLI test context
+      }
       favoritesApiService.setUserId(uid);
       await this.persistSession();
       await favoritesApiService.syncWithBackend();
@@ -415,6 +422,11 @@ class AuthService {
       });
 
       this.currentUser = profile;
+      try {
+        await signInWithEmailAndPassword(getFirebaseAuth(), cleanEmail, password);
+      } catch {
+        // Non-fatal if SDK auth fails in offline/CLI test context
+      }
       favoritesApiService.setUserId(uid);
       await this.persistSession();
       this.notify();
@@ -681,6 +693,11 @@ class AuthService {
     this.refreshToken = null;
     firestoreEngine.setToken(null);
     await favoritesApiService.clear();
+    try {
+      await signOut(getFirebaseAuth());
+    } catch {
+      // Ignore if SDK auth not initialized
+    }
     await this.safeStorageRemove(STORAGE_KEY_TOKEN);
     await this.safeStorageRemove(STORAGE_KEY_REFRESH);
     await this.safeStorageRemove(STORAGE_KEY_USER);

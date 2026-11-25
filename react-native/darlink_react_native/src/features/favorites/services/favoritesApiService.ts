@@ -27,6 +27,7 @@ class FavoritesApiService {
   private isInitialized = false;
   private currentUserId: string | null = null;
   private unsubscribeSnapshot: (() => void) | null = null;
+  private pendingToggles = new Set<string>();
 
   private getStorageKey(suffix: string): string {
     const uidScope = this.currentUserId ? `user_${this.currentUserId}` : 'guest';
@@ -167,6 +168,13 @@ class FavoritesApiService {
           const remoteIds = new Set(
             snapshot.docs.map((d) => String((d.data() as FirestoreFavoriteDoc).propertyId || d.id))
           );
+          for (const pendingId of this.pendingToggles) {
+            if (this.favoriteIds.has(pendingId)) {
+              remoteIds.add(pendingId);
+            } else {
+              remoteIds.delete(pendingId);
+            }
+          }
           const isDifferent =
             remoteIds.size !== this.favoriteIds.size ||
             Array.from(remoteIds).some((id) => !this.favoriteIds.has(id));
@@ -285,48 +293,52 @@ class FavoritesApiService {
    */
   public async toggleFavorite(propertyId: string | number, property?: Property): Promise<boolean> {
     const strId = String(propertyId);
+    this.pendingToggles.add(strId);
     const willBeFavorite = !this.favoriteIds.has(strId);
 
-    if (willBeFavorite) {
-      this.favoriteIds.add(strId);
-      if (property && !this.cachedFavorites.some((p) => String(p.id) === strId)) {
-        this.cachedFavorites.push(property);
-      } else {
-        const allProps = await propertyApiService.getProperties();
-        const prop = allProps.find((p) => String(p.id) === strId);
-        if (prop && !this.cachedFavorites.some((p) => String(p.id) === strId)) {
-          this.cachedFavorites.push(prop);
-        }
-      }
-    } else {
-      this.favoriteIds.delete(strId);
-      this.cachedFavorites = this.cachedFavorites.filter((p) => String(p.id) !== strId);
-    }
-
-    // Persistance locale scopée
-    await this.persistLocally();
-    this.notify();
-
-    // Persistance Cloud Firestore : users/{userId}/favorites/{propertyId}
-    const uid = this.currentUserId;
-    if (uid) {
-      const subcollectionPath = `users/${uid}/favorites`;
-      try {
-        if (willBeFavorite) {
-          await firestoreEngine.setDocument(subcollectionPath, strId, {
-            propertyId: strId,
-            userId: uid,
-            createdAt: new Date().toISOString(),
-          });
+    try {
+      if (willBeFavorite) {
+        this.favoriteIds.add(strId);
+        if (property && !this.cachedFavorites.some((p) => String(p.id) === strId)) {
+          this.cachedFavorites.push(property);
         } else {
-          await firestoreEngine.deleteDocument(subcollectionPath, strId);
+          const allProps = await propertyApiService.getProperties();
+          const prop = allProps.find((p) => String(p.id) === strId);
+          if (prop && !this.cachedFavorites.some((p) => String(p.id) === strId)) {
+            this.cachedFavorites.push(prop);
+          }
         }
-      } catch (err) {
-        console.warn('[DarLink Favorites] Synchronisation Cloud Firestore différée :', err);
+      } else {
+        this.favoriteIds.delete(strId);
+        this.cachedFavorites = this.cachedFavorites.filter((p) => String(p.id) !== strId);
       }
-    }
 
-    return willBeFavorite;
+      // Persistance locale scopée
+      await this.persistLocally();
+      this.notify();
+
+      // Persistance Cloud Firestore : users/{userId}/favorites/{propertyId}
+      const uid = this.currentUserId;
+      if (uid) {
+        const subcollectionPath = `users/${uid}/favorites`;
+        try {
+          if (willBeFavorite) {
+            await firestoreEngine.setDocument(subcollectionPath, strId, {
+              propertyId: strId,
+              userId: uid,
+              createdAt: new Date().toISOString(),
+            });
+          } else {
+            await firestoreEngine.deleteDocument(subcollectionPath, strId);
+          }
+        } catch (err) {
+          console.warn('[DarLink Favorites] Synchronisation Cloud Firestore différée :', err);
+        }
+      }
+      return willBeFavorite;
+    } finally {
+      this.pendingToggles.delete(strId);
+    }
   }
 }
 
