@@ -72,3 +72,4 @@ cd react-native/darlink_react_native
 # Configuration du profil de production dans eas.json puis :
 eas build --platform android --profile production
 ```
+

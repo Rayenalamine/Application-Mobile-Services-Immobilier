@@ -46,3 +46,4 @@
 | **Iconography & Graphics** | Pure Material Symbols / vector icons. Zero emojis, zero cartoon stickers. | Pure Lucide React Native vector icons. Zero emojis, zero cartoon stickers. | **FULL PARITY** |
 | **Trilingual Localization** | French (FR), Arabic (AR with RTL support), English (EN). Dynamic instant language switcher. | French (FR), Arabic (AR with RTL support), English (EN). Dynamic instant language switcher. | **FULL PARITY** |
 | **Adaptive Light / Dark Themes** | High-contrast WCAG AA palette (`#0F1015` dark / `#F8FAFC` light, `#2563EB` royal accent, `#10B981` emerald). | High-contrast WCAG AA palette (`#0F1015` dark / `#F8FAFC` light, `#2563EB` royal accent, `#10B981` emerald). | **FULL PARITY** |
+

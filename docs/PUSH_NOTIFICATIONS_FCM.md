@@ -251,3 +251,4 @@ Lorsqu'un utilisateur tape sur une notification reçue :
 - Dans tous les cas :
   - Le document correspondant dans `/notifications/{id}` passe à `read = true`.
   - Le badge numérique de l'icône cloche s'actualise instantanément.
+
