@@ -196,11 +196,11 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     setZoom(14);
   };
 
-  // Source de tuiles 100% libre, gratuite et sans clé API OpenStreetMap (aucun filigrane)
+  // Source de tuiles haute disponibilité mondiale Esri ArcGIS (100% accessible, sans clé requise, aucun blocage)
   const getTileUri = (tile: { tx: number; ty: number }) => {
-    const subdomains = ['a', 'b', 'c'];
-    const subdomain = subdomains[Math.abs(tile.tx + tile.ty) % 3];
-    return `https://${subdomain}.tile.openstreetmap.org/${zoom}/${tile.tx}/${tile.ty}.png`;
+    return isDark
+      ? `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${zoom}/${tile.ty}/${tile.tx}`
+      : `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${zoom}/${tile.ty}/${tile.tx}`;
   };
 
   return (
@@ -210,35 +210,22 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
     >
       {/* 1. MOTEUR CARTOGRAPHIQUE SLIPPY MAP */}
       <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers}>
-        {/* A. TUILES OPENSTREETMAP LIBRES SANS CLÉ API NI FILIGRANE */}
+        {/* A. TUILES CARTOGRAPHIQUES HAUTE DISPONIBILITÉ (SANS BLOCAGE NI CLÉ REQUISE) */}
         {visibleTiles.map((tile) => (
           <Image
             key={tile.key}
-            source={{
-              uri: getTileUri(tile),
-              headers: { 'User-Agent': 'DarLink-App/2.0' },
-            }}
+            source={{ uri: getTileUri(tile) }}
             style={[
               styles.tile,
               {
                 left: tile.x,
                 top: tile.y,
-                opacity: isDark ? 0.85 : 1.0,
               },
             ]}
             fadeDuration={0}
             resizeMode="cover"
           />
         ))}
-        {isDark && (
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'rgba(15, 23, 42, 0.25)' },
-            ]}
-            pointerEvents="none"
-          />
-        )}
 
         {/* B. PIN MA POSITION GPS */}
         <View
@@ -424,9 +411,9 @@ export const MapScreen: React.FC<MapScreenProps> = ({ onBack, onSelectProperty }
         </TouchableOpacity>
       </View>
 
-      {/* 4. ATTRIBUTION LÉGALE OPENSTREETMAP */}
+      {/* 4. ATTRIBUTION LÉGALE */}
       <View style={[styles.attributionBadge, { bottom: selectedProperty ? 135 : 16 }]}>
-        <Text style={styles.attributionText}>© OpenStreetMap contributors</Text>
+        <Text style={styles.attributionText}>© Esri, HERE, Garmin, OpenStreetMap</Text>
       </View>
 
       {/* 5. CARTE D'APERÇU DU BIEN SÉLECTIONNÉ */}
