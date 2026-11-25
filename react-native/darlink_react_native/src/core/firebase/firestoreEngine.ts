@@ -1,7 +1,6 @@
 // ============================================================
-// DARLINK — MOTEUR CLOUD FIRESTORE & FIREBASE AUTH (React Native)
-// Connecteur direct haute performance vers Cloud Firestore & Firebase Auth
-// Persistance cloud intégrale, résilience hors-ligne et compatibilité Expo
+// DARLINK — MOTEUR CLOUD FIRESTORE & STRUCTURED QUERY (React Native)
+// Connecteur direct REST vers Cloud Firestore (:runQuery, CRUD, cache hors-ligne)
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,19 +10,29 @@ export interface FirestoreFieldMap {
   [key: string]: unknown;
 }
 
-export interface FirestoreDoc<T = FirestoreFieldMap> {
-  id: string;
-  name?: string;
-  fields: T;
-  createTime?: string;
-  updateTime?: string;
+export interface StructuredFieldFilter {
+  field: { fieldPath: string };
+  op:
+    | 'EQUAL'
+    | 'NOT_EQUAL'
+    | 'LESS_THAN'
+    | 'LESS_THAN_OR_EQUAL'
+    | 'GREATER_THAN'
+    | 'GREATER_THAN_OR_EQUAL'
+    | 'ARRAY_CONTAINS'
+    | 'IN';
+  value: Record<string, unknown>;
+}
+
+export interface StructuredOrderBy {
+  field: { fieldPath: string };
+  direction: 'ASCENDING' | 'DESCENDING';
 }
 
 export class FirestoreEngine {
   private static instance: FirestoreEngine;
   private config: FirebaseConfig = defaultFirebaseConfig;
   private idToken: string | null = null;
-  private localCache: Map<string, unknown> = new Map();
 
   private constructor() {
     this.restoreToken();
@@ -64,35 +73,16 @@ export class FirestoreEngine {
     return `https://firestore.googleapis.com/v1/projects/${this.config.projectId}/databases/(default)/documents`;
   }
 
-  private get authBaseUrl(): string {
-    return `https://identitytoolkit.googleapis.com/v1`;
-  }
-
-  /**
-   * Convertit une valeur JS en format Firestore REST
-   */
   public toFirestoreValue(val: unknown): Record<string, unknown> {
-    if (val === null || val === undefined) {
-      return { nullValue: null };
-    }
-    if (typeof val === 'boolean') {
-      return { booleanValue: val };
-    }
+    if (val === null || val === undefined) return { nullValue: null };
+    if (typeof val === 'boolean') return { booleanValue: val };
     if (typeof val === 'number') {
-      if (Number.isInteger(val)) {
-        return { integerValue: val.toString() };
-      }
+      if (Number.isInteger(val)) return { integerValue: val.toString() };
       return { doubleValue: val };
     }
-    if (typeof val === 'string') {
-      return { stringValue: val };
-    }
+    if (typeof val === 'string') return { stringValue: val };
     if (Array.isArray(val)) {
-      return {
-        arrayValue: {
-          values: val.map((v) => this.toFirestoreValue(v)),
-        },
-      };
+      return { arrayValue: { values: val.map((v) => this.toFirestoreValue(v)) } };
     }
     if (typeof val === 'object') {
       const fields: Record<string, unknown> = {};
@@ -104,9 +94,6 @@ export class FirestoreEngine {
     return { stringValue: String(val) };
   }
 
-  /**
-   * Convertit une valeur Firestore REST en valeur JS normale
-   */
   public fromFirestoreValue(val: Record<string, unknown>): unknown {
     if (!val || typeof val !== 'object') return null;
     if ('nullValue' in val) return null;
@@ -132,9 +119,6 @@ export class FirestoreEngine {
     return null;
   }
 
-  /**
-   * Convertit un objet JS plat en document Firestore
-   */
   public toFirestoreDoc(data: Record<string, unknown>): { fields: Record<string, unknown> } {
     const fields: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
@@ -145,14 +129,9 @@ export class FirestoreEngine {
     return { fields };
   }
 
-  /**
-   * Extrait les champs d'un document Firestore en objet JS
-   */
   public fromFirestoreDoc<T = Record<string, unknown>>(doc: {
     name?: string;
     fields?: Record<string, Record<string, unknown>>;
-    createTime?: string;
-    updateTime?: string;
   }): T & { id: string } {
     const result: Record<string, unknown> = {};
     if (doc.fields) {
@@ -160,73 +139,97 @@ export class FirestoreEngine {
         result[key] = this.fromFirestoreValue(value);
       }
     }
-    // Extrait l'ID du document depuis son chemin complet
     const docId = doc.name ? doc.name.split('/').pop() || '' : '';
     return { ...result, id: result.id ? String(result.id) : docId } as T & { id: string };
   }
 
   private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.idToken) {
       headers['Authorization'] = `Bearer ${this.idToken}`;
     }
     return headers;
   }
 
-  /**
-   * GET /documents/{collectionPath}
-   */
-  public async getCollection<T = Record<string, unknown>>(collectionPath: string): Promise<Array<T & { id: string }>> {
-    const url = `${this.firestoreBaseUrl}/${collectionPath}?key=${this.config.apiKey}`;
+  public async getCollection<T = Record<string, unknown>>(
+    collectionPath: string,
+    pageSize: number = 50
+  ): Promise<Array<T & { id: string }>> {
+    const url = `${this.firestoreBaseUrl}/${collectionPath}?pageSize=${pageSize}&key=${this.config.apiKey}`;
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        // Fallback vers le cache local
-        const cached = await this.getCachedCollection<T>(collectionPath);
-        return cached;
-      }
-
+      const response = await fetch(url, { method: 'GET', headers: this.getHeaders() });
+      if (!response.ok) return [];
       const json = await response.json();
-      if (!json.documents || !Array.isArray(json.documents)) {
-        return [];
-      }
-
-      const items = json.documents.map((doc: Parameters<typeof this.fromFirestoreDoc>[0]) =>
+      if (!json.documents || !Array.isArray(json.documents)) return [];
+      return json.documents.map((doc: Parameters<typeof this.fromFirestoreDoc>[0]) =>
         this.fromFirestoreDoc<T>(doc)
       );
-
-      // Met en cache pour usage hors-ligne
-      await this.setCachedCollection(collectionPath, items);
-      return items;
     } catch {
-      return this.getCachedCollection<T>(collectionPath);
+      return [];
     }
   }
 
   /**
-   * GET /documents/{collectionPath}/{docId}
+   * Requête structurée Firestore côté serveur (:runQuery) avec filtres, tri et pagination
    */
+  public async runStructuredQuery<T = Record<string, unknown>>(params: {
+    collectionId: string;
+    whereFilters?: StructuredFieldFilter[];
+    orderBy?: StructuredOrderBy[];
+    limit?: number;
+    offset?: number;
+  }): Promise<Array<T & { id: string }>> {
+    const url = `${this.firestoreBaseUrl}:runQuery?key=${this.config.apiKey}`;
+    const structuredQuery: Record<string, unknown> = {
+      from: [{ collectionId: params.collectionId }],
+      limit: params.limit ?? 30,
+    };
+    if (params.offset && params.offset > 0) {
+      structuredQuery.offset = params.offset;
+    }
+    if (params.whereFilters && params.whereFilters.length === 1) {
+      structuredQuery.where = { fieldFilter: params.whereFilters[0] };
+    } else if (params.whereFilters && params.whereFilters.length > 1) {
+      structuredQuery.where = {
+        compositeFilter: {
+          op: 'AND',
+          filters: params.whereFilters.map((f) => ({ fieldFilter: f })),
+        },
+      };
+    }
+    if (params.orderBy && params.orderBy.length > 0) {
+      structuredQuery.orderBy = params.orderBy;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ structuredQuery }),
+      });
+      if (!response.ok) return [];
+      const json = await response.json();
+      if (!Array.isArray(json)) return [];
+      const items: Array<T & { id: string }> = [];
+      for (const row of json) {
+        if (row && row.document) {
+          items.push(this.fromFirestoreDoc<T>(row.document));
+        }
+      }
+      return items;
+    } catch {
+      return [];
+    }
+  }
+
   public async getDocument<T = Record<string, unknown>>(
     collectionPath: string,
     docId: string
   ): Promise<(T & { id: string }) | null> {
     const url = `${this.firestoreBaseUrl}/${collectionPath}/${encodeURIComponent(docId)}?key=${this.config.apiKey}`;
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
+      const response = await fetch(url, { method: 'GET', headers: this.getHeaders() });
+      if (!response.ok) return null;
       const json = await response.json();
       return this.fromFirestoreDoc<T>(json);
     } catch {
@@ -234,9 +237,6 @@ export class FirestoreEngine {
     }
   }
 
-  /**
-   * PATCH /documents/{collectionPath}/{docId} (Upsert avec setDoc)
-   */
   public async setDocument(
     collectionPath: string,
     docId: string,
@@ -244,108 +244,41 @@ export class FirestoreEngine {
   ): Promise<boolean> {
     const url = `${this.firestoreBaseUrl}/${collectionPath}/${encodeURIComponent(docId)}?key=${this.config.apiKey}`;
     const body = JSON.stringify(this.toFirestoreDoc(data));
-
     try {
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: this.getHeaders(),
-        body,
-      });
-
-      // Mettre à jour le cache local immédiatement
-      await this.updateLocalDoc(collectionPath, docId, data);
+      const response = await fetch(url, { method: 'PATCH', headers: this.getHeaders(), body });
       return response.ok;
     } catch {
-      await this.updateLocalDoc(collectionPath, docId, data);
       return false;
     }
   }
 
-  /**
-   * POST /documents/{collectionPath} (Création avec ID auto)
-   */
-  public async addDocument(
+  public async patchFields(
     collectionPath: string,
-    data: Record<string, unknown>,
-    customId?: string
-  ): Promise<string> {
-    const docId = customId || String(Date.now());
-    await this.setDocument(collectionPath, docId, { ...data, id: docId });
-    return docId;
+    docId: string,
+    data: Record<string, unknown>
+  ): Promise<boolean> {
+    const masks = Object.keys(data)
+      .map((k) => `updateMask.fieldPaths=${encodeURIComponent(k)}`)
+      .join('&');
+    const url = `${this.firestoreBaseUrl}/${collectionPath}/${encodeURIComponent(docId)}?${masks}&key=${this.config.apiKey}`;
+    const body = JSON.stringify(this.toFirestoreDoc(data));
+    try {
+      const response = await fetch(url, { method: 'PATCH', headers: this.getHeaders(), body });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 
-  /**
-   * DELETE /documents/{collectionPath}/{docId}
-   */
   public async deleteDocument(collectionPath: string, docId: string): Promise<boolean> {
     const url = `${this.firestoreBaseUrl}/${collectionPath}/${encodeURIComponent(docId)}?key=${this.config.apiKey}`;
     try {
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: this.getHeaders(),
-      });
-
-      await this.removeLocalDoc(collectionPath, docId);
-      return response.ok;
+      const response = await fetch(url, { method: 'DELETE', headers: this.getHeaders() });
+      return response.status === 200 || response.ok;
     } catch {
-      await this.removeLocalDoc(collectionPath, docId);
       return false;
-    }
-  }
-
-  // ============================================================
-  // CACHE LOCAL ET RÉSILIENCE HORS-LIGNE
-  // ============================================================
-
-  private getCacheKey(collectionPath: string): string {
-    return `@darlink_fb_cache_${collectionPath.replace(/\//g, '_')}`;
-  }
-
-  public async getCachedCollection<T>(collectionPath: string): Promise<Array<T & { id: string }>> {
-    try {
-      const raw = await AsyncStorage.getItem(this.getCacheKey(collectionPath));
-      if (raw) {
-        return JSON.parse(raw);
-      }
-    } catch {
-      // Ignore
-    }
-    return [];
-  }
-
-  public async setCachedCollection<T>(collectionPath: string, items: T[]): Promise<void> {
-    try {
-      await AsyncStorage.setItem(this.getCacheKey(collectionPath), JSON.stringify(items));
-    } catch {
-      // Ignore
-    }
-  }
-
-  private async updateLocalDoc(collectionPath: string, docId: string, data: Record<string, unknown>): Promise<void> {
-    try {
-      const list = await this.getCachedCollection<Record<string, unknown>>(collectionPath);
-      const idx = list.findIndex((item) => String(item.id) === String(docId));
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...data, id: docId };
-      } else {
-        list.unshift({ ...data, id: docId });
-      }
-      await this.setCachedCollection(collectionPath, list);
-    } catch {
-      // Ignore
-    }
-  }
-
-  private async removeLocalDoc(collectionPath: string, docId: string): Promise<void> {
-    try {
-      const list = await this.getCachedCollection<Record<string, unknown>>(collectionPath);
-      const filtered = list.filter((item) => String(item.id) !== String(docId));
-      await this.setCachedCollection(collectionPath, filtered);
-    } catch {
-      // Ignore
     }
   }
 }
 
 export const firestoreEngine = FirestoreEngine.getInstance();
-

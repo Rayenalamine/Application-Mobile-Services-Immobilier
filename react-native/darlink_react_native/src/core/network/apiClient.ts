@@ -167,7 +167,7 @@ export class ApiClient {
       headers.Authorization = `Bearer ${this.authToken}`;
     }
 
-    console.log(`[DarLink API] 🚀 ${method} ${url}`);
+    console.log(`[DarLink API] ${method} ${url}`);
 
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
     const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : undefined;
@@ -194,11 +194,11 @@ export class ApiClient {
             detail: rawText || `Erreur serveur HTTP ${response.status}`,
           };
         }
-        console.error(`[DarLink API] ❌ HTTP ${response.status} sur ${method} ${url}`, problem);
+        console.error(`[DarLink API] HTTP ${response.status} sur ${method} ${url}`, problem);
         throw new ApiException(problem);
       }
 
-      console.log(`[DarLink API] ✅ HTTP ${response.status} pour ${method} ${url}`);
+      console.log(`[DarLink API] HTTP ${response.status} pour ${method} ${url}`);
 
       if (response.status === 204) {
         return {} as T;
@@ -213,7 +213,7 @@ export class ApiClient {
       if (timeoutId) clearTimeout(timeoutId);
       if (err instanceof ApiException) throw err;
       const errorMsg = err instanceof Error ? err.message : 'Impossible de contacter le serveur DarLink';
-      console.error(`[DarLink API] ⚠️ Échec réseau sur ${method} ${url} : ${errorMsg}`);
+      console.error(`[DarLink API] Échec réseau sur ${method} ${url} : ${errorMsg}`);
       throw new ApiException({
         type: 'urn:darlink:error:network',
         title: 'Erreur réseau',

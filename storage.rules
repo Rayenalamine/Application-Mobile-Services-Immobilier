@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Public read on uploaded property photos and user avatars
+    match /properties/{userId}/{propertyId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+      allow delete: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.auth.token.role == 'ADMIN' ||
+        request.auth.token.admin == true
+      );
+    }
+
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size <= 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+      allow delete: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.auth.token.role == 'ADMIN'
+      );
+    }
+  }
+}
+

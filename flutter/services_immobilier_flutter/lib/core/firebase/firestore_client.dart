@@ -1,6 +1,6 @@
 // ============================================================
-// DARLINK — CLIENT CLOUD FIRESTORE & FIREBASE AUTH (Flutter)
-// Client REST haute performance pour Cloud Firestore v1 et Auth
+// DARLINK — CLIENT CLOUD FIRESTORE & STRUCTURED QUERY (Flutter)
+// Client REST haute performance pour Cloud Firestore v1 (GET, runQuery, PATCH, DELETE)
 // ============================================================
 
 import 'dart:convert';
@@ -123,15 +123,71 @@ class FirestoreClient {
     return result;
   }
 
-  /// Récupérer les documents d'une collection
-  Future<List<Map<String, dynamic>>> getCollection(String collectionPath) async {
-    final url = Uri.parse('${FirebaseConfig.firestoreBaseUrl}/$collectionPath?key=${FirebaseConfig.apiKey}');
+  /// Récupérer les documents d'une collection (avec taille de page configurable)
+  Future<List<Map<String, dynamic>>> getCollection(String collectionPath, {int pageSize = 50}) async {
+    final url = Uri.parse(
+        '${FirebaseConfig.firestoreBaseUrl}/$collectionPath?pageSize=$pageSize&key=${FirebaseConfig.apiKey}');
     try {
       final response = await http.get(url, headers: _headers());
       if (response.statusCode == 200) {
         final body = json.decode(response.body) as Map<String, dynamic>;
         final docs = body['documents'] as List<dynamic>? ?? [];
         return docs.map((d) => fromFirestoreDoc(d as Map<String, dynamic>)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Exécuter une requête structurée Firestore (`:runQuery`) côté serveur avec filtres, tri et pagination
+  Future<List<Map<String, dynamic>>> runStructuredQuery({
+    required String collectionId,
+    List<Map<String, dynamic>> whereFilters = const [],
+    List<Map<String, dynamic>> orderBy = const [],
+    int limit = 30,
+    int offset = 0,
+  }) async {
+    final url = Uri.parse('${FirebaseConfig.firestoreBaseUrl}:runQuery?key=${FirebaseConfig.apiKey}');
+
+    final structuredQuery = <String, dynamic>{
+      'from': [
+        {'collectionId': collectionId}
+      ],
+      'limit': limit,
+      if (offset > 0) 'offset': offset,
+    };
+
+    if (whereFilters.length == 1) {
+      structuredQuery['where'] = {'fieldFilter': whereFilters.first};
+    } else if (whereFilters.length > 1) {
+      structuredQuery['where'] = {
+        'compositeFilter': {
+          'op': 'AND',
+          'filters': whereFilters.map((f) => {'fieldFilter': f}).toList(),
+        }
+      };
+    }
+
+    if (orderBy.isNotEmpty) {
+      structuredQuery['orderBy'] = orderBy;
+    }
+
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers(),
+        body: json.encode({'structuredQuery': structuredQuery}),
+      );
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is List) {
+          final results = <Map<String, dynamic>>[];
+          for (final item in decoded) {
+            if (item is Map<String, dynamic> && item.containsKey('document')) {
+              results.add(fromFirestoreDoc(item['document'] as Map<String, dynamic>));
+            }
+          }
+          return results;
+        }
       }
     } catch (_) {}
     return [];
@@ -164,6 +220,20 @@ class FirestoreClient {
     }
   }
 
+  /// Mise à jour partielle de champs précis (`updateMask`) sans écraser les autres champs
+  Future<bool> patchFields(String collectionPath, String docId, Map<String, dynamic> data) async {
+    final masks = data.keys.map((k) => 'updateMask.fieldPaths=${Uri.encodeQueryComponent(k)}').join('&');
+    final url = Uri.parse(
+        '${FirebaseConfig.firestoreBaseUrl}/$collectionPath/${Uri.encodeComponent(docId)}?$masks&key=${FirebaseConfig.apiKey}');
+    final body = json.encode(toFirestoreDoc(data));
+    try {
+      final response = await http.patch(url, headers: _headers(), body: body);
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Supprimer un document
   Future<bool> deleteDocument(String collectionPath, String docId) async {
     final url = Uri.parse(
@@ -176,4 +246,3 @@ class FirestoreClient {
     }
   }
 }
-
