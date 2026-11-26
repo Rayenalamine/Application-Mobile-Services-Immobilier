@@ -108,8 +108,25 @@ const NavButton: React.FC<NavButtonProps> = ({
 
 const MainNavigationContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
+  const [visitedTabs, setVisitedTabs] = useState<Record<TabKey, boolean>>({
+    home: true,
+    search: false,
+    favorites: false,
+    profile: false,
+  });
   const { isDark, colors } = useTheme();
   const { t, isRTL } = useTranslation();
+
+  const handleTabPress = (key: TabKey) => {
+    if (activeTab !== key) {
+      triggerHaptic('selection');
+      if (Platform.OS !== 'web') {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      }
+      setActiveTab(key);
+      setVisitedTabs((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+    }
+  };
 
   const renderIcon = (key: TabKey, isActive: boolean) => {
     const iconColor = isActive ? colors.dockActiveIcon : colors.dockInactiveIcon;
@@ -139,16 +156,6 @@ const MainNavigationContent: React.FC = () => {
     { key: 'profile', label: t('nav_profile') },
   ];
 
-  const handleTabPress = (key: TabKey) => {
-    if (activeTab !== key) {
-      triggerHaptic('selection');
-      if (Platform.OS !== 'web') {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      }
-      setActiveTab(key);
-    }
-  };
-
   return (
     <SafeAreaView
       style={[
@@ -174,35 +181,41 @@ const MainNavigationContent: React.FC = () => {
           <HomeScreen onNavigateToSearch={() => handleTabPress('search')} />
         </View>
 
-        <View
-          style={[
-            styles.tabContent,
-            activeTab === 'search' ? styles.tabVisible : styles.tabHidden,
-          ]}
-          pointerEvents={activeTab === 'search' ? 'auto' : 'none'}
-        >
-          <SearchScreen />
-        </View>
+        {visitedTabs.search && (
+          <View
+            style={[
+              styles.tabContent,
+              activeTab === 'search' ? styles.tabVisible : styles.tabHidden,
+            ]}
+            pointerEvents={activeTab === 'search' ? 'auto' : 'none'}
+          >
+            <SearchScreen />
+          </View>
+        )}
 
-        <View
-          style={[
-            styles.tabContent,
-            activeTab === 'favorites' ? styles.tabVisible : styles.tabHidden,
-          ]}
-          pointerEvents={activeTab === 'favorites' ? 'auto' : 'none'}
-        >
-          <FavoritesScreen />
-        </View>
+        {visitedTabs.favorites && (
+          <View
+            style={[
+              styles.tabContent,
+              activeTab === 'favorites' ? styles.tabVisible : styles.tabHidden,
+            ]}
+            pointerEvents={activeTab === 'favorites' ? 'auto' : 'none'}
+          >
+            <FavoritesScreen />
+          </View>
+        )}
 
-        <View
-          style={[
-            styles.tabContent,
-            activeTab === 'profile' ? styles.tabVisible : styles.tabHidden,
-          ]}
-          pointerEvents={activeTab === 'profile' ? 'auto' : 'none'}
-        >
-          <ProfileScreen />
-        </View>
+        {visitedTabs.profile && (
+          <View
+            style={[
+              styles.tabContent,
+              activeTab === 'profile' ? styles.tabVisible : styles.tabHidden,
+            ]}
+            pointerEvents={activeTab === 'profile' ? 'auto' : 'none'}
+          >
+            <ProfileScreen />
+          </View>
+        )}
       </View>
 
       {/* Floating Liquid Glass Dock */}
