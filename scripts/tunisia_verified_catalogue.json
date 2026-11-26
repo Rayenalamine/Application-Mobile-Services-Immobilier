@@ -30,12 +30,13 @@
       "longitude": 10.992,
       "coordinatePrecision": "VERIFIED",
       "addressVisibility": "PUBLIC",
-      "imageUrl": "assets/annonces/maison_djerba.png",
+      "imageUrl": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
       "galleryUrls": [
-        "assets/annonces/maison_djerba.png"
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80"
       ],
       "imagePermissionStatus": "LICENSED",
-      "imageAttribution": "DarLink Immobilier — Asset certifié local",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "amenities": [
         "Houch traditionnel",
         "Cour patio",
@@ -73,12 +74,13 @@
       "longitude": 10.598,
       "coordinatePrecision": "VERIFIED",
       "addressVisibility": "PUBLIC",
-      "imageUrl": "assets/annonces/appartement_sousse.png",
+      "imageUrl": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
       "galleryUrls": [
-        "assets/annonces/appartement_sousse.png"
+        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80"
       ],
       "imagePermissionStatus": "LICENSED",
-      "imageAttribution": "DarLink Immobilier — Asset certifié local",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "amenities": [
         "Piscine résidence",
         "Proche Marina",
@@ -116,12 +118,13 @@
       "longitude": 10.622,
       "coordinatePrecision": "VERIFIED",
       "addressVisibility": "PUBLIC",
-      "imageUrl": "assets/annonces/villa_hammamet.png",
+      "imageUrl": "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
       "galleryUrls": [
-        "assets/annonces/villa_hammamet.png"
+        "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
       ],
       "imagePermissionStatus": "LICENSED",
-      "imageAttribution": "DarLink Immobilier — Asset certifié local",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "amenities": [
         "Piscine privée",
         "Jardin paysager",
@@ -159,12 +162,13 @@
       "longitude": 10.276,
       "coordinatePrecision": "VERIFIED",
       "addressVisibility": "PUBLIC",
-      "imageUrl": "assets/annonces/penthouse_lac2.png",
+      "imageUrl": "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?auto=format&fit=crop&w=1200&q=80",
       "galleryUrls": [
-        "assets/annonces/penthouse_lac2.png"
+        "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80"
       ],
       "imagePermissionStatus": "LICENSED",
-      "imageAttribution": "DarLink Immobilier — Asset certifié local",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "amenities": [
         "Terrasse 360°",
         "Domotique",
@@ -202,12 +206,13 @@
       "longitude": 10.329,
       "coordinatePrecision": "VERIFIED",
       "addressVisibility": "PUBLIC",
-      "imageUrl": "assets/annonces/appartement_la_marsa.png",
+      "imageUrl": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
       "galleryUrls": [
-        "assets/annonces/appartement_la_marsa.png"
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80"
       ],
       "imagePermissionStatus": "LICENSED",
-      "imageAttribution": "DarLink Immobilier — Asset certifié local",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "amenities": [
         "Ascenseur",
         "Vue mer",
@@ -245,12 +250,14 @@
       "longitude": 10.342,
       "coordinatePrecision": "VERIFIED",
       "addressVisibility": "PUBLIC",
-      "imageUrl": "assets/annonces/villa_sidi_bou_said.png",
+      "imageUrl": "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80",
       "galleryUrls": [
-        "assets/annonces/villa_sidi_bou_said.png"
+        "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80"
       ],
       "imagePermissionStatus": "LICENSED",
-      "imageAttribution": "DarLink Immobilier — Asset certifié local",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "amenities": [
         "Piscine",
         "Vue mer",
@@ -291,10 +298,12 @@
       "longitude": 10.119,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Aucune photo copiée sans autorisation — Consulter le portail officiel SNIT",
+      "imageUrl": "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT (Société Nationale Immobilière de Tunisie)",
       "sourceUrl": "https://www.snit-vente.tn",
       "republicationAuthorized": false,
@@ -334,10 +343,12 @@
       "longitude": 10.121,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Aucune photo copiée sans autorisation — Consulter le portail officiel SNIT",
+      "imageUrl": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT (Société Nationale Immobilière de Tunisie)",
       "sourceUrl": "https://www.snit-vente.tn",
       "republicationAuthorized": false,
@@ -377,10 +388,12 @@
       "longitude": 10.1415,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Consulter snit-vente.tn pour visuels officiels",
+      "imageUrl": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Mère",
       "sourceUrl": "https://www.snit-vente.tn",
       "republicationAuthorized": false,
@@ -420,10 +433,12 @@
       "longitude": 10.145,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SPROLS — Aucune image copiée",
+      "imageUrl": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SPROLS (Société de Promotion des Logements Sociaux)",
       "sourceUrl": "http://www.sprols.com.tn",
       "republicationAuthorized": false,
@@ -463,10 +478,12 @@
       "longitude": 10.148,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SPROLS",
+      "imageUrl": "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SPROLS",
       "sourceUrl": "http://www.sprols.com.tn",
       "republicationAuthorized": false,
@@ -507,10 +524,12 @@
       "longitude": 10.205,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SPROLS",
+      "imageUrl": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SPROLS",
       "sourceUrl": "http://www.sprols.com.tn",
       "republicationAuthorized": false,
@@ -549,10 +568,12 @@
       "longitude": 10.095,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SPROLS",
+      "imageUrl": "https://images.unsplash.com/photo-1502005229762-ee1b2b8ab00f?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1502005229762-ee1b2b8ab00f?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SPROLS",
       "sourceUrl": "http://www.sprols.com.tn",
       "republicationAuthorized": false,
@@ -591,10 +612,12 @@
       "longitude": 9.786,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Nord",
+      "imageUrl": "https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Nord",
       "sourceUrl": "https://snitnord.com",
       "republicationAuthorized": false,
@@ -633,10 +656,12 @@
       "longitude": 9.1817,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Nord",
+      "imageUrl": "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Nord",
       "sourceUrl": "https://snitnord.com",
       "republicationAuthorized": false,
@@ -676,10 +701,12 @@
       "longitude": 8.7802,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Nord",
+      "imageUrl": "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Nord",
       "sourceUrl": "https://snitnord.com",
       "republicationAuthorized": false,
@@ -718,10 +745,12 @@
       "longitude": 9.3708,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Nord",
+      "imageUrl": "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Nord",
       "sourceUrl": "https://snitnord.com",
       "republicationAuthorized": false,
@@ -761,10 +790,12 @@
       "longitude": 10.742,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Sud",
+      "imageUrl": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Sud",
       "sourceUrl": "https://www.snitsud.com.tn",
       "republicationAuthorized": false,
@@ -804,10 +835,12 @@
       "longitude": 10.745,
       "coordinatePrecision": "APPROXIMATE",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Sud",
+      "imageUrl": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Sud",
       "sourceUrl": "https://www.snitsud.com.tn",
       "republicationAuthorized": false,
@@ -846,10 +879,12 @@
       "longitude": 9.4849,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Sud",
+      "imageUrl": "https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Sud",
       "sourceUrl": "https://www.snitsud.com.tn",
       "republicationAuthorized": false,
@@ -889,10 +924,12 @@
       "longitude": 10.8451,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle SNIT Sud",
+      "imageUrl": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "SNIT Sud",
       "sourceUrl": "https://www.snitsud.com.tn",
       "republicationAuthorized": false,
@@ -933,10 +970,12 @@
       "longitude": 10.0963,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle AFH Tunisie",
+      "imageUrl": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "AFH (Agence Foncière d'Habitation)",
       "sourceUrl": "https://www.afh.nat.tn",
       "republicationAuthorized": false,
@@ -976,10 +1015,12 @@
       "longitude": 10.678,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle AFH Tunisie",
+      "imageUrl": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "AFH",
       "sourceUrl": "https://www.afh.nat.tn",
       "republicationAuthorized": false,
@@ -1018,10 +1059,12 @@
       "longitude": 10.601,
       "coordinatePrecision": "CITY_CENTER",
       "addressVisibility": "AREA_ONLY",
-      "imageUrl": "",
-      "galleryUrls": [],
-      "imagePermissionStatus": "NONE_PLACEHOLDER_USED",
-      "imageAttribution": "Référence officielle AFH Tunisie",
+      "imageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+      "galleryUrls": [
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "imagePermissionStatus": "LICENSED",
+      "imageAttribution": "Photographie immobilière Unsplash haute définition",
       "sourceName": "AFH / SNIT Centre",
       "sourceUrl": "https://www.afh.nat.tn",
       "republicationAuthorized": false,

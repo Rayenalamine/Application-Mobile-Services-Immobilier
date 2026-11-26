@@ -63,10 +63,16 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
   onLocateOnMap,
 }) => {
   const { width } = useWindowDimensions();
-  const allImages = [
+  const rawImages = [
     ...(property.imageUrl ? [property.imageUrl] : []),
     ...(property.imagesGalerie ?? []),
   ];
+  const allImages =
+    rawImages.length > 0
+      ? rawImages
+      : [
+          'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        ];
   const [imageIndex, setImageIndex] = useState<number>(0);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const propId = property.id || '1';
