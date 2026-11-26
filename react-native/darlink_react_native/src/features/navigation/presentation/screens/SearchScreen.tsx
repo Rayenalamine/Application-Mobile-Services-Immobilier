@@ -18,6 +18,7 @@ import {
 import { Map as MapIcon, RotateCcw, Search, X, MapPin } from 'lucide-react-native';
 import { TUNISIA_GOVERNORATES } from '../../../../core/constants/tunisiaLocations';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property } from '../../../properties/domain/models/property';
 import { PropertyCard } from '../../../../core/components/PropertyCard';
@@ -42,6 +43,7 @@ const SORT_OPTIONS = [
 ] as const;
 
 export const SearchScreen: React.FC = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedSegment, setSelectedSegment] = useState<string>('Tous');
   const [selectedType, setSelectedType] = useState<string>('Tous');
@@ -163,7 +165,7 @@ export const SearchScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerBar}>
           <View>
-            <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>EXPLORATION</Text>
+            <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>{t('exploration_tag')}</Text>
             <Text style={[TypographyScale.pageTitle, { color: colors.textPrimary, fontSize: 22 }]}>
               Recherche avancée
             </Text>
@@ -228,7 +230,7 @@ export const SearchScreen: React.FC = () => {
               style={[styles.pill, { backgroundColor: !selectedGov ? activeBg : colors.surface, borderColor: !selectedGov ? 'transparent' : colors.border }]}
               onPress={() => setSelectedGov('')}
             >
-              <Text style={{ color: !selectedGov ? activeFg : colors.textSecondary, fontSize: 12.5, fontWeight: '600' }}>Tous</Text>
+              <Text style={{ color: !selectedGov ? activeFg : colors.textSecondary, fontSize: 12.5, fontWeight: '600' }}>{t('filter_all')}</Text>
             </TouchableOpacity>
             {TUNISIA_GOVERNORATES.map((g) => {
               const active = selectedGov === g.nameFr;
@@ -370,7 +372,7 @@ export const SearchScreen: React.FC = () => {
             title={`Résultats (${properties.length})`}
             trailing={
               <TouchableOpacity onPress={handleReset}>
-                <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>Réinitialiser</Text>
+                <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>{t('btn_reset')}</Text>
               </TouchableOpacity>
             }
           />
@@ -395,7 +397,7 @@ export const SearchScreen: React.FC = () => {
                 style={[styles.loadMoreBtn, { borderColor: colors.border }]}
                 onPress={() => setLimit((l) => l + 20)}
               >
-                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>Charger plus</Text>
+                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{t('load_more')}</Text>
               </TouchableOpacity>
             )}
           </View>

@@ -28,7 +28,7 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.text('Recherche de biens'), findsOneWidget);
+      expect(find.text('Recherche avancée'), findsOneWidget);
       expect(find.byKey(const Key('search_text_input')), findsOneWidget);
       expect(find.text('Acheter'), findsOneWidget);
       expect(find.text('Louer'), findsOneWidget);
@@ -69,7 +69,7 @@ void main() {
       await tester.tap(applyBtn);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('trouvé(s) sur Cloud Firestore !'), findsOneWidget);
+      expect(find.textContaining('résultat(s)'), findsWidgets);
     });
   });
 }

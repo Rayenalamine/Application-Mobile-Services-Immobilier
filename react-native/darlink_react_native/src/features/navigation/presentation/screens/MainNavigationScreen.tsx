@@ -19,8 +19,8 @@ import { HomeScreen } from '../../../properties/presentation/screens/HomeScreen'
 import { SearchScreen } from './SearchScreen';
 import { FavoritesScreen } from './FavoritesScreen';
 import { ProfileScreen } from './ProfileScreen';
-import { ThemeProvider, useTheme } from '../../../../core/theme/ThemeContext';
-import { LocalizationProvider, useTranslation } from '../../../../core/localization/LocalizationContext';
+import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { LiquidGlassView } from '../../../../core/designSystem/LiquidGlass';
 import { triggerHaptic } from '../../../../core/designSystem/tokens';
 
@@ -137,13 +137,7 @@ const MainNavigationContent: React.FC = () => {
 };
 
 export const MainNavigationScreen: React.FC = () => {
-  return (
-    <LocalizationProvider>
-      <ThemeProvider>
-        <MainNavigationContent />
-      </ThemeProvider>
-    </LocalizationProvider>
-  );
+  return <MainNavigationContent />;
 };
 
 const styles = StyleSheet.create({
