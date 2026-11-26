@@ -22,6 +22,7 @@ import { TUNISIA_GOVERNORATES } from '../../../../core/constants/tunisiaLocation
 import { uploadLocalImageUriToFirebaseStorage, deleteStorageObject, validateImageUpload } from '../../../../core/firebase/storageService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { GlassOrbButton } from '../../../../core/designSystem/LiquidGlass';
 import { authService } from '../../../auth/services/authService';
 import { propertyApiService } from '../../services/propertyApiService';
 import { ListingStatus, Property, PropertyType } from '../../domain/models/property';
@@ -375,13 +376,13 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]} onPress={onBack}>
+        <GlassOrbButton size={40} onPress={onBack} accessibilityLabel={t('btn_back')}>
           {isRTL ? (
             <ArrowRight size={19} color={colors.textPrimary} />
           ) : (
             <ArrowLeft size={19} color={colors.textPrimary} />
           )}
-        </TouchableOpacity>
+        </GlassOrbButton>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           {propertyToEdit ? t('edit_title') : t('add_title')}
         </Text>
