@@ -1,0 +1,2227 @@
+{
+  "documents": [
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_afh_kairouan_mansoura",
+      "fields": {
+        "bathrooms": {
+          "integerValue": "0"
+        },
+        "sourceName": {
+          "stringValue": "AFH (Agence Foncière d'Habitation)"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "id": {
+          "stringValue": "ref_afh_kairouan_mansoura"
+        },
+        "surfaceM2": {
+          "integerValue": "250"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "AFH Tunisie (Référence Officielle)"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "description": {
+          "stringValue": "Lots de terrains individuels et collectifs viabilisés par l'Agence Foncière d'Habitation (AFH) à El Mansoura, Kairouan. Attribution selon les avis de vente officiels de l'AFH."
+        },
+        "governorate": {
+          "stringValue": "Kairouan"
+        },
+        "latitude": {
+          "doubleValue": 35.6781
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle AFH Tunisie"
+        },
+        "yearBuilt": {
+          "integerValue": "2025"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "title": {
+          "stringValue": "Lotissement El Mansoura — Terrain viabilisé (AFH)"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Terrain viabilisé"
+              },
+              {
+                "stringValue": "Voirie et réseaux"
+              },
+              {
+                "stringValue": "Attribution AFH"
+              }
+            ]
+          }
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "standing": {
+          "stringValue": "Lotissement viabilisé AFH"
+        },
+        "price": {
+          "integerValue": "0"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "type": {
+          "stringValue": "Terrain"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.afh.nat.tn"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "bedrooms": {
+          "integerValue": "0"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "location": {
+          "stringValue": "El Mansoura, Kairouan"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "longitude": {
+          "doubleValue": 10.0963
+        },
+        "city": {
+          "stringValue": "Kairouan"
+        },
+        "neighborhood": {
+          "stringValue": "El Mansoura"
+        }
+      },
+      "createTime": "2026-11-25T18:54:26.110734Z",
+      "updateTime": "2026-11-25T18:54:26.110734Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_afh_nabeul_mrezga",
+      "fields": {
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "price": {
+          "integerValue": "0"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.afh.nat.tn"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "longitude": {
+          "doubleValue": 10.678
+        },
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "standing": {
+          "stringValue": "Lotissement viabilisé AFH"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "neighborhood": {
+          "stringValue": "Mrezga"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle AFH Tunisie"
+        },
+        "title": {
+          "stringValue": "Lotissement AFH Mrezga — Terrain résidentiel (AFH)"
+        },
+        "sourceName": {
+          "stringValue": "AFH"
+        },
+        "bedrooms": {
+          "integerValue": "0"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Proche littoral"
+              },
+              {
+                "stringValue": "Terrain viabilisé AFH"
+              }
+            ]
+          }
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "location": {
+          "stringValue": "Mrezga, Nabeul"
+        },
+        "type": {
+          "stringValue": "Terrain"
+        },
+        "id": {
+          "stringValue": "ref_afh_nabeul_mrezga"
+        },
+        "description": {
+          "stringValue": "Zone d'aménagement urbain AFH à Mrezga (Nabeul / Hammamet). Lots viabilisés destinés à l'habitat selon les appels à candidatures de l'Agence Foncière d'Habitation."
+        },
+        "city": {
+          "stringValue": "Hammamet"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "latitude": {
+          "doubleValue": 36.425
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "bathrooms": {
+          "integerValue": "0"
+        },
+        "governorate": {
+          "stringValue": "Nabeul"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "agentName": {
+          "stringValue": "AFH Tunisie (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "surfaceM2": {
+          "integerValue": "300"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        }
+      },
+      "createTime": "2026-11-25T18:54:26.579628Z",
+      "updateTime": "2026-11-25T18:54:26.579628Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_afh_sousse_errayhan",
+      "fields": {
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "price": {
+          "integerValue": "0"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "AFH / SNIT Centre (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "surfaceM2": {
+          "integerValue": "300"
+        },
+        "id": {
+          "stringValue": "ref_afh_sousse_errayhan"
+        },
+        "bathrooms": {
+          "integerValue": "0"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "type": {
+          "stringValue": "Terrain"
+        },
+        "title": {
+          "stringValue": "Lotissement Cité Riadh / Errayhan (AFH)"
+        },
+        "sourceName": {
+          "stringValue": "AFH / SNIT Centre"
+        },
+        "latitude": {
+          "doubleValue": 35.805
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "city": {
+          "stringValue": "Sousse"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "governorate": {
+          "stringValue": "Sousse"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle AFH Tunisie"
+        },
+        "neighborhood": {
+          "stringValue": "Cité Riadh"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Terrain viabilisé AFH"
+              }
+            ]
+          }
+        },
+        "bedrooms": {
+          "integerValue": "0"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "location": {
+          "stringValue": "Cité Riadh, Sousse"
+        },
+        "standing": {
+          "stringValue": "Lotissement AFH"
+        },
+        "longitude": {
+          "doubleValue": 10.601
+        },
+        "description": {
+          "stringValue": "Zone résidentielle aménagée par l'AFH à Sousse. Informations officielles de commercialisation et d'aménagement sur le portail de l'AFH et SNIT Centre."
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.afh.nat.tn"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        }
+      },
+      "createTime": "2026-11-25T18:54:27.005194Z",
+      "updateTime": "2026-11-25T18:54:27.005194Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snit_ariana_tanit",
+      "fields": {
+        "surfaceM2": {
+          "integerValue": "100"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "agentName": {
+          "stringValue": "SNIT Mère (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "location": {
+          "stringValue": "Jardins El Menzah 1, Ariana"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "standing": {
+          "stringValue": "Standing Public SNIT"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "title": {
+          "stringValue": "Résidence Tanit — Jardins El Menzah 1 (SNIT)"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "sourceName": {
+          "stringValue": "SNIT Mère"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "price": {
+          "integerValue": "0"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "yearBuilt": {
+          "integerValue": "2025"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "id": {
+          "stringValue": "ref_snit_ariana_tanit"
+        },
+        "city": {
+          "stringValue": "Ariana"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "description": {
+          "stringValue": "Programme collectif SNIT aux Jardins El Menzah 1 comprenant des appartements S+1, S+2 (91 unités) et S+3 (34 unités). Prix communiqué lors de l'inscription officielle."
+        },
+        "latitude": {
+          "doubleValue": 36.854
+        },
+        "neighborhood": {
+          "stringValue": "Jardins El Menzah 1"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Inscription officielle SNIT"
+              },
+              {
+                "stringValue": "Résidence moderne"
+              }
+            ]
+          }
+        },
+        "governorate": {
+          "stringValue": "Ariana"
+        },
+        "coordinatePrecision": {
+          "stringValue": "APPROXIMATE"
+        },
+        "longitude": {
+          "doubleValue": 10.1415
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "imageAttribution": {
+          "stringValue": "Consulter snit-vente.tn pour visuels officiels"
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.snit-vente.tn"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-11-25T18:54:12.522289Z",
+      "updateTime": "2026-11-25T18:54:12.522289Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snit_tunis_ibnkhaldoun_s2",
+      "fields": {
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Programme FOPROLOS"
+              },
+              {
+                "stringValue": "Résidence collective"
+              },
+              {
+                "stringValue": "Promotion publique SNIT"
+              }
+            ]
+          }
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "latitude": {
+          "doubleValue": 36.7745
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "coordinatePrecision": {
+          "stringValue": "APPROXIMATE"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "longitude": {
+          "doubleValue": 10.119
+        },
+        "id": {
+          "stringValue": "ref_snit_tunis_ibnkhaldoun_s2"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.snit-vente.tn"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "sourceName": {
+          "stringValue": "SNIT (Société Nationale Immobilière de Tunisie)"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "imageAttribution": {
+          "stringValue": "Aucune photo copiée sans autorisation — Consulter le portail officiel SNIT"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "description": {
+          "stringValue": "Logement collectif S+2 proposé dans le cadre du programme FOPROLOS de la SNIT à Sidi Hassine Séjoumi. Superficie à partir de 75,58 m². Inscription et dossier officiel via le portail SNIT."
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "location": {
+          "stringValue": "Sidi Hassine Séjoumi, Tunis"
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "price": {
+          "integerValue": "155000"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "agentName": {
+          "stringValue": "SNIT Mère (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "surfaceM2": {
+          "integerValue": "76"
+        },
+        "city": {
+          "stringValue": "Tunis"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "standing": {
+          "stringValue": "Économique / FOPROLOS"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "neighborhood": {
+          "stringValue": "Sidi Hassine Séjoumi"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "title": {
+          "stringValue": "Résidence Ibn Khaldoun 1 — Appartement S+2 (SNIT)"
+        },
+        "governorate": {
+          "stringValue": "Tunis"
+        }
+      },
+      "createTime": "2026-11-25T18:54:11.074768Z",
+      "updateTime": "2026-11-25T18:54:11.074768Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snit_tunis_ibnkhaldoun_s3",
+      "fields": {
+        "city": {
+          "stringValue": "Tunis"
+        },
+        "title": {
+          "stringValue": "Résidence Ibn Khaldoun 1 — Appartement S+3 (SNIT)"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "neighborhood": {
+          "stringValue": "Sidi Hassine Séjoumi"
+        },
+        "governorate": {
+          "stringValue": "Tunis"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.snit-vente.tn"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "longitude": {
+          "doubleValue": 10.121
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "standing": {
+          "stringValue": "Économique / FOPROLOS"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "description": {
+          "stringValue": "Appartement S+3 de la SNIT à Sidi Hassine Séjoumi (à partir de 96,94 m²), éligible au financement FOPROLOS."
+        },
+        "price": {
+          "integerValue": "221000"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Programme FOPROLOS"
+              },
+              {
+                "stringValue": "Promotion publique SNIT"
+              }
+            ]
+          }
+        },
+        "location": {
+          "stringValue": "Sidi Hassine Séjoumi, Tunis"
+        },
+        "bedrooms": {
+          "integerValue": "3"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "coordinatePrecision": {
+          "stringValue": "APPROXIMATE"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "id": {
+          "stringValue": "ref_snit_tunis_ibnkhaldoun_s3"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "agentName": {
+          "stringValue": "SNIT Mère (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "latitude": {
+          "doubleValue": 36.776
+        },
+        "surfaceM2": {
+          "integerValue": "97"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "sourceName": {
+          "stringValue": "SNIT (Société Nationale Immobilière de Tunisie)"
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "imageAttribution": {
+          "stringValue": "Aucune photo copiée sans autorisation — Consulter le portail officiel SNIT"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        }
+      },
+      "createTime": "2026-11-25T18:54:11.777513Z",
+      "updateTime": "2026-11-25T18:54:11.777513Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitnord_beja_vaga",
+      "fields": {
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "description": {
+          "stringValue": "Appartements S+2 et S+3 (88 à 135 m²) de la Résidence VAGA à Béja. Tarification S+2 affichée à partir de 124 000 TND selon l'étage sur snitnord.com."
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Promotion publique SNIT Nord"
+              }
+            ]
+          }
+        },
+        "neighborhood": {
+          "stringValue": "Centre Béja"
+        },
+        "latitude": {
+          "doubleValue": 36.7256
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "governorate": {
+          "stringValue": "Béja"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Nord"
+        },
+        "sourceUrl": {
+          "stringValue": "https://snitnord.com"
+        },
+        "longitude": {
+          "doubleValue": 9.1817
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "surfaceM2": {
+          "integerValue": "88"
+        },
+        "agentName": {
+          "stringValue": "SNIT Nord (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "title": {
+          "stringValue": "Résidence VAGA — Appartement S+2 (SNIT Nord)"
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "price": {
+          "integerValue": "124000"
+        },
+        "standing": {
+          "stringValue": "Standing SNIT Nord"
+        },
+        "id": {
+          "stringValue": "ref_snitnord_beja_vaga"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "location": {
+          "stringValue": "Béja Ville, Béja"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "city": {
+          "stringValue": "Béja"
+        },
+        "sourceName": {
+          "stringValue": "SNIT Nord"
+        },
+        "yearBuilt": {
+          "integerValue": "2023"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        }
+      },
+      "createTime": "2026-11-25T18:54:18.376601Z",
+      "updateTime": "2026-11-25T18:54:18.376601Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitnord_bizerte_ezzahra",
+      "fields": {
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "sourceName": {
+          "stringValue": "SNIT Nord"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "latitude": {
+          "doubleValue": 37.154
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "neighborhood": {
+          "stringValue": "Ezzahra"
+        },
+        "governorate": {
+          "stringValue": "Bizerte"
+        },
+        "sourceUrl": {
+          "stringValue": "https://snitnord.com"
+        },
+        "longitude": {
+          "doubleValue": 9.786
+        },
+        "description": {
+          "stringValue": "Appartements S+2 situés à Menzel Bourguiba (Gouvernorat de Bizerte), surfaces entre 108 et 120 m², grille officielle SNIT Nord de 158 000 à 166 000 TND."
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Promotion publique SNIT Nord"
+              }
+            ]
+          }
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "city": {
+          "stringValue": "Menzel Bourguiba"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "standing": {
+          "stringValue": "Standing SNIT Nord"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "location": {
+          "stringValue": "Menzel Bourguiba, Bizerte"
+        },
+        "yearBuilt": {
+          "integerValue": "2023"
+        },
+        "title": {
+          "stringValue": "Résidence Ezzahra — Appartement S+2 (SNIT Nord)"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Nord"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "agentName": {
+          "stringValue": "SNIT Nord (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "surfaceM2": {
+          "integerValue": "108"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "price": {
+          "integerValue": "158000"
+        },
+        "id": {
+          "stringValue": "ref_snitnord_bizerte_ezzahra"
+        },
+        "isRental": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-11-25T18:54:18.077447Z",
+      "updateTime": "2026-11-25T18:54:18.077447Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitnord_jendouba_montazah",
+      "fields": {
+        "standing": {
+          "stringValue": "Économique SNIT Nord"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "price": {
+          "integerValue": "82000"
+        },
+        "neighborhood": {
+          "stringValue": "Cité Montazah"
+        },
+        "description": {
+          "stringValue": "Logements individuels et semi-collectifs S+2 / S+3 à Jendouba (tarifs publics SNIT Nord constatés entre 82 000 et 195 000 TND selon surface du terrain et du bâti)."
+        },
+        "yearBuilt": {
+          "integerValue": "2023"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "location": {
+          "stringValue": "Cité Montazah, Jendouba"
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "sourceName": {
+          "stringValue": "SNIT Nord"
+        },
+        "title": {
+          "stringValue": "Cité Montazah — Logement individuel S+2 (SNIT Nord)"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "governorate": {
+          "stringValue": "Jendouba"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "surfaceM2": {
+          "integerValue": "95"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "SNIT Nord (Référence Officielle)"
+        },
+        "sourceUrl": {
+          "stringValue": "https://snitnord.com"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "latitude": {
+          "doubleValue": 36.5011
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Nord"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "longitude": {
+          "doubleValue": 8.7802
+        },
+        "type": {
+          "stringValue": "Maison"
+        },
+        "id": {
+          "stringValue": "ref_snitnord_jendouba_montazah"
+        },
+        "city": {
+          "stringValue": "Jendouba"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Maison individuelle"
+              },
+              {
+                "stringValue": "Promotion publique SNIT Nord"
+              }
+            ]
+          }
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        }
+      },
+      "createTime": "2026-11-25T18:54:18.659300Z",
+      "updateTime": "2026-11-25T18:54:18.659300Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitnord_siliana_narjes",
+      "fields": {
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "sourceName": {
+          "stringValue": "SNIT Nord"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "latitude": {
+          "doubleValue": 36.0849
+        },
+        "yearBuilt": {
+          "integerValue": "2023"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Nord"
+        },
+        "agentName": {
+          "stringValue": "SNIT Nord (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "surfaceM2": {
+          "integerValue": "102"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "city": {
+          "stringValue": "Siliana"
+        },
+        "neighborhood": {
+          "stringValue": "Centre Siliana"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "location": {
+          "stringValue": "Siliana Ville, Siliana"
+        },
+        "governorate": {
+          "stringValue": "Siliana"
+        },
+        "longitude": {
+          "doubleValue": 9.3708
+        },
+        "standing": {
+          "stringValue": "Standing SNIT Nord"
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "sourceUrl": {
+          "stringValue": "https://snitnord.com"
+        },
+        "title": {
+          "stringValue": "Résidence Narjes — Appartement S+2 (SNIT Nord)"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "description": {
+          "stringValue": "Appartements S+2 et S+3 à Siliana (102 à 140 m²), tarifs officiels SNIT Nord débutant à 132 000 TND."
+        },
+        "id": {
+          "stringValue": "ref_snitnord_siliana_narjes"
+        },
+        "price": {
+          "integerValue": "132000"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Promotion publique SNIT Nord"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-25T18:54:19.202803Z",
+      "updateTime": "2026-11-25T18:54:19.202803Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitsud_medenine_djerba_cactus",
+      "fields": {
+        "sourceUrl": {
+          "stringValue": "https://www.snitsud.com.tn"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "longitude": {
+          "doubleValue": 10.8451
+        },
+        "standing": {
+          "stringValue": "Logement individuel / jumelé"
+        },
+        "type": {
+          "stringValue": "Villa"
+        },
+        "title": {
+          "stringValue": "Villas Cactus — Djerba (SNIT Sud)"
+        },
+        "neighborhood": {
+          "stringValue": "Djerba"
+        },
+        "location": {
+          "stringValue": "Djerba, Médenine"
+        },
+        "description": {
+          "stringValue": "Logements individuels, jumelés et semi-collectifs à Djerba (Gouvernorat de Médenine) portés par la SNIT Sud. Disponibilité et tarification sur le portail SNIT Sud."
+        },
+        "bedrooms": {
+          "integerValue": "3"
+        },
+        "city": {
+          "stringValue": "Djerba"
+        },
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "price": {
+          "integerValue": "0"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Jardin privatif"
+              },
+              {
+                "stringValue": "Promotion publique SNIT Sud"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "ref_snitsud_medenine_djerba_cactus"
+        },
+        "governorate": {
+          "stringValue": "Médenine"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "latitude": {
+          "doubleValue": 33.8075
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "sourceName": {
+          "stringValue": "SNIT Sud"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "bathrooms": {
+          "integerValue": "2"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "surfaceM2": {
+          "integerValue": "180"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "SNIT Sud (Référence Officielle)"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Sud"
+        }
+      },
+      "createTime": "2026-11-25T18:54:25.732690Z",
+      "updateTime": "2026-11-25T18:54:25.732690Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitsud_sfax_azur_s2",
+      "fields": {
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "description": {
+          "stringValue": "Programme collectif SNIT Sud Route de Bouzaien à Sfax. Appartements S+2 (93 à 117 m²), prix indicatifs TTC entre 244 400 et 304 200 TND."
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Résidence R+4"
+              },
+              {
+                "stringValue": "Promotion publique SNIT Sud"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "ref_snitsud_sfax_azur_s2"
+        },
+        "latitude": {
+          "doubleValue": 34.738
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "coordinatePrecision": {
+          "stringValue": "APPROXIMATE"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.snitsud.com.tn"
+        },
+        "governorate": {
+          "stringValue": "Sfax"
+        },
+        "longitude": {
+          "doubleValue": 10.742
+        },
+        "sourceName": {
+          "stringValue": "SNIT Sud"
+        },
+        "title": {
+          "stringValue": "Résidence Azur — Appartement S+2 (SNIT Sud)"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "SNIT Sud (Référence Officielle)"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Sud"
+        },
+        "surfaceM2": {
+          "integerValue": "93"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "neighborhood": {
+          "stringValue": "Route de Bouzaien"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "city": {
+          "stringValue": "Sfax"
+        },
+        "price": {
+          "integerValue": "244400"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "standing": {
+          "stringValue": "Résidence Collective R+4"
+        },
+        "location": {
+          "stringValue": "Route de Bouzaien, Sfax"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        }
+      },
+      "createTime": "2026-11-25T18:54:19.549175Z",
+      "updateTime": "2026-11-25T18:54:19.549175Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitsud_sfax_azur_s3",
+      "fields": {
+        "city": {
+          "stringValue": "Sfax"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "description": {
+          "stringValue": "Appartement S+3 (127 à 133 m²) au sein de la Résidence Azur à Sfax (SNIT Sud). Prix TTC constatés à partir de 342 900 TND."
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "latitude": {
+          "doubleValue": 34.741
+        },
+        "price": {
+          "integerValue": "342900"
+        },
+        "surfaceM2": {
+          "integerValue": "127"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "SNIT Sud (Référence Officielle)"
+        },
+        "bathrooms": {
+          "integerValue": "2"
+        },
+        "governorate": {
+          "stringValue": "Sfax"
+        },
+        "title": {
+          "stringValue": "Résidence Azur — Appartement S+3 (SNIT Sud)"
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Sud"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "location": {
+          "stringValue": "Route de Bouzaien, Sfax"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "bedrooms": {
+          "integerValue": "3"
+        },
+        "longitude": {
+          "doubleValue": 10.745
+        },
+        "standing": {
+          "stringValue": "Résidence Collective R+4"
+        },
+        "coordinatePrecision": {
+          "stringValue": "APPROXIMATE"
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.snitsud.com.tn"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "neighborhood": {
+          "stringValue": "Route de Bouzaien"
+        },
+        "sourceName": {
+          "stringValue": "SNIT Sud"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Résidence R+4"
+              },
+              {
+                "stringValue": "Promotion publique SNIT Sud"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "ref_snitsud_sfax_azur_s3"
+        }
+      },
+      "createTime": "2026-11-25T18:54:22.467674Z",
+      "updateTime": "2026-11-25T18:54:22.467674Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_snitsud_sidibouzid_collines",
+      "fields": {
+        "imageAttribution": {
+          "stringValue": "Référence officielle SNIT Sud"
+        },
+        "city": {
+          "stringValue": "Sidi Bouzid"
+        },
+        "sourceName": {
+          "stringValue": "SNIT Sud"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "latitude": {
+          "doubleValue": 35.0382
+        },
+        "governorate": {
+          "stringValue": "Sidi Bouzid"
+        },
+        "description": {
+          "stringValue": "Programme immobilier en R+4 de la SNIT Sud à Sidi Bouzid proposant des appartements S+2 et S+3. Consulter snitsud.com.tn pour disponibilité actuelle."
+        },
+        "surfaceM2": {
+          "integerValue": "95"
+        },
+        "agentName": {
+          "stringValue": "SNIT Sud (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "neighborhood": {
+          "stringValue": "Centre"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "location": {
+          "stringValue": "Sidi Bouzid Ville, Sidi Bouzid"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "longitude": {
+          "doubleValue": 9.4849
+        },
+        "standing": {
+          "stringValue": "Collectif R+4 SNIT Sud"
+        },
+        "price": {
+          "integerValue": "0"
+        },
+        "sourceUrl": {
+          "stringValue": "https://www.snitsud.com.tn"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "title": {
+          "stringValue": "Résidence Les Collines — S+2 / S+3 (SNIT Sud)"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Promotion publique SNIT Sud"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "ref_snitsud_sidibouzid_collines"
+        },
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        }
+      },
+      "createTime": "2026-11-25T18:54:25.129832Z",
+      "updateTime": "2026-11-25T18:54:25.129832Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_sprols_ariana_borjtouil_s2",
+      "fields": {
+        "imageAttribution": {
+          "stringValue": "Référence officielle SPROLS — Aucune image copiée"
+        },
+        "neighborhood": {
+          "stringValue": "Borj Touil"
+        },
+        "longitude": {
+          "doubleValue": 10.145
+        },
+        "id": {
+          "stringValue": "ref_sprols_ariana_borjtouil_s2"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "sourceUrl": {
+          "stringValue": "http://www.sprols.com.tn"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "latitude": {
+          "doubleValue": 36.935
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "sourceName": {
+          "stringValue": "SPROLS (Société de Promotion des Logements Sociaux)"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Éligible FOPROLOS"
+              },
+              {
+                "stringValue": "Programme public SPROLS"
+              }
+            ]
+          }
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "location": {
+          "stringValue": "Borj Touil, Ariana"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "description": {
+          "stringValue": "Appartement S+2 du programme SPROLS à Borj Touil (gouvernorat de l'Ariana). Superficie comprise entre 112 et 119 m², tarif officiel SPROLS à partir de 179 879 TND."
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "price": {
+          "integerValue": "179879"
+        },
+        "standing": {
+          "stringValue": "Économique / Social SPROLS"
+        },
+        "surfaceM2": {
+          "integerValue": "112"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "SPROLS (Référence Officielle)"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "governorate": {
+          "stringValue": "Ariana"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "title": {
+          "stringValue": "Résidences El Khaleej — Appartement S+2 (SPROLS)"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "city": {
+          "stringValue": "Borj Touil"
+        }
+      },
+      "createTime": "2026-11-25T18:54:13.093025Z",
+      "updateTime": "2026-11-25T18:54:13.093025Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_sprols_ariana_borjtouil_s3",
+      "fields": {
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "price": {
+          "integerValue": "193494"
+        },
+        "surfaceM2": {
+          "integerValue": "132"
+        },
+        "latitude": {
+          "doubleValue": 36.937
+        },
+        "agentName": {
+          "stringValue": "SPROLS (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "bathrooms": {
+          "integerValue": "2"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "title": {
+          "stringValue": "Résidences El Khaleej — Appartement S+3 (SPROLS)"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "neighborhood": {
+          "stringValue": "Borj Touil"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SPROLS"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "bedrooms": {
+          "integerValue": "3"
+        },
+        "location": {
+          "stringValue": "Borj Touil, Ariana"
+        },
+        "city": {
+          "stringValue": "Borj Touil"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Éligible FOPROLOS"
+              },
+              {
+                "stringValue": "Programme public SPROLS"
+              }
+            ]
+          }
+        },
+        "standing": {
+          "stringValue": "Économique / Social SPROLS"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "description": {
+          "stringValue": "Appartement S+3 du programme SPROLS à Borj Touil (132 à 143 m²), tarif officiel à partir de 179 407 TND selon la tranche."
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "sourceName": {
+          "stringValue": "SPROLS"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "longitude": {
+          "doubleValue": 10.148
+        },
+        "governorate": {
+          "stringValue": "Ariana"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "sourceUrl": {
+          "stringValue": "http://www.sprols.com.tn"
+        },
+        "id": {
+          "stringValue": "ref_sprols_ariana_borjtouil_s3"
+        },
+        "priceOnRequest": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-11-25T18:54:15.733242Z",
+      "updateTime": "2026-11-25T18:54:15.733242Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_sprols_benarous_mourouj",
+      "fields": {
+        "isRental": {
+          "booleanValue": false
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "agentName": {
+          "stringValue": "SPROLS (Référence Officielle)"
+        },
+        "surfaceM2": {
+          "integerValue": "105"
+        },
+        "description": {
+          "stringValue": "Résidences R+3 SPROLS à El Mourouj (Ben Arous) avec espaces verts et parking. Appartements S+2 (97–110 m²) et S+3 (118–120 m²). Tarif à vérifier auprès de l'agence commerciale SPROLS."
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "neighborhood": {
+          "stringValue": "El Mourouj 6"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "location": {
+          "stringValue": "El Mourouj, Ben Arous"
+        },
+        "governorate": {
+          "stringValue": "Ben Arous"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "standing": {
+          "stringValue": "Résidence R+3 SPROLS"
+        },
+        "id": {
+          "stringValue": "ref_sprols_benarous_mourouj"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Espaces verts"
+              },
+              {
+                "stringValue": "Parking résidence"
+              },
+              {
+                "stringValue": "FOPROLOS"
+              }
+            ]
+          }
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "price": {
+          "integerValue": "0"
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SPROLS"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "longitude": {
+          "doubleValue": 10.205
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "sourceUrl": {
+          "stringValue": "http://www.sprols.com.tn"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "city": {
+          "stringValue": "El Mourouj"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "sourceName": {
+          "stringValue": "SPROLS"
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "latitude": {
+          "doubleValue": 36.733
+        },
+        "title": {
+          "stringValue": "Résidences El Mourouj 3 & 6 — S+2 / S+3 (SPROLS)"
+        }
+      },
+      "createTime": "2026-11-25T18:54:17.136785Z",
+      "updateTime": "2026-11-25T18:54:17.136785Z"
+    },
+    {
+      "name": "projects/darlink-74715/databases/(default)/documents/properties/ref_sprols_manouba_douarhicher",
+      "fields": {
+        "listingStatus": {
+          "stringValue": "PUBLISHED"
+        },
+        "imageAttribution": {
+          "stringValue": "Référence officielle SPROLS"
+        },
+        "lastVerifiedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "description": {
+          "stringValue": "Projet de logements économiques et sociaux porté par la SPROLS à Douar Hicher (Gouvernorat de la Manouba). Conditions d'éligibilité et disponibilité sur le portail SPROLS."
+        },
+        "imageUrl": {
+          "stringValue": ""
+        },
+        "longitude": {
+          "doubleValue": 10.095
+        },
+        "latitude": {
+          "doubleValue": 36.826
+        },
+        "sourceUrl": {
+          "stringValue": "http://www.sprols.com.tn"
+        },
+        "sourceName": {
+          "stringValue": "SPROLS"
+        },
+        "city": {
+          "stringValue": "Douar Hicher"
+        },
+        "agentPhone": {
+          "stringValue": ""
+        },
+        "addressVisibility": {
+          "stringValue": "AREA_ONLY"
+        },
+        "republicationAuthorized": {
+          "booleanValue": false
+        },
+        "governorate": {
+          "stringValue": "Manouba"
+        },
+        "type": {
+          "stringValue": "Appartement"
+        },
+        "amenities": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Programme public SPROLS"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "ref_sprols_manouba_douarhicher"
+        },
+        "imagePermissionStatus": {
+          "stringValue": "NONE_PLACEHOLDER_USED"
+        },
+        "bedrooms": {
+          "integerValue": "2"
+        },
+        "location": {
+          "stringValue": "Douar Hicher, Manouba"
+        },
+        "ownerId": {
+          "stringValue": "3TD4BAlbq3dztLRiltWwLKIx1vv2"
+        },
+        "title": {
+          "stringValue": "Programme Résidentiel Douar Hicher (SPROLS)"
+        },
+        "standing": {
+          "stringValue": "Social / Économique"
+        },
+        "yearBuilt": {
+          "integerValue": "2024"
+        },
+        "priceOnRequest": {
+          "booleanValue": true
+        },
+        "coordinatePrecision": {
+          "stringValue": "CITY_CENTER"
+        },
+        "publishedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "surfaceM2": {
+          "integerValue": "90"
+        },
+        "isRental": {
+          "booleanValue": false
+        },
+        "agentName": {
+          "stringValue": "SPROLS (Référence Officielle)"
+        },
+        "createdAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "galleryUrls": {
+          "arrayValue": {}
+        },
+        "bathrooms": {
+          "integerValue": "1"
+        },
+        "collectedAt": {
+          "stringValue": "2026-11-25T18:45:00.000Z"
+        },
+        "neighborhood": {
+          "stringValue": "Douar Hicher"
+        },
+        "price": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-11-25T18:54:17.779576Z",
+      "updateTime": "2026-11-25T18:54:17.779576Z"
+    }
+  ]
+}

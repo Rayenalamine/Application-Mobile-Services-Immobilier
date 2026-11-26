@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "844919536034",
+    "project_id": "darlink-74715",
+    "storage_bucket": "darlink-74715.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:844919536034:android:350d25a857073c8b2e5afb",
+        "android_client_info": {
+          "package_name": "com.example.services_immobilier_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC72VZUyhh4IbmaPsz22xXOL7KyUTME-dU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
