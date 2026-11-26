@@ -195,6 +195,30 @@ async function run() {
   }), tokenB);
   assertTest('12c. Modifying another user agency denied', r12c.status === 403, `status=${r12c.status}`);
 
+  // 13. P0 Property Creation + Image Metadata Order
+  const p0PropId = 'prop_p0_order_test';
+  const r13a = await fsRequest('PATCH', `/property_images/img_before_${Date.now()}`, toFsFields({
+    uploaderUid: uidA, propertyId: p0PropId, sizeBytes: 102400,
+  }), tokenA);
+  assertTest('13a. property_images before property exists denied', r13a.status === 403, `status=${r13a.status}`);
+
+  const r13b = await fsRequest('PATCH', `/properties/${p0PropId}`, toFsFields({
+    title: 'Villa P0 Test', ownerId: uidA, listingStatus: 'DRAFT', price: 320000, surfaceM2: 200, bedrooms: 4, bathrooms: 2,
+  }), tokenA);
+  assertTest('13b. Initial DRAFT property creation accepted', r13b.status === 200, `status=${r13b.status}`);
+
+  const r13c = await fsRequest('PATCH', `/property_images/img_after_${Date.now()}`, toFsFields({
+    uploaderUid: uidA, propertyId: p0PropId, sizeBytes: 102400,
+  }), tokenA);
+  assertTest('13c. property_images after DRAFT exists accepted', r13c.status === 200, `status=${r13c.status} ${r13c.body}`);
+
+  const r13d = await fsRequest('PATCH', `/properties/${p0PropId}?updateMask.fieldPaths=imageUrl&updateMask.fieldPaths=imagePermissionStatus&updateMask.fieldPaths=listingStatus`, toFsFields({
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/darlink-74715.appspot.com/o/test.jpg?alt=media',
+    imagePermissionStatus: 'OWNER_UPLOADED',
+    listingStatus: 'PENDING_REVIEW',
+  }), tokenA);
+  assertTest('13d. Updating DRAFT with imageUrl + PENDING_REVIEW accepted', r13d.status === 200, `status=${r13d.status} ${r13d.body}`);
+
   console.log(`\n============================================================`);
   console.log(`EMULATOR SECURITY RESULT: ${passed}/${passed + failed} passed (${failed} failed)`);
   console.log(`============================================================`);

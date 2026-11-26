@@ -1,7 +1,7 @@
 // ============================================================
 // DARLINK — FLOATING LIQUID GLASS NAVIGATION BAR (React Native)
 // True BlurView capsule floating over scrollable content.
-// State-preserving tabs (IndexedStack equivalent) & fluid haptics.
+// State-preserving tabs & lazy-mounted screens with spring haptics.
 // ============================================================
 
 import React, { useState, useRef } from 'react';
@@ -22,15 +22,14 @@ import { HomeScreen } from '../../../properties/presentation/screens/HomeScreen'
 import { SearchScreen } from './SearchScreen';
 import { FavoritesScreen } from './FavoritesScreen';
 import { ProfileScreen } from './ProfileScreen';
-import { ThemeProvider, useTheme } from '../../../../core/theme/ThemeContext';
-import { LocalizationProvider, useTranslation } from '../../../../core/localization/LocalizationContext';
+import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { LiquidGlassView } from '../../../../core/designSystem/LiquidGlass';
 import { triggerHaptic } from '../../../../core/designSystem/tokens';
 
 type TabKey = 'home' | 'search' | 'favorites' | 'profile';
 
 interface NavButtonProps {
-  tabKey: TabKey;
   label: string;
   isActive: boolean;
   onPress: () => void;
@@ -156,6 +155,29 @@ const MainNavigationContent: React.FC = () => {
     { key: 'profile', label: t('nav_profile') },
   ];
 
+  const renderActiveScreen = () => (
+    <>
+      <View style={[styles.tabPane, activeTab !== 'home' && styles.hiddenPane]}>
+        <HomeScreen onNavigateToSearch={() => handleTabPress('search')} />
+      </View>
+      {visitedTabs.search && (
+        <View style={[styles.tabPane, activeTab !== 'search' && styles.hiddenPane]}>
+          <SearchScreen />
+        </View>
+      )}
+      {visitedTabs.favorites && (
+        <View style={[styles.tabPane, activeTab !== 'favorites' && styles.hiddenPane]}>
+          <FavoritesScreen />
+        </View>
+      )}
+      {visitedTabs.profile && (
+        <View style={[styles.tabPane, activeTab !== 'profile' && styles.hiddenPane]}>
+          <ProfileScreen />
+        </View>
+      )}
+    </>
+  );
+
   return (
     <SafeAreaView
       style={[
@@ -169,53 +191,9 @@ const MainNavigationContent: React.FC = () => {
     >
       <ExpoStatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* State-Preserving Screens Stack (Zero Unmount/Remount Flashing) */}
+      {/* Lazy-mounted, state-preserving screens stack */}
       <View style={styles.screenContainer}>
-        <View
-          style={[
-            styles.tabContent,
-            activeTab === 'home' ? styles.tabVisible : styles.tabHidden,
-          ]}
-          pointerEvents={activeTab === 'home' ? 'auto' : 'none'}
-        >
-          <HomeScreen onNavigateToSearch={() => handleTabPress('search')} />
-        </View>
-
-        {visitedTabs.search && (
-          <View
-            style={[
-              styles.tabContent,
-              activeTab === 'search' ? styles.tabVisible : styles.tabHidden,
-            ]}
-            pointerEvents={activeTab === 'search' ? 'auto' : 'none'}
-          >
-            <SearchScreen />
-          </View>
-        )}
-
-        {visitedTabs.favorites && (
-          <View
-            style={[
-              styles.tabContent,
-              activeTab === 'favorites' ? styles.tabVisible : styles.tabHidden,
-            ]}
-            pointerEvents={activeTab === 'favorites' ? 'auto' : 'none'}
-          >
-            <FavoritesScreen />
-          </View>
-        )}
-
-        {visitedTabs.profile && (
-          <View
-            style={[
-              styles.tabContent,
-              activeTab === 'profile' ? styles.tabVisible : styles.tabHidden,
-            ]}
-            pointerEvents={activeTab === 'profile' ? 'auto' : 'none'}
-          >
-            <ProfileScreen />
-          </View>
-        )}
+        {renderActiveScreen()}
       </View>
 
       {/* Floating Liquid Glass Dock */}
@@ -227,7 +205,6 @@ const MainNavigationContent: React.FC = () => {
               return (
                 <NavButton
                   key={tab.key}
-                  tabKey={tab.key}
                   label={tab.label}
                   isActive={isActive}
                   onPress={() => handleTabPress(tab.key)}
@@ -246,33 +223,14 @@ const MainNavigationContent: React.FC = () => {
 };
 
 export const MainNavigationScreen: React.FC = () => {
-  return (
-    <LocalizationProvider>
-      <ThemeProvider>
-        <MainNavigationContent />
-      </ThemeProvider>
-    </LocalizationProvider>
-  );
+  return <MainNavigationContent />;
 };
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  screenContainer: { flex: 1, position: 'relative' },
-  tabContent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  tabVisible: {
-    opacity: 1,
-    zIndex: 1,
-  },
-  tabHidden: {
-    opacity: 0,
-    zIndex: 0,
-  },
+  screenContainer: { flex: 1 },
+  tabPane: { flex: 1 },
+  hiddenPane: { display: 'none' },
   dockWrapper: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 24 : 14,

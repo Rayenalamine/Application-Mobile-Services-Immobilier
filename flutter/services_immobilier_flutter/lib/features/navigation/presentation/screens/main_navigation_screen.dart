@@ -25,6 +25,7 @@ class EcranNavigationPrincipale extends StatefulWidget {
 
 class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
   int _indexCourant = 0;
+  final List<bool> _visited = [true, false, false, false];
 
   final List<Widget> _ecrans = const [
     EcranAccueil(),
@@ -89,7 +90,9 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
       extendBody: true,
       body: IndexedStack(
         index: _indexCourant,
-        children: _ecrans,
+        children: List.generate(_ecrans.length, (i) {
+          return _visited[i] ? _ecrans[i] : const SizedBox.shrink();
+        }),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -145,7 +148,10 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
                           onTap: () {
                             if (_indexCourant != i) {
                               HapticFeedback.selectionClick();
-                              setState(() => _indexCourant = i);
+                              setState(() {
+                                _indexCourant = i;
+                                _visited[i] = true;
+                              });
                             }
                           },
                         ),

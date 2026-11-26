@@ -35,7 +35,7 @@ interface PropertyCardProps {
   readonly onPress: (property: Property) => void;
 }
 
-export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress }) => {
+export const PropertyCard: React.FC<PropertyCardProps> = React.memo(({ property, onPress }) => {
   const [isFavorite, setIsFavorite] = useState<boolean>(
     property.id ? favoritesApiService.isFavorite(property.id) : property.isFavorite ?? false
   );
@@ -252,7 +252,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
       </TouchableOpacity>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   cardContainer: {

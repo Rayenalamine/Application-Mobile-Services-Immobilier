@@ -6,12 +6,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Animated, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MainNavigationScreen } from './src/features/navigation/presentation/screens/MainNavigationScreen';
+import { ThemeProvider } from './src/core/theme/ThemeContext';
+import { LocalizationProvider, useTranslation } from './src/core/localization/LocalizationContext';
 import { authService } from './src/features/auth/services/authService';
 import { favoritesApiService } from './src/features/favorites/services/favoritesApiService';
 
-export default function App() {
+const AppContent: React.FC = () => {
   const [isReady, setIsReady] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { t } = useTranslation();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -37,7 +40,7 @@ export default function App() {
             <Text style={styles.monogramText}>D</Text>
           </View>
           <Text style={styles.brandName}>DarLink</Text>
-          <Text style={styles.brandTagline}>Immobilier d’exception • Tunisie</Text>
+          <Text style={styles.brandTagline}>{t('splash_tagline')}</Text>
           <ActivityIndicator size="small" color="#9A7B4F" style={{ marginTop: 28 }} />
         </Animated.View>
         <StatusBar style="dark" />
@@ -50,6 +53,16 @@ export default function App() {
       <MainNavigationScreen />
       <StatusBar style="dark" />
     </>
+  );
+};
+
+export default function App() {
+  return (
+    <LocalizationProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </LocalizationProvider>
   );
 }
 

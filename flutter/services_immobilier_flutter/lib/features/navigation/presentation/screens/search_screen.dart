@@ -152,8 +152,8 @@ class _EcranRechercheState extends State<EcranRecherche> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('EXPLORATION', style: AppTypography.micro(AppColors.accentChampagne)),
-                            Text('Recherche de biens', style: AppTypography.pageTitle(textPrim).copyWith(fontSize: 21)),
+                            Text(AppLocale.instance.tr('exploration_tag'), style: AppTypography.micro(AppColors.accentChampagne)),
+                            Text(AppLocale.instance.tr('search_title'), style: AppTypography.pageTitle(textPrim).copyWith(fontSize: 21)),
                           ],
                         ),
                       ),
@@ -280,7 +280,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                       side: BorderSide(color: borderColor),
                                       minimumSize: const Size(0, 44),
                                     ),
-                                    child: const Text('Réinitialiser'),
+                                    child: Text(AppLocale.instance.tr('btn_reset')),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -294,7 +294,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                         SnackBar(
                                           behavior: SnackBarBehavior.floating,
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                          content: Text('${_proprietesTrouvees.length} bien(s) trouvé(s) sur Cloud Firestore !'),
+                                          content: Text(AppLocale.instance.trParams('results_count', {'count': _proprietesTrouvees.length})),
                                           duration: const Duration(seconds: 2),
                                         ),
                                       );
@@ -306,14 +306,14 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                       minimumSize: const Size(0, 44),
                                       shape: const StadiumBorder(),
                                     ),
-                                    child: const Text('Appliquer les filtres', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    child: Text(AppLocale.instance.tr('btn_apply_filters'), style: const TextStyle(fontWeight: FontWeight.w600)),
                                   ),
                                 ),
                               ],
                             ),
                           ),
 
-                        Text('Gouvernorats de Tunisie (24)', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
+                        Text(AppLocale.instance.tr('governorates_24'), style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
                         const SizedBox(height: 10),
                         SizedBox(
                           height: 36,
@@ -353,7 +353,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                         ),
                         const SizedBox(height: 20),
 
-                        Text('Type de bien', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
+                        Text(AppLocale.instance.tr('property_type'), style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 15)),
                         const SizedBox(height: 10),
                         Wrap(
                           spacing: 8,
@@ -401,7 +401,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('Budget (DT)', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
+                                  Text(AppLocale.instance.tr('budget_dt'), style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
                                   Text(
                                     '${_priceRange.start.toInt()} - ${_priceRange.end.toInt()} DT',
                                     style: AppTypography.caption(AppColors.accentChampagne),
@@ -462,7 +462,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                         ),
                         const SizedBox(height: 18),
 
-                        Text('Chambres & Salles de bain', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
+                        Text(AppLocale.instance.tr('rooms_and_baths'), style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
                         const SizedBox(height: 10),
                         Wrap(
                           spacing: 8,
@@ -498,7 +498,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                           spacing: 8,
                           children: [
                             ChoiceChip(
-                              label: const Text('Plus récentes'),
+                              label: Text(AppLocale.instance.tr('sort_newest')),
                               selected: _sortBy == 'newest',
                               onSelected: (_) {
                                 setState(() => _sortBy = 'newest');
@@ -506,7 +506,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                               },
                             ),
                             ChoiceChip(
-                              label: const Text('Prix croissant'),
+                              label: Text(AppLocale.instance.tr('sort_price_asc')),
                               selected: _sortBy == 'price_asc',
                               onSelected: (_) {
                                 setState(() => _sortBy = 'price_asc');
@@ -514,7 +514,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                               },
                             ),
                             ChoiceChip(
-                              label: const Text('Prix décroissant'),
+                              label: Text(AppLocale.instance.tr('sort_price_desc')),
                               selected: _sortBy == 'price_desc',
                               onSelected: (_) {
                                 setState(() => _sortBy = 'price_desc');
@@ -553,7 +553,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                                   setState(() => _limit += 20);
                                   _appliquerRechercheBackend();
                                 },
-                                child: const Text('Charger plus'),
+                                child: Text(AppLocale.instance.tr('load_more')),
                               ),
                             ),
                         ],
@@ -585,7 +585,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                             side: BorderSide(color: borderColor),
                             minimumSize: const Size(0, 44),
                           ),
-                          child: const Text('Réinitialiser'),
+                          child: Text(AppLocale.instance.tr('btn_reset')),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -599,7 +599,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                               SnackBar(
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                content: Text('${_proprietesTrouvees.length} bien(s) trouvé(s) sur Cloud Firestore !'),
+                                content: Text(AppLocale.instance.trParams('results_count', {'count': _proprietesTrouvees.length})),
                                 duration: const Duration(seconds: 2),
                               ),
                             );
@@ -611,7 +611,7 @@ class _EcranRechercheState extends State<EcranRecherche> {
                             minimumSize: const Size(0, 44),
                             shape: const StadiumBorder(),
                           ),
-                          child: const Text('Appliquer les filtres', style: TextStyle(fontWeight: FontWeight.w600)),
+                          child: Text(AppLocale.instance.tr('btn_apply_filters'), style: const TextStyle(fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],

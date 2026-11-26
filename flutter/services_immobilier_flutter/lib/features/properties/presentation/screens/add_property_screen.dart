@@ -269,43 +269,19 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
       _uploadTotal = _photos.where((p) => !p.isRemote).length;
     });
 
+    final uploadedStoragePaths = <String>[];
+    String? createdDraftId;
+    String? activeToken;
+
     try {
       await AuthService.instance.refreshSessionIfNeeded();
       final idToken = AuthState.instance.token ?? '';
-      final uid = AuthState.instance.currentUser!.effectiveUid;
-      if (idToken.isEmpty) {
+      final currentUser = AuthState.instance.currentUser;
+      if (idToken.isEmpty || currentUser == null) {
         throw Exception(loc.tr('auth_required'));
       }
-
-      final propertyIdForStorage = widget.proprieteAEditer?.id ?? 'prop_${DateTime.now().millisecondsSinceEpoch}';
-      final uploadedUrls = <String>[];
-
-      for (final photo in _photos) {
-        if (photo.isRemote) {
-          uploadedUrls.add(photo.existingUrl!);
-        } else if (photo.bytes != null) {
-          setState(() => _uploadCurrent += 1);
-          final res = await StorageService.instance.uploadImage(
-            idToken: idToken,
-            userId: uid,
-            propertyId: propertyIdForStorage,
-            fileName: photo.fileName,
-            mimeType: photo.mimeType,
-            bytes: photo.bytes!,
-          );
-          final url = res['downloadUrl'] ?? '';
-          if (url.isNotEmpty) {
-            uploadedUrls.add(url);
-          }
-        }
-      }
-
-      if (uploadedUrls.isEmpty) {
-        throw Exception(loc.tr('upload_failed'));
-      }
-
-      final coverUrl = uploadedUrls.first;
-      final galleryUrls = uploadedUrls.length > 1 ? uploadedUrls.sublist(1) : <String>[];
+      activeToken = idToken;
+      final uid = currentUser.effectiveUid;
 
       final prix = double.tryParse(_prixCtrl.text.replaceAll(' ', '')) ?? 0;
       final surface = double.tryParse(_surfaceCtrl.text.replaceAll(' ', '')) ?? 0;
@@ -317,32 +293,14 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
           ? _descCtrl.text.trim()
           : '${loc.translatePropertyType(_typeSelectionne)} — $localisation';
 
-      Propriete? resultProp;
-      if (widget.proprieteAEditer != null) {
-        resultProp = await PropertyApiService.instance.updateProperty(
-          widget.proprieteAEditer!.id,
-          {
-            'title': _titreCtrl.text.trim(),
-            'description': desc,
-            'location': localisation,
-            'governorate': _gouvernoratSelectionne,
-            'city': quartier,
-            'neighborhood': quartier,
-            'price': prix,
-            'type': _typeSelectionne,
-            'imageUrl': coverUrl,
-            'galleryUrls': galleryUrls,
-            'imagePermissionStatus': 'OWNER_UPLOADED',
-            'bedrooms': _nbChambres,
-            'bathrooms': _nbSallesDeBain,
-            'surfaceM2': surface,
-            'isRental': _isLocation,
-            'listingStatus': _statutSelectionne,
-            'amenities': _commoditesChoisies.toList(),
-          },
-        );
-      } else {
-        resultProp = await PropertyApiService.instance.createProperty(
+      final propertyIdForStorage =
+          widget.proprieteAEditer?.id ?? 'prop_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Step 3 (P0): Create property document in DRAFT BEFORE uploading images
+      // so Firestore rules for property_images (exists(properties/{id})) succeed.
+      if (widget.proprieteAEditer == null) {
+        final draftProp = await PropertyApiService.instance.createProperty(
+          id: propertyIdForStorage,
           title: _titreCtrl.text.trim(),
           description: desc,
           location: localisation,
@@ -351,16 +309,77 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
           neighborhood: quartier,
           price: prix,
           type: _typeSelectionne,
-          imageUrl: coverUrl,
-          galleryUrls: galleryUrls,
+          imageUrl: '',
+          galleryUrls: const [],
           bedrooms: _nbChambres,
           bathrooms: _nbSallesDeBain,
           surfaceM2: surface,
           isRental: _isLocation,
-          listingStatus: _statutSelectionne,
+          listingStatus: 'DRAFT',
           amenities: _commoditesChoisies.toList(),
         );
+        if (draftProp == null) {
+          throw Exception(loc.tr('publish_error'));
+        }
+        createdDraftId = draftProp.id;
       }
+
+      // Step 4 (P0): Upload new local images to Firebase Storage
+      final uploadedUrls = <String>[];
+      for (final photo in _photos) {
+        if (photo.isRemote) {
+          uploadedUrls.add(photo.existingUrl!);
+        } else if (photo.bytes != null) {
+          if (mounted) setState(() => _uploadCurrent += 1);
+          final res = await StorageService.instance.uploadImage(
+            idToken: idToken,
+            userId: uid,
+            propertyId: propertyIdForStorage,
+            fileName: photo.fileName,
+            mimeType: photo.mimeType,
+            bytes: photo.bytes!,
+          );
+          final url = res['downloadUrl'] ?? '';
+          final path = res['storagePath'] ?? '';
+          if (url.isEmpty) {
+            throw Exception(loc.tr('upload_failed'));
+          }
+          uploadedUrls.add(url);
+          if (path.isNotEmpty) uploadedStoragePaths.add(path);
+        }
+      }
+
+      if (uploadedUrls.isEmpty) {
+        throw Exception(loc.tr('upload_failed'));
+      }
+
+      final coverUrl = uploadedUrls.first;
+      final galleryUrls = uploadedUrls.length > 1 ? uploadedUrls.sublist(1) : <String>[];
+
+      // Step 5 & 6 (P0): Save image references and submit final status (DRAFT or PENDING_REVIEW)
+      final resultProp = await PropertyApiService.instance.updateProperty(
+        propertyIdForStorage,
+        {
+          'title': _titreCtrl.text.trim(),
+          'description': desc,
+          'location': localisation,
+          'governorate': _gouvernoratSelectionne,
+          'city': quartier,
+          'neighborhood': quartier,
+          'price': prix,
+          'type': _typeSelectionne,
+          'imageUrl': coverUrl,
+          'galleryUrls': galleryUrls,
+          'imagePermissionStatus': 'OWNER_UPLOADED',
+          'imageAttribution': 'Photo fournie par ${currentUser.fullName}',
+          'bedrooms': _nbChambres,
+          'bathrooms': _nbSallesDeBain,
+          'surfaceM2': surface,
+          'isRental': _isLocation,
+          'listingStatus': _statutSelectionne,
+          'amenities': _commoditesChoisies.toList(),
+        },
+      );
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
@@ -381,15 +400,18 @@ class _EcranDepotAnnonceState extends State<EcranDepotAnnonce> {
         );
         Navigator.of(context).pop(true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.accentRed,
-            content: Text(loc.tr('publish_error')),
-          ),
-        );
+        throw Exception(loc.tr('publish_error'));
       }
     } catch (e) {
+      // Safe cleanup of abandoned uploads and empty DRAFT created during this failed attempt
+      if (activeToken != null) {
+        for (final path in uploadedStoragePaths) {
+          await StorageService.instance.deleteObject(activeToken, path);
+        }
+      }
+      if (createdDraftId != null) {
+        await PropertyApiService.instance.deleteProperty(createdDraftId);
+      }
       if (!mounted) return;
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(

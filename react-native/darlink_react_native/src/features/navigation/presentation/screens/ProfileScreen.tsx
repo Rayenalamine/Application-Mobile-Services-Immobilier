@@ -48,6 +48,7 @@ import { contactApiService, ContactRequest } from '../../../contact/services/con
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property, formatPrice } from '../../../properties/domain/models/property';
 import { AppNotification } from '../../../properties/domain/models/relationships';
+import { AddPropertyScreen } from '../../../properties/presentation/screens/AddPropertyScreen';
 
 interface ProfileScreenProps {
   onBack?: () => void;
@@ -78,6 +79,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
   const [receivedRequests, setReceivedRequests] = useState<ContactRequest[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [showAddProperty, setShowAddProperty] = useState(false);
 
   // Modales gestion compte
   const [editModal, setEditModal] = useState(false);
@@ -193,14 +196,31 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
     }
   };
 
+  if (showAddProperty || editingProperty) {
+    return (
+      <AddPropertyScreen
+        propertyToEdit={editingProperty ?? undefined}
+        onBack={() => {
+          setShowAddProperty(false);
+          setEditingProperty(null);
+        }}
+        onPropertyCreated={() => {
+          setShowAddProperty(false);
+          setEditingProperty(null);
+          loadDashboard();
+        }}
+      />
+    );
+  }
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
     >
-      <Text style={[styles.eyebrow, { color: colors.accentChampagne }]}>ESPACE PERSONNEL</Text>
+      <Text style={[styles.eyebrow, { color: colors.accentChampagne }]}>{t('preferences_tag')}</Text>
       <Text style={[styles.pageHeading, { color: colors.textPrimary }]}>
-        {isAuthenticated && user ? user.fullName : 'Mon Profil'}
+        {isAuthenticated && user ? user.fullName : t('profile_title')}
       </Text>
 
       {!isAuthenticated && (
@@ -560,7 +580,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
 
           <TouchableOpacity
             style={[styles.addPropButton, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
-            onPress={() => onNavigateToAddProperty && onNavigateToAddProperty()}
+            onPress={() => {
+              if (onNavigateToAddProperty) {
+                onNavigateToAddProperty();
+              } else {
+                setShowAddProperty(true);
+              }
+            }}
             activeOpacity={0.86}
           >
             <Plus size={18} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
@@ -599,24 +625,34 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                     {formatPrice(prop.prix, Boolean(prop.estLocation), Boolean(prop.priceOnRequest))} • {translateListingStatus(prop.listingStatus || 'DRAFT')}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(t('btn_delete'), t('delete_confirm_msg'), [
-                      { text: t('btn_cancel'), style: 'cancel' },
-                      {
-                        text: t('btn_delete'),
-                        style: 'destructive',
-                        onPress: async () => {
-                          await propertyApiService.deleteProperty(prop.id || '');
-                          loadDashboard();
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <TouchableOpacity
+                    accessibilityLabel={t('btn_edit')}
+                    onPress={() => setEditingProperty(prop)}
+                    style={{ padding: 6 }}
+                  >
+                    <Edit3 size={17} color={colors.accentChampagne} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityLabel={t('btn_delete')}
+                    onPress={() =>
+                      Alert.alert(t('btn_delete'), t('delete_confirm_msg'), [
+                        { text: t('btn_cancel'), style: 'cancel' },
+                        {
+                          text: t('btn_delete'),
+                          style: 'destructive',
+                          onPress: async () => {
+                            await propertyApiService.deleteProperty(prop.id || '');
+                            loadDashboard();
+                          },
                         },
-                      },
-                    ])
-                  }
-                  style={{ padding: 6 }}
-                >
-                  <Trash2 size={17} color="#DC2626" />
-                </TouchableOpacity>
+                      ])
+                    }
+                    style={{ padding: 6 }}
+                  >
+                    <Trash2 size={17} color="#DC2626" />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))
           )}

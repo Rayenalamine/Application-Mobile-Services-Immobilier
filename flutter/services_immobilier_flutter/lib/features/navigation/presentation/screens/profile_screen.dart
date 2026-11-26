@@ -310,7 +310,7 @@ class _EcranProfilState extends State<EcranProfil> {
               Text('ESPACE PERSONNEL', style: AppTypography.micro(AppColors.accentChampagne)),
               const SizedBox(height: 4),
               Text(
-                isAuthenticated && user != null ? 'Tableau de bord' : 'Mon Profil',
+                isAuthenticated && user != null ? AppLocale.instance.tr('dashboard_title') : AppLocale.instance.tr('profile_title'),
                 style: AppTypography.pageTitle(textPrim),
               ),
               const SizedBox(height: 18),
@@ -453,10 +453,10 @@ class _EcranProfilState extends State<EcranProfil> {
                           dropdownColor: AppColors.surfaceOf(context),
                           style: TextStyle(color: textPrim),
                           decoration: const InputDecoration(labelText: 'Type de compte'),
-                          items: const [
-                            DropdownMenuItem(value: 'USER', child: Text('Particulier')),
-                            DropdownMenuItem(value: 'OWNER', child: Text('Propriétaire')),
-                            DropdownMenuItem(value: 'AGENCY', child: Text('Agence immobilière')),
+                          items: [
+                            DropdownMenuItem(value: 'USER', child: Text(AppLocale.instance.tr('role_user'))),
+                            DropdownMenuItem(value: 'OWNER', child: Text(AppLocale.instance.tr('role_owner'))),
+                            DropdownMenuItem(value: 'AGENCY', child: Text(AppLocale.instance.tr('role_agency'))),
                           ],
                           onChanged: (v) => setState(() => _selectedRole = v ?? 'USER'),
                         ),
@@ -500,7 +500,7 @@ class _EcranProfilState extends State<EcranProfil> {
 
                       const SizedBox(height: 18),
                       LuxuryPillButton(
-                        label: _isRegisterMode ? 'Créer mon compte' : 'Se connecter',
+                        label: _isRegisterMode ? AppLocale.instance.tr('btn_register') : AppLocale.instance.tr('btn_login'),
                         isLoading: _isLoading,
                         onPressed: _isLoading ? null : _handleAuthSubmit,
                       ),

@@ -19,9 +19,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { ArrowLeft, ArrowRight, Camera, Check, ImagePlus, ShieldAlert, X } from 'lucide-react-native';
 import { TUNISIA_GOVERNORATES } from '../../../../core/constants/tunisiaLocations';
-import { uploadImageToFirebaseStorage, validateImageUpload } from '../../../../core/firebase/storageService';
+import { uploadLocalImageUriToFirebaseStorage, deleteStorageObject, validateImageUpload } from '../../../../core/firebase/storageService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
+import { GlassOrbButton } from '../../../../core/designSystem/LiquidGlass';
 import { authService } from '../../../auth/services/authService';
 import { propertyApiService } from '../../services/propertyApiService';
 import { ListingStatus, Property, PropertyType } from '../../domain/models/property';
@@ -30,6 +31,7 @@ interface SelectedPhoto {
   uri: string;
   fileName: string;
   mimeType: string;
+  sizeBytes?: number;
   isRemote: boolean;
 }
 
@@ -152,6 +154,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
         uri: asset.uri,
         fileName: asset.fileName || `photo_${Date.now()}.jpg`,
         mimeType,
+        sizeBytes: asset.fileSize,
         isRemote: false,
       });
     }
@@ -187,6 +190,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
         uri: asset.uri,
         fileName: asset.fileName || `camera_${Date.now()}.jpg`,
         mimeType,
+        sizeBytes: asset.fileSize,
         isRemote: false,
       },
     ]);
@@ -236,14 +240,50 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
     const localPhotos = photos.filter((p) => !p.isRemote);
     setUploadProgress(localPhotos.length > 0 ? { current: 0, total: localPhotos.length } : null);
 
+    const uploadedStoragePaths: string[] = [];
+    let createdDraftId: string | null = null;
+    let activeToken: string | null = null;
+
     try {
+      await authService.refreshSessionIfNeeded();
       const idToken = authService.getToken();
       const currentUser = authService.getCurrentUser();
       if (!idToken || !currentUser) {
         throw new Error(t('auth_required_publish'));
       }
+      activeToken = idToken;
 
       const propertyIdForStorage = propertyToEdit?.id || `prop_${Date.now()}`;
+      const finalDescription =
+        description.trim() ||
+        `${translatePropertyType(type)} — ${neighborhood.trim()}, ${governorate}`;
+
+      // Step 3 (P0): Create property in DRAFT BEFORE uploading photos
+      // so Firestore rules for property_images (exists(properties/{id})) pass.
+      if (!propertyToEdit?.id) {
+        const draftProp = await propertyApiService.createProperty({
+          id: propertyIdForStorage,
+          title: title.trim(),
+          description: finalDescription,
+          type,
+          price: numPrice,
+          location: `${neighborhood.trim()}, ${governorate}`,
+          governorate,
+          city: neighborhood.trim(),
+          neighborhood: neighborhood.trim(),
+          bedrooms,
+          bathrooms,
+          surfaceM2: numSurface,
+          isRental,
+          amenities: selectedAmenities,
+          imageUrl: '',
+          galleryUrls: [],
+          listingStatus: 'DRAFT',
+        });
+        createdDraftId = draftProp.id || propertyIdForStorage;
+      }
+
+      // Step 4 (P0): Upload new local images to Firebase Storage
       const uploadedUrls: string[] = [];
       let uploadStep = 0;
 
@@ -253,67 +293,46 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
         } else {
           uploadStep += 1;
           setUploadProgress({ current: uploadStep, total: localPhotos.length });
-          const resp = await fetch(photo.uri);
-          const arrayBuffer = await resp.arrayBuffer();
-          const bytes = new Uint8Array(arrayBuffer);
-          const uploaded = await uploadImageToFirebaseStorage({
+          const uploaded = await uploadLocalImageUriToFirebaseStorage({
             idToken,
             userId: currentUser.id,
             propertyId: propertyIdForStorage,
+            fileUri: photo.uri,
             fileName: photo.fileName,
             mimeType: photo.mimeType,
-            bytes,
+            sizeBytes: photo.sizeBytes,
           });
           uploadedUrls.push(uploaded.downloadUrl);
+          if (uploaded.storagePath) uploadedStoragePaths.push(uploaded.storagePath);
         }
+      }
+
+      if (uploadedUrls.length === 0) {
+        throw new Error(t('upload_failed'));
       }
 
       const coverUrl = uploadedUrls[0];
       const galleryUrls = uploadedUrls.slice(1);
-      const finalDescription =
-        description.trim() ||
-        `${translatePropertyType(type)} — ${neighborhood.trim()}, ${governorate}`;
 
-      let savedProp: Property | null = null;
-      if (propertyToEdit?.id) {
-        savedProp = await propertyApiService.updateProperty(propertyToEdit.id, {
-          title: title.trim(),
-          description: finalDescription,
-          type,
-          price: numPrice,
-          location: `${neighborhood.trim()}, ${governorate}`,
-          governorate,
-          city: neighborhood.trim(),
-          neighborhood: neighborhood.trim(),
-          bedrooms,
-          bathrooms,
-          surfaceM2: numSurface,
-          isRental,
-          amenities: selectedAmenities,
-          imageUrl: coverUrl,
-          galleryUrls,
-          listingStatus,
-        });
-      } else {
-        savedProp = await propertyApiService.createProperty({
-          title: title.trim(),
-          description: finalDescription,
-          type,
-          price: numPrice,
-          location: `${neighborhood.trim()}, ${governorate}`,
-          governorate,
-          city: neighborhood.trim(),
-          neighborhood: neighborhood.trim(),
-          bedrooms,
-          bathrooms,
-          surfaceM2: numSurface,
-          isRental,
-          amenities: selectedAmenities,
-          imageUrl: coverUrl,
-          galleryUrls,
-          listingStatus,
-        });
-      }
+      // Step 5 & 6 (P0): Save image references and final listingStatus
+      const savedProp = await propertyApiService.updateProperty(propertyIdForStorage, {
+        title: title.trim(),
+        description: finalDescription,
+        type,
+        price: numPrice,
+        location: `${neighborhood.trim()}, ${governorate}`,
+        governorate,
+        city: neighborhood.trim(),
+        neighborhood: neighborhood.trim(),
+        bedrooms,
+        bathrooms,
+        surfaceM2: numSurface,
+        isRental,
+        amenities: selectedAmenities,
+        imageUrl: coverUrl,
+        galleryUrls,
+        listingStatus,
+      });
 
       if (!savedProp) {
         throw new Error(t('publish_error'));
@@ -336,6 +355,14 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
         ]
       );
     } catch (err: unknown) {
+      if (activeToken) {
+        for (const path of uploadedStoragePaths) {
+          await deleteStorageObject(activeToken, path);
+        }
+      }
+      if (createdDraftId) {
+        await propertyApiService.deleteProperty(createdDraftId);
+      }
       Alert.alert(
         t('publish_error'),
         err instanceof Error ? err.message : t('publish_error')
@@ -349,13 +376,13 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.surface }]} onPress={onBack}>
+        <GlassOrbButton size={40} onPress={onBack} accessibilityLabel={t('btn_back')}>
           {isRTL ? (
             <ArrowRight size={19} color={colors.textPrimary} />
           ) : (
             <ArrowLeft size={19} color={colors.textPrimary} />
           )}
-        </TouchableOpacity>
+        </GlassOrbButton>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           {propertyToEdit ? t('edit_title') : t('add_title')}
         </Text>

@@ -47,7 +47,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Vérification du titre de l'écran recherche
-      expect(find.text('Recherche de biens'), findsOneWidget);
+      expect(find.text('Recherche avancée'), findsOneWidget);
       expect(find.text('Type de bien'), findsOneWidget);
       expect(find.text('Gouvernorats de Tunisie (24)'), findsOneWidget);
       expect(find.text('Appliquer les filtres'), findsOneWidget);
@@ -100,7 +100,7 @@ void main() {
       // Navigation vers Recherche
       await tester.tap(find.text('Recherche'));
       await tester.pumpAndSettle();
-      expect(find.text('Recherche de biens'), findsOneWidget);
+      expect(find.text('Recherche avancée'), findsOneWidget);
 
       // Navigation vers Profil
       await tester.tap(find.text('Profil'));

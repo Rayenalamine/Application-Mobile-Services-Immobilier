@@ -304,6 +304,7 @@ class PropertyApiService {
 
   /// Déposer une nouvelle annonce immobilière dans Cloud Firestore (nécessite authentification)
   Future<Propriete?> createProperty({
+    String? id,
     required String title,
     required String description,
     required String location,
@@ -335,7 +336,9 @@ class PropertyApiService {
     final lng = longitude ?? resolved.longitude;
     final gov = (governorate != null && governorate.isNotEmpty) ? governorate : resolved.governorate;
 
-    final newId = 'prop_${DateTime.now().millisecondsSinceEpoch}';
+    final newId = (id != null && id.trim().isNotEmpty)
+        ? id.trim()
+        : 'prop_${DateTime.now().millisecondsSinceEpoch}';
     final nowIso = DateTime.now().toIso8601String();
     final hasPhoto = imageUrl.trim().isNotEmpty;
 

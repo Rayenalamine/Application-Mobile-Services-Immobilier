@@ -21,6 +21,7 @@ import {
 import { Image } from 'expo-image';
 import {
   ArrowLeft,
+  ArrowRight,
   Heart,
   Trash2,
   MapPin,
@@ -32,6 +33,7 @@ import {
   Phone,
   ExternalLink,
   Flag,
+  ChevronLeft,
   ChevronRight,
 } from 'lucide-react-native';
 import { firestoreEngine } from '../../../../core/firebase/firestoreEngine';
@@ -80,7 +82,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
     property.isFavorite ?? favoritesApiService.isFavorite(propId)
   );
   const { isDark, colors } = useTheme();
-  const { t, translateAmenity } = useTranslation();
+  const { t, isRTL, translateAmenity } = useTranslation();
 
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
   const [senderName, setSenderName] = useState<string>(authService.getCurrentUser()?.fullName || '');
@@ -250,8 +252,12 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
           {/* Floating Top Controls */}
           <View style={styles.topControls}>
-            <GlassOrbButton size={40} onPress={onBack} accessibilityLabel="Retour">
-              <ArrowLeft size={19} color={colors.textPrimary} />
+            <GlassOrbButton size={40} onPress={onBack} accessibilityLabel={t('btn_back')}>
+              {isRTL ? (
+                <ArrowRight size={19} color={colors.textPrimary} />
+              ) : (
+                <ArrowLeft size={19} color={colors.textPrimary} />
+              )}
             </GlassOrbButton>
 
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -329,7 +335,11 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             {onLocateOnMap ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                 <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>{t('nav_map')}</Text>
-                <ChevronRight size={16} color={colors.accentChampagne} />
+                {isRTL ? (
+                  <ChevronLeft size={16} color={colors.accentChampagne} />
+                ) : (
+                  <ChevronRight size={16} color={colors.accentChampagne} />
+                )}
               </View>
             ) : null}
           </TouchableOpacity>
