@@ -34,6 +34,7 @@ export interface PropertyFilterParams {
 }
 
 export interface CreatePropertyPayload {
+  id?: string;
   title: string;
   description: string;
   type: string;
@@ -280,7 +281,7 @@ class PropertyApiService {
     const fallback = resolveFallbackCoordinates(payload.governorate || payload.city);
     const hasCoords = payload.latitude !== undefined && payload.longitude !== undefined;
     const gov = payload.governorate || fallback.governorate;
-    const newId = `prop_${Date.now()}`;
+    const newId = payload.id?.trim() || `prop_${Date.now()}`;
     const nowIso = new Date().toISOString();
     const img = (payload.imageUrl || '').trim();
 
@@ -356,7 +357,12 @@ class PropertyApiService {
     if (payload.bathrooms !== undefined) safePatch.bathrooms = payload.bathrooms;
     if (payload.surfaceM2 !== undefined) safePatch.surfaceM2 = payload.surfaceM2;
     if (payload.isRental !== undefined) safePatch.isRental = payload.isRental;
-    if (payload.imageUrl !== undefined) safePatch.imageUrl = payload.imageUrl;
+    if (payload.imageUrl !== undefined) {
+      safePatch.imageUrl = payload.imageUrl;
+      if (payload.imageUrl.trim()) {
+        safePatch.imagePermissionStatus = 'OWNER_UPLOADED';
+      }
+    }
     if (payload.galleryUrls !== undefined) safePatch.galleryUrls = payload.galleryUrls;
     if (payload.amenities !== undefined) safePatch.amenities = payload.amenities;
     if (payload.listingStatus !== undefined) safePatch.listingStatus = payload.listingStatus;
