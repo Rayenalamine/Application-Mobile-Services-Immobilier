@@ -73,7 +73,7 @@ function yToLat(y: number, zoom: number): number {
 }
 
 const QUICK_GOVERNORATES = [
-  'Tous',
+  'ALL',
   'Tunis',
   'Ariana',
   'Ben Arous',
@@ -100,7 +100,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(initialProperty || null);
-  const [selectedGov, setSelectedGov] = useState('Tous');
+  const [selectedGov, setSelectedGov] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [locating, setLocating] = useState(false);
   const [gpsStatusMessage, setGpsStatusMessage] = useState<string | null>(null);
@@ -120,7 +120,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
     (async () => {
       setLoading(true);
       const list = await propertyApiService.getMapProperties(
-        selectedGov === 'Tous' ? undefined : selectedGov
+        selectedGov === 'ALL' ? undefined : selectedGov
       );
       if (isMounted) {
         setProperties(list);
@@ -191,7 +191,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
 
   const handleSelectGovernorate = (gov: string) => {
     setSelectedGov(gov);
-    if (gov === 'Tous') {
+    if (gov === 'ALL') {
       setCenterLat(35.8);
       setCenterLng(9.8);
       setZoom(7);
@@ -212,16 +212,16 @@ export const MapScreen: React.FC<MapScreenProps> = ({
     try {
       const servicesOn = await Location.hasServicesEnabledAsync();
       if (!servicesOn) {
-        setGpsStatusMessage('Services de localisation désactivés sur l’appareil.');
+        setGpsStatusMessage(t('gps_disabled'));
         return;
       }
 
       const perm = await Location.requestForegroundPermissionsAsync();
       if (perm.status !== 'granted') {
         if (!perm.canAskAgain) {
-          setGpsStatusMessage('Localisation refusée définitivement. Activez-la dans les réglages.');
+          setGpsStatusMessage(t('gps_denied_permanent'));
         } else {
-          setGpsStatusMessage('Permission GPS refusée. Navigation libre par gouvernorat active.');
+          setGpsStatusMessage(t('gps_denied'));
         }
         return;
       }
@@ -234,7 +234,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
       setCenterLng(pos.coords.longitude);
       setZoom(13);
     } catch {
-      setGpsStatusMessage('Localisation indisponible. Affichage centré sur la Tunisie.');
+      setGpsStatusMessage(t('gps_unavailable'));
     } finally {
       setLocating(false);
     }
@@ -247,9 +247,9 @@ export const MapScreen: React.FC<MapScreenProps> = ({
   };
 
   const precisionLabel = (precision?: string) => {
-    if (precision === 'VERIFIED') return 'Position vérifiée';
-    if (precision === 'APPROXIMATE') return 'Zone du quartier (adresse protégée)';
-    return 'Centre gouvernorat';
+    if (precision === 'VERIFIED') return t('map_precision_verified');
+    if (precision === 'APPROXIMATE') return t('map_precision_approx');
+    return t('map_precision_governorate');
   };
 
   return (
@@ -293,8 +293,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({
           const isSelected = selectedProperty?.id === prop.id;
           const priceShort =
             prop.priceOnRequest || !prop.prix || prop.prix <= 0
-              ? 'Sur demande'
-              : `${(prop.prix / 1000).toFixed(0)}k DT`;
+              ? t('price_on_request_short')
+              : `${(prop.prix / 1000).toFixed(0)}k ${t('currency')}`;
 
           return (
             <TouchableOpacity
@@ -355,10 +355,10 @@ export const MapScreen: React.FC<MapScreenProps> = ({
             onPress={onBack}
             style={[styles.backBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
             accessibilityRole="button"
-            accessibilityLabel="Retour"
+            accessibilityLabel={t('btn_back')}
           >
             <ArrowLeft size={15} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
-            <Text style={[styles.backBtnText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>Retour</Text>
+            <Text style={[styles.backBtnText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>{t('btn_back')}</Text>
           </TouchableOpacity>
 
           <View style={{ flex: 1 }}>
@@ -366,7 +366,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
               {t('map_title')}
             </Text>
             <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
-              {t('map_properties_count', { count: properties.length })} • {selectedGov}
+              {t('map_properties_count', { count: properties.length })} • {selectedGov === 'ALL' ? t('filter_all') : selectedGov}
             </Text>
           </View>
           {loading && <ActivityIndicator size="small" color={colors.accentChampagne} />}
@@ -409,7 +409,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
                     { color: isSelected ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textPrimary, fontWeight: isSelected ? '600' : '500' },
                   ]}
                 >
-                  {gov}
+                  {gov === 'ALL' ? t('filter_all') : gov}
                 </Text>
               </TouchableOpacity>
             );
@@ -422,21 +422,21 @@ export const MapScreen: React.FC<MapScreenProps> = ({
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: cardSurface(isDark), borderColor: colors.border }]}
           onPress={() => setZoom((z) => Math.min(18, z + 1))}
-          accessibilityLabel="Zoom avant"
+          accessibilityLabel={t('map_zoom_in')}
         >
           <Plus size={18} color={colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: cardSurface(isDark), borderColor: colors.border }]}
           onPress={() => setZoom((z) => Math.max(5, z - 1))}
-          accessibilityLabel="Zoom arrière"
+          accessibilityLabel={t('map_zoom_out')}
         >
           <Minus size={18} color={colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: cardSurface(isDark), borderColor: colors.border }]}
           onPress={() => setShowPermissionModal(true)}
-          accessibilityLabel="Ma position GPS"
+          accessibilityLabel={t('map_my_gps')}
         >
           {locating ? (
             <ActivityIndicator size="small" color={colors.accentBlue} />
@@ -503,7 +503,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
                 )}
               </Text>
               <View style={[styles.consultBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}>
-                <Text style={[styles.consultBtnText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>Consulter</Text>
+                <Text style={[styles.consultBtnText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>{t('map_view_listing')}</Text>
                 <ChevronRight size={13} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
               </View>
             </View>
@@ -517,23 +517,23 @@ export const MapScreen: React.FC<MapScreenProps> = ({
           <View style={[styles.modalCard, { backgroundColor: cardSurface(isDark), borderColor: colors.border }]}>
             <Compass size={28} color={colors.accentBlue} />
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              Centrer sur votre position ?
+              {t('gps_modal_title')}
             </Text>
             <Text style={[styles.modalBody, { color: colors.textSecondary }]}>
-              DarLink utilise votre position uniquement pour afficher les annonces à proximité sur la carte. Vos coordonnées ne sont jamais enregistrées.
+              {t('gps_modal_body')}
             </Text>
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1 }]}
                 onPress={() => setShowPermissionModal(false)}
               >
-                <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Plus tard</Text>
+                <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{t('gps_later')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalBtn, { backgroundColor: colors.accentBlue }]}
                 onPress={handleRequestGps}
               >
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Autoriser</Text>
+                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{t('gps_allow')}</Text>
               </TouchableOpacity>
             </View>
           </View>

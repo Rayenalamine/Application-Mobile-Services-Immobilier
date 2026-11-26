@@ -55,6 +55,28 @@ interface ProfileScreenProps {
   onNavigateToAddProperty?: () => void;
 }
 
+const AUTH_ERROR_KEY_MAP: Record<string, string> = {
+  'auth/email-exists': 'error_auth_email_exists',
+  'auth/invalid-credentials': 'error_auth_invalid_credentials',
+  'auth/user-disabled': 'error_auth_user_disabled',
+  'auth/too-many-attempts': 'error_auth_too_many_attempts',
+  'auth/invalid-email': 'error_auth_invalid_email',
+  'auth/weak-password': 'error_auth_weak_password',
+  'auth/session-expired': 'error_auth_session_expired',
+  'auth/firebase-error': 'error_auth_firebase_error',
+  'auth/missing-credentials': 'error_auth_missing_credentials',
+  'auth/network-error': 'error_auth_network_error',
+  'auth/missing-full-name': 'error_auth_missing_full_name',
+  'auth/password-too-weak': 'error_auth_password_too_weak',
+  'auth/password-mismatch': 'error_auth_password_mismatch',
+  'auth/not-authenticated': 'error_auth_not_authenticated',
+  'auth/verification-send-failed': 'error_auth_verification_send_failed',
+  'auth/reset-send-failed': 'error_auth_reset_send_failed',
+  'auth/password-update-failed': 'error_auth_password_update_failed',
+  'auth/email-update-failed': 'error_auth_email_update_failed',
+  'auth/account-delete-failed': 'error_auth_account_delete_failed',
+};
+
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddProperty }) => {
   const { colors, isDark, toggleTheme } = useTheme();
   const { t, language, setLanguage, translateListingStatus } = useTranslation();
@@ -130,6 +152,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
 
   const strength = evaluatePasswordStrength(password);
 
+  const translateAuthError = (code?: string | null): string => {
+    if (!code) return t('auth_failed');
+    const key = AUTH_ERROR_KEY_MAP[code];
+    return key ? t(key) : code;
+  };
+
   const handleAuthSubmit = async () => {
     setLoading(true);
     setAuthError(null);
@@ -141,20 +169,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
 
     setLoading(false);
     if (!ok) {
-      setAuthError(authService.lastError || 'Échec de l’authentification.');
+      setAuthError(translateAuthError(authService.lastError));
     } else if (isRegisterMode) {
-      setInfoBanner('Compte créé ! Un e-mail de vérification vient d’être envoyé à votre adresse.');
+      setInfoBanner(t('register_verify_sent'));
     }
   };
 
   const handleSaveProfile = async () => {
     if (!editName.trim()) {
-      Alert.alert('Erreur', 'Le nom complet est requis.');
+      Alert.alert(t('alert_error'), t('validation_full_name_required'));
       return;
     }
     const ok = await authService.updateProfile(editName, editPhone, editPhoto.trim() || undefined);
     setEditModal(false);
-    Alert.alert(ok ? 'Succès' : 'Erreur', ok ? 'Profil mis à jour.' : 'Mise à jour refusée.');
+    Alert.alert(ok ? t('alert_success') : t('alert_error'), ok ? t('profile_updated') : t('profile_update_denied'));
   };
 
   const handleChangePassword = async () => {
@@ -163,9 +191,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       setPasswordModal(false);
       setCurrentPassword('');
       setNewPassword('');
-      Alert.alert('Succès', 'Mot de passe mis à jour.');
+      Alert.alert(t('alert_success'), t('password_updated'));
     } else {
-      Alert.alert('Erreur', err);
+      Alert.alert(t('alert_error'), translateAuthError(err));
     }
   };
 
@@ -175,24 +203,24 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       setEmailModal(false);
       setCurrentPassword('');
       setNewEmailVal('');
-      Alert.alert('E-mail mis à jour', 'Un nouvel e-mail de vérification a été envoyé.');
+      Alert.alert(t('email_updated_title'), t('email_updated_body'));
     } else {
-      Alert.alert('Erreur', err);
+      Alert.alert(t('alert_error'), translateAuthError(err));
     }
   };
 
   const handleDeleteAccount = async () => {
     if (!deletePassword) {
-      Alert.alert('Confirmation requise', 'Entrez votre mot de passe actuel pour confirmer.');
+      Alert.alert(t('confirm_required_title'), t('confirm_current_password_msg'));
       return;
     }
     const err = await authService.deleteAccount(deletePassword);
     if (!err) {
       setDeleteModal(false);
       setDeletePassword('');
-      Alert.alert('Compte supprimé', 'Votre compte et vos données personnelles ont été supprimés.');
+      Alert.alert(t('account_deleted_title'), t('account_deleted_msg'));
     } else {
-      Alert.alert('Erreur', err);
+      Alert.alert(t('alert_error'), translateAuthError(err));
     }
   };
 
@@ -245,9 +273,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           >
             <Lock size={26} color={colors.accentChampagne} />
           </View>
-          <Text style={[styles.authTitle, { color: colors.textPrimary }]}>Espace DarLink</Text>
+          <Text style={[styles.authTitle, { color: colors.textPrimary }]}>{t('auth_space_title')}</Text>
           <Text style={[styles.authSubtitle, { color: colors.textSecondary }]}>
-            Connectez-vous ou créez un compte sécurisé Firebase pour gérer vos biens et favoris.
+            {t('auth_space_subtitle')}
           </Text>
 
           <View
@@ -272,7 +300,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                   { color: !isRegisterMode ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textSecondary },
                 ]}
               >
-                Connexion
+                {t('tab_login')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -291,7 +319,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                   { color: isRegisterMode ? (isDark ? '#1D1D1F' : '#FFFFFF') : colors.textSecondary },
                 ]}
               >
-                Inscription
+                {t('tab_register')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -310,7 +338,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                   styles.input,
                   { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
                 ]}
-                placeholder="Nom et prénom"
+                placeholder={t('field_full_name')}
                 placeholderTextColor={colors.textSecondary}
                 value={fullName}
                 onChangeText={setFullName}
@@ -320,18 +348,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                   styles.input,
                   { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
                 ]}
-                placeholder="Téléphone (+216)"
+                placeholder={t('field_phone_tn')}
                 placeholderTextColor={colors.textSecondary}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
               />
-              <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>TYPE DE COMPTE</Text>
+              <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>{t('account_type_label')}</Text>
               <View style={styles.roleRow}>
                 {[
-                  { key: 'USER', label: 'Particulier' },
-                  { key: 'OWNER', label: 'Propriétaire' },
-                  { key: 'AGENCY', label: 'Agence' },
+                  { key: 'USER', label: t('role_user') },
+                  { key: 'OWNER', label: t('role_owner') },
+                  { key: 'AGENCY', label: t('role_agency') },
                 ].map((r) => {
                   const active = requestedRole === r.key;
                   return (
@@ -373,7 +401,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               styles.input,
               { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
             ]}
-            placeholder="Adresse e-mail"
+            placeholder={t('field_email')}
             placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={setEmail}
@@ -386,7 +414,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               styles.input,
               { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
             ]}
-            placeholder="Mot de passe"
+            placeholder={t('field_password')}
             placeholderTextColor={colors.textSecondary}
             value={password}
             onChangeText={setPassword}
@@ -398,11 +426,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               {password.length > 0 && (
                 <View style={styles.strengthBox}>
                   <Text style={{ fontSize: 11.5, fontWeight: '700', color: strength.valid ? '#16A34A' : '#D97706' }}>
-                    Robustesse : {strength.label}
+                    {t('password_strength', { label: t(strength.label) })}
                   </Text>
                   {strength.issues.length > 0 && (
                     <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                      Requis : {strength.issues.join(' • ')}
+                      {t('password_required_prefix', { issues: strength.issues.map((i) => t(i)).join(' • ') })}
                     </Text>
                   )}
                 </View>
@@ -412,7 +440,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                   styles.input,
                   { backgroundColor: isDark ? '#1E2128' : '#F5F5F7', color: colors.textPrimary, borderColor: colors.border },
                 ]}
-                placeholder="Confirmer le mot de passe"
+                placeholder={t('field_confirm_password')}
                 placeholderTextColor={colors.textSecondary}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -431,7 +459,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               <ActivityIndicator color={isDark ? '#1D1D1F' : '#FFFFFF'} />
             ) : (
               <Text style={[styles.submitButtonText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>
-                {isRegisterMode ? 'Créer mon compte' : 'Se connecter'}
+                {isRegisterMode ? t('btn_create_my_account') : t('btn_login')}
               </Text>
             )}
           </TouchableOpacity>
@@ -445,7 +473,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               }}
             >
               <Text style={{ color: colors.accentChampagne, fontSize: 13, fontWeight: '600' }}>
-                Mot de passe oublié ?
+                {t('forgot_password')}
               </Text>
             </TouchableOpacity>
           )}
@@ -522,25 +550,25 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           >
             <CheckCircle2 size={17} color={user.emailVerified ? '#16A34A' : '#D97706'} />
             <Text style={{ flex: 1, fontSize: 12.5, color: colors.textPrimary, fontWeight: '600' }}>
-              {user.emailVerified ? 'Adresse e-mail vérifiée' : 'E-mail non vérifié'}
+              {user.emailVerified ? t('email_verified_full') : t('email_unverified')}
             </Text>
             {!user.emailVerified && (
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
                   onPress={async () => {
                     const sent = await authService.resendVerificationEmail();
-                    Alert.alert(sent ? 'E-mail envoyé' : 'Erreur', sent ? 'Vérifiez votre boîte de réception.' : authService.lastError || 'Échec');
+                    Alert.alert(sent ? t('email_sent_title') : t('alert_error'), sent ? t('check_inbox_msg') : translateAuthError(authService.lastError));
                   }}
                 >
-                  <Text style={{ color: colors.accentChampagne, fontSize: 12, fontWeight: '700' }}>Renvoyer</Text>
+                  <Text style={{ color: colors.accentChampagne, fontSize: 12, fontWeight: '700' }}>{t('btn_resend')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={async () => {
                     const ok = await authService.refreshVerificationStatus();
-                    Alert.alert('Statut', ok ? 'E-mail confirmé !' : 'Pas encore vérifié dans Firebase.');
+                    Alert.alert(t('alert_status'), ok ? t('email_confirmed_msg') : t('email_not_verified_yet'));
                   }}
                 >
-                  <Text style={{ color: '#16A34A', fontSize: 12, fontWeight: '700' }}>Actualiser</Text>
+                  <Text style={{ color: '#16A34A', fontSize: 12, fontWeight: '700' }}>{t('btn_refresh')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -662,7 +690,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <MessageSquare size={16} color={colors.accentChampagne} />
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                Demandes reçues ({receivedRequests.length})
+                {t('contact_requests_received')} ({receivedRequests.length})
               </Text>
             </View>
           </View>
@@ -679,7 +707,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Bell size={16} color={colors.accentChampagne} />
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                Notifications ({notifications.length})
+                {t('notifications_title')} ({notifications.length})
               </Text>
             </View>
           </View>
@@ -693,7 +721,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       )}
 
       {/* PRÉFÉRENCES STYLE APPLE GROUPÉ */}
-      <Text style={[styles.settingsSectionLabel, { color: colors.textSecondary }]}>PRÉFÉRENCES</Text>
+      <Text style={[styles.settingsSectionLabel, { color: colors.textSecondary }]}>{t('preferences_tag')}</Text>
       <View
         style={[
           styles.settingsGroup,
@@ -709,14 +737,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               {isDark ? <Moon size={17} color={colors.accentChampagne} /> : <Sun size={17} color={colors.accentChampagne} />}
             </View>
             <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>
-              {isDark ? 'Mode sombre' : 'Mode clair'}
+              {isDark ? t('theme_dark') : t('theme_light')}
             </Text>
           </View>
           <TouchableOpacity
             style={[styles.themeSwitchBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
             onPress={toggleTheme}
           >
-            <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600', fontSize: 12 }}>Basculer</Text>
+            <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600', fontSize: 12 }}>{t('btn_toggle')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -756,7 +784,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
 
           <TouchableOpacity style={{ alignItems: 'center', padding: 10 }} onPress={() => setDeleteModal(true)}>
             <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-              Supprimer définitivement mon compte
+              {t('delete_account_permanent')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -766,10 +794,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       <Modal visible={forgotModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Réinitialiser le mot de passe</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('reset_password_title')}</Text>
             <TextInput
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
-              placeholder="Votre adresse e-mail"
+              placeholder={t('placeholder_your_email')}
               placeholderTextColor={colors.textSecondary}
               value={resetEmailVal}
               onChangeText={setResetEmailVal}
@@ -777,17 +805,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setForgotModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                <Text style={{ color: colors.textSecondary }}>{t('btn_cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]}
                 onPress={async () => {
                   const err = await authService.sendPasswordResetEmail(resetEmailVal);
                   setForgotModal(false);
-                  Alert.alert(err ? 'Erreur' : 'E-mail envoyé', err || 'Consultez votre boîte mail pour choisir un nouveau mot de passe.');
+                  Alert.alert(err ? t('alert_error') : t('email_sent_title'), err ? translateAuthError(err) : t('reset_password_sent_body'));
                 }}
               >
-                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Envoyer</Text>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>{t('btn_send')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -798,35 +826,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       <Modal visible={editModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Modifier mon profil</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('edit_profile_dialog')}</Text>
             <TextInput
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={editName}
               onChangeText={setEditName}
-              placeholder="Nom complet"
+              placeholder={t('field_full_name')}
               placeholderTextColor={colors.textSecondary}
             />
             <TextInput
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={editPhone}
               onChangeText={setEditPhone}
-              placeholder="Téléphone"
+              placeholder={t('field_phone')}
               placeholderTextColor={colors.textSecondary}
             />
             <TextInput
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={editPhoto}
               onChangeText={setEditPhoto}
-              placeholder="URL photo de profil (HTTPS, optionnel)"
+              placeholder={t('placeholder_avatar_url')}
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                <Text style={{ color: colors.textSecondary }}>{t('btn_cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]} onPress={handleSaveProfile}>
-                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Enregistrer</Text>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>{t('btn_save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -837,12 +865,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       <Modal visible={passwordModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Changer de mot de passe</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('change_password_title')}</Text>
             <TextInput
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={currentPassword}
               onChangeText={setCurrentPassword}
-              placeholder="Mot de passe actuel"
+              placeholder={t('field_current_password')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
@@ -850,16 +878,16 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={newPassword}
               onChangeText={setNewPassword}
-              placeholder="Nouveau mot de passe (min 8 car., Maj + Chiffre)"
+              placeholder={t('placeholder_new_password_hint')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setPasswordModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                <Text style={{ color: colors.textSecondary }}>{t('btn_cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]} onPress={handleChangePassword}>
-                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Valider</Text>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>{t('btn_confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -870,12 +898,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       <Modal visible={emailModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Changer d’adresse e-mail</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('change_email_title')}</Text>
             <TextInput
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={currentPassword}
               onChangeText={setCurrentPassword}
-              placeholder="Mot de passe actuel (réauthentification)"
+              placeholder={t('placeholder_current_password_reauth')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
@@ -883,16 +911,16 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={newEmailVal}
               onChangeText={setNewEmailVal}
-              placeholder="Nouvel e-mail"
+              placeholder={t('placeholder_new_email')}
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setEmailModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                <Text style={{ color: colors.textSecondary }}>{t('btn_cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isDark ? '#F5F5F7' : '#1D1D1F' }]} onPress={handleChangeEmail}>
-                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>Valider</Text>
+                <Text style={{ color: isDark ? '#1D1D1F' : '#FFFFFF', fontWeight: '600' }}>{t('btn_confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -903,24 +931,24 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
       <Modal visible={deleteModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: '#DC2626' }]}>Suppression du compte</Text>
+            <Text style={[styles.modalTitle, { color: '#DC2626' }]}>{t('delete_account_title')}</Text>
             <Text style={{ fontSize: 13, lineHeight: 19, color: colors.textSecondary, marginBottom: 12 }}>
-              Vos annonces seront archivées et anonymisées, et vos favoris supprimés. Cette action est irréversible.
+              {t('delete_account_warning')}
             </Text>
             <TextInput
               style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: isDark ? '#1E2128' : '#F5F5F7' }]}
               value={deletePassword}
               onChangeText={setDeletePassword}
-              placeholder="Confirmez avec votre mot de passe"
+              placeholder={t('placeholder_confirm_password')}
               placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeleteModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Annuler</Text>
+                <Text style={{ color: colors.textSecondary }}>{t('btn_cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: '#DC2626' }]} onPress={handleDeleteAccount}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Supprimer</Text>
+                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>{t('btn_delete')}</Text>
               </TouchableOpacity>
             </View>
           </View>
