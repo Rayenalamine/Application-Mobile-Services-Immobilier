@@ -1,9 +1,10 @@
 // ============================================================
 // DARLINK — FLOATING LIQUID GLASS NAVIGATION BAR (React Native)
 // True BlurView capsule floating over scrollable content.
+// State-preserving tabs (IndexedStack equivalent) & fluid haptics.
 // ============================================================
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  Animated,
   LayoutAnimation,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
@@ -26,6 +28,83 @@ import { LiquidGlassView } from '../../../../core/designSystem/LiquidGlass';
 import { triggerHaptic } from '../../../../core/designSystem/tokens';
 
 type TabKey = 'home' | 'search' | 'favorites' | 'profile';
+
+interface NavButtonProps {
+  tabKey: TabKey;
+  label: string;
+  isActive: boolean;
+  onPress: () => void;
+  icon: React.ReactNode;
+  activeBg: string;
+  activeTextColor: string;
+  inactiveTextColor: string;
+}
+
+const NavButton: React.FC<NavButtonProps> = ({
+  label,
+  isActive,
+  onPress,
+  icon,
+  activeBg,
+  activeTextColor,
+  inactiveTextColor,
+}) => {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.9,
+      speed: 40,
+      bounciness: 4,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      speed: 36,
+      bounciness: 5,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <Animated.View style={[styles.tabButtonWrapper, { transform: [{ scale }] }]}>
+      <TouchableOpacity
+        style={styles.tabButton}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        activeOpacity={0.9}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: isActive }}
+      >
+        <View
+          style={[
+            styles.iconPill,
+            isActive && { backgroundColor: activeBg },
+          ]}
+        >
+          {icon}
+        </View>
+        <Text
+          style={[
+            styles.tabLabel,
+            {
+              color: isActive ? activeTextColor : inactiveTextColor,
+              fontWeight: isActive ? '600' : '500',
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 const MainNavigationContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
@@ -60,18 +139,13 @@ const MainNavigationContent: React.FC = () => {
     { key: 'profile', label: t('nav_profile') },
   ];
 
-  const renderActiveScreen = () => {
-    switch (activeTab) {
-      case 'home':
-        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
-      case 'search':
-        return <SearchScreen />;
-      case 'favorites':
-        return <FavoritesScreen />;
-      case 'profile':
-        return <ProfileScreen />;
-      default:
-        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
+  const handleTabPress = (key: TabKey) => {
+    if (activeTab !== key) {
+      triggerHaptic('selection');
+      if (Platform.OS !== 'web') {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      }
+      setActiveTab(key);
     }
   };
 
@@ -87,50 +161,68 @@ const MainNavigationContent: React.FC = () => {
       ]}
     >
       <ExpoStatusBar style={isDark ? 'light' : 'dark'} />
-      <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
+      {/* State-Preserving Screens Stack (Zero Unmount/Remount Flashing) */}
+      <View style={styles.screenContainer}>
+        <View
+          style={[
+            styles.tabContent,
+            activeTab === 'home' ? styles.tabVisible : styles.tabHidden,
+          ]}
+          pointerEvents={activeTab === 'home' ? 'auto' : 'none'}
+        >
+          <HomeScreen onNavigateToSearch={() => handleTabPress('search')} />
+        </View>
+
+        <View
+          style={[
+            styles.tabContent,
+            activeTab === 'search' ? styles.tabVisible : styles.tabHidden,
+          ]}
+          pointerEvents={activeTab === 'search' ? 'auto' : 'none'}
+        >
+          <SearchScreen />
+        </View>
+
+        <View
+          style={[
+            styles.tabContent,
+            activeTab === 'favorites' ? styles.tabVisible : styles.tabHidden,
+          ]}
+          pointerEvents={activeTab === 'favorites' ? 'auto' : 'none'}
+        >
+          <FavoritesScreen />
+        </View>
+
+        <View
+          style={[
+            styles.tabContent,
+            activeTab === 'profile' ? styles.tabVisible : styles.tabHidden,
+          ]}
+          pointerEvents={activeTab === 'profile' ? 'auto' : 'none'}
+        >
+          <ProfileScreen />
+        </View>
+      </View>
+
+      {/* Floating Liquid Glass Dock */}
       <View style={styles.dockWrapper} pointerEvents="box-none">
         <LiquidGlassView useBlur borderRadius={34} intensity={isDark ? 55 : 70} style={styles.dockContainer}>
           <View style={styles.dockRow}>
             {tabs.map((tab) => {
               const isActive = activeTab === tab.key;
               return (
-                <TouchableOpacity
+                <NavButton
                   key={tab.key}
-                  style={styles.tabButton}
-                  onPress={() => {
-                    triggerHaptic('selection');
-                    if (Platform.OS !== 'web') {
-                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                    }
-                    setActiveTab(tab.key);
-                  }}
-                  activeOpacity={0.85}
-                  accessibilityRole="button"
-                  accessibilityLabel={tab.label}
-                  accessibilityState={{ selected: isActive }}
-                >
-                  <View
-                    style={[
-                      styles.iconPill,
-                      isActive && { backgroundColor: colors.dockActiveBg },
-                    ]}
-                  >
-                    {renderIcon(tab.key, isActive)}
-                  </View>
-                  <Text
-                    style={[
-                      styles.tabLabel,
-                      {
-                        color: isActive ? colors.textPrimary : colors.textSecondary,
-                        fontWeight: isActive ? '600' : '500',
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
+                  tabKey={tab.key}
+                  label={tab.label}
+                  isActive={isActive}
+                  onPress={() => handleTabPress(tab.key)}
+                  icon={renderIcon(tab.key, isActive)}
+                  activeBg={colors.dockActiveBg}
+                  activeTextColor={colors.textPrimary}
+                  inactiveTextColor={colors.textSecondary}
+                />
               );
             })}
           </View>
@@ -152,7 +244,22 @@ export const MainNavigationScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  screenContainer: { flex: 1 },
+  screenContainer: { flex: 1, position: 'relative' },
+  tabContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  tabVisible: {
+    opacity: 1,
+    zIndex: 1,
+  },
+  tabHidden: {
+    opacity: 0,
+    zIndex: 0,
+  },
   dockWrapper: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 24 : 14,
@@ -169,8 +276,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingHorizontal: 8,
   },
-  tabButton: {
+  tabButtonWrapper: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabButton: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
