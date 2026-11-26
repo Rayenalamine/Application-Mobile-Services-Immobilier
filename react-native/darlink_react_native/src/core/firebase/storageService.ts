@@ -4,6 +4,12 @@
 // URL signée, suivi d'attribution & suppression sécurisée.
 // ============================================================
 
+import { Platform } from 'react-native';
+import {
+  FileSystemUploadType,
+  getInfoAsync,
+  uploadAsync,
+} from 'expo-file-system/legacy';
 import { defaultFirebaseConfig } from './firebaseConfig';
 import { firestoreEngine } from './firestoreEngine';
 
@@ -99,6 +105,100 @@ export async function uploadImageToFirebaseStorage(params: {
     downloadUrl,
     mimeType: params.mimeType,
     sizeBytes: byteLength,
+    attribution,
+    permissionStatus: 'OWNER_UPLOADED',
+    createdAt: new Date().toISOString(),
+  });
+
+  return {
+    downloadUrl,
+    storagePath,
+    attribution,
+    permissionStatus: 'OWNER_UPLOADED',
+  };
+}
+
+export async function uploadLocalImageUriToFirebaseStorage(params: {
+  idToken: string;
+  userId: string;
+  propertyId?: string;
+  fileUri: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes?: number;
+  isAvatar?: boolean;
+  attribution?: string;
+}): Promise<UploadedImageResult> {
+  let actualSize = params.sizeBytes;
+  if (actualSize === undefined && Platform.OS !== 'web') {
+    const info = await getInfoAsync(params.fileUri);
+    if (info.exists && typeof info.size === 'number') {
+      actualSize = info.size;
+    }
+  }
+
+  const check = validateImageUpload({
+    mimeType: params.mimeType,
+    sizeBytes: actualSize,
+    isAvatar: params.isAvatar,
+  });
+  if (!check.valid) {
+    throw new Error(check.error || 'Image invalide.');
+  }
+
+  const cleanName = params.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const ts = Date.now();
+  const storagePath = params.isAvatar
+    ? `avatars/${params.userId}/${ts}_${cleanName}`
+    : `properties/${params.userId}/${params.propertyId || 'draft'}/${ts}_${cleanName}`;
+
+  const bucket = defaultFirebaseConfig.storageBucket;
+  const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(storagePath)}`;
+
+  let meta: { downloadTokens?: string } = {};
+  if (Platform.OS !== 'web') {
+    const result = await uploadAsync(uploadUrl, params.fileUri, {
+      httpMethod: 'POST',
+      uploadType: FileSystemUploadType.BINARY_CONTENT,
+      headers: {
+        Authorization: `Bearer ${params.idToken}`,
+        'Content-Type': params.mimeType,
+      },
+    });
+    if (result.status < 200 || result.status >= 300) {
+      throw new Error(`Échec upload Firebase Storage (${result.status}): ${result.body}`);
+    }
+    meta = JSON.parse(result.body) as { downloadTokens?: string };
+  } else {
+    const resp = await fetch(params.fileUri);
+    const blob = await resp.blob();
+    actualSize = actualSize ?? blob.size;
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${params.idToken}`,
+        'Content-Type': params.mimeType,
+      },
+      body: blob,
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(`Échec upload Firebase Storage (${res.status}): ${errText}`);
+    }
+    meta = (await res.json()) as { downloadTokens?: string };
+  }
+
+  const downloadToken = meta.downloadTokens ? String(meta.downloadTokens).split(',')[0] : '';
+  const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(storagePath)}?alt=media${downloadToken ? `&token=${downloadToken}` : ''}`;
+
+  const attribution = params.attribution || `Photo fournie par le propriétaire (${params.userId})`;
+  await firestoreEngine.setDocument('property_images', `${ts}`, {
+    uploaderUid: params.userId,
+    propertyId: params.propertyId || 'avatar',
+    storagePath,
+    downloadUrl,
+    mimeType: params.mimeType,
+    sizeBytes: actualSize ?? 0,
     attribution,
     permissionStatus: 'OWNER_UPLOADED',
     createdAt: new Date().toISOString(),

@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { ArrowLeft, ArrowRight, Camera, Check, ImagePlus, ShieldAlert, X } from 'lucide-react-native';
 import { TUNISIA_GOVERNORATES } from '../../../../core/constants/tunisiaLocations';
-import { uploadImageToFirebaseStorage, deleteStorageObject, validateImageUpload } from '../../../../core/firebase/storageService';
+import { uploadLocalImageUriToFirebaseStorage, deleteStorageObject, validateImageUpload } from '../../../../core/firebase/storageService';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { authService } from '../../../auth/services/authService';
@@ -30,6 +30,7 @@ interface SelectedPhoto {
   uri: string;
   fileName: string;
   mimeType: string;
+  sizeBytes?: number;
   isRemote: boolean;
 }
 
@@ -152,6 +153,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
         uri: asset.uri,
         fileName: asset.fileName || `photo_${Date.now()}.jpg`,
         mimeType,
+        sizeBytes: asset.fileSize,
         isRemote: false,
       });
     }
@@ -187,6 +189,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
         uri: asset.uri,
         fileName: asset.fileName || `camera_${Date.now()}.jpg`,
         mimeType,
+        sizeBytes: asset.fileSize,
         isRemote: false,
       },
     ]);
@@ -241,6 +244,7 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
     let activeToken: string | null = null;
 
     try {
+      await authService.refreshSessionIfNeeded();
       const idToken = authService.getToken();
       const currentUser = authService.getCurrentUser();
       if (!idToken || !currentUser) {
@@ -288,16 +292,14 @@ export const AddPropertyScreen: React.FC<AddPropertyScreenProps> = ({
         } else {
           uploadStep += 1;
           setUploadProgress({ current: uploadStep, total: localPhotos.length });
-          const resp = await fetch(photo.uri);
-          const arrayBuffer = await resp.arrayBuffer();
-          const bytes = new Uint8Array(arrayBuffer);
-          const uploaded = await uploadImageToFirebaseStorage({
+          const uploaded = await uploadLocalImageUriToFirebaseStorage({
             idToken,
             userId: currentUser.id,
             propertyId: propertyIdForStorage,
+            fileUri: photo.uri,
             fileName: photo.fileName,
             mimeType: photo.mimeType,
-            bytes,
+            sizeBytes: photo.sizeBytes,
           });
           uploadedUrls.push(uploaded.downloadUrl);
           if (uploaded.storagePath) uploadedStoragePaths.push(uploaded.storagePath);
