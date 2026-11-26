@@ -5,7 +5,6 @@
 // tactile scale & heart animations.
 // ============================================================
 
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -93,11 +92,11 @@ class _CarteProprieteState extends State<CartePropriete> {
     final primaryFg = AppColors.primaryActionFgOf(context);
 
     final priceDisplay = p.priceOnRequest || p.prix <= 0
-        ? 'Prix sur demande'
+        ? AppLocale.instance.tr('price_on_request')
         : AppLocale.instance.formatCurrency(p.prix, isRental: p.estLocation);
 
     final statusLabel = p.isInstitutionalReference
-        ? 'Référence programme'
+        ? AppLocale.instance.tr('institutional_ref')
         : (p.estLocation
             ? AppLocale.instance.tr('for_rent')
             : AppLocale.instance.tr('for_sale'));
@@ -133,11 +132,11 @@ class _CarteProprieteState extends State<CartePropriete> {
                 fit: StackFit.expand,
                 children: [
                   if (p.imageUrl.isNotEmpty)
-                    Image.network(
-                      p.imageUrl,
+                    LuxuryNetworkImage(
+                      imageUrl: p.imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          _ArchitecturalBlueprintFallback(propriete: p),
+                      memCacheWidth: 900,
+                      fallbackBuilder: (_) => _ArchitecturalBlueprintFallback(propriete: p),
                     )
                   else
                     _ArchitecturalBlueprintFallback(propriete: p),
@@ -224,29 +223,25 @@ class _CarteProprieteState extends State<CartePropriete> {
                     ),
                   ),
 
-                  // Bottom Frosted Liquid Glass Info Sheet
+                  // Bottom Frosted Liquid Glass Info Sheet (lightweight translucent surface for 60fps scroll)
                   Positioned(
                     left: 12,
                     right: 12,
                     bottom: 12,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xCC14161B)
-                                : const Color(0xD9FFFFFF),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.16)
-                                  : Colors.white.withValues(alpha: 0.9),
-                              width: 0.9,
-                            ),
-                          ),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xD914161B)
+                            : const Color(0xEBFFFFFF),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.16)
+                              : Colors.white.withValues(alpha: 0.9),
+                          width: 0.9,
+                        ),
+                      ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
@@ -285,9 +280,9 @@ class _CarteProprieteState extends State<CartePropriete> {
                                       minimumSize: const Size(0, 38),
                                       shape: const StadiumBorder(),
                                     ),
-                                    child: const Text(
-                                      'Voir détails',
-                                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                                    child: Text(
+                                      AppLocale.instance.tr('btn_details'),
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ],
@@ -310,11 +305,11 @@ class _CarteProprieteState extends State<CartePropriete> {
                               const SizedBox(height: 10),
                               Row(
                                 children: [
-                                  _SpecPill(icon: Icons.bed_outlined, label: '${p.nombreChambres} ch'),
+                                  _SpecPill(icon: Icons.bed_outlined, label: '${p.nombreChambres} ${AppLocale.instance.tr('bedrooms_short')}'),
                                   const SizedBox(width: 6),
-                                  _SpecPill(icon: Icons.bathtub_outlined, label: '${p.nombreSallesDeBain} sdb'),
+                                  _SpecPill(icon: Icons.bathtub_outlined, label: '${p.nombreSallesDeBain} ${AppLocale.instance.tr('bathrooms_short')}'),
                                   const SizedBox(width: 6),
-                                  _SpecPill(icon: Icons.square_foot_rounded, label: '${p.surfaceM2} m²'),
+                                  _SpecPill(icon: Icons.square_foot_rounded, label: '${p.surfaceM2} ${AppLocale.instance.tr('area_unit')}'),
                                   if (p.sourceName != null && p.sourceName!.isNotEmpty) ...[
                                     const Spacer(),
                                     Text(
@@ -327,8 +322,6 @@ class _CarteProprieteState extends State<CartePropriete> {
                             ],
                           ),
                         ),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -444,7 +437,9 @@ class _ArchitecturalBlueprintFallback extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Visuels disponibles sur portail officiel',
+                    propriete.isInstitutionalReference
+                        ? AppLocale.instance.tr('official_portal_visuals')
+                        : AppLocale.instance.tr('no_photo'),
                     textAlign: TextAlign.center,
                     style: AppTypography.caption(textSec).copyWith(fontSize: 11.5),
                   ),

@@ -114,7 +114,24 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: lightBackground,
-      splashFactory: InkSparkle.splashFactory,
+      splashFactory: NoSplash.splashFactory,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          overlayColor: Colors.black.withValues(alpha: 0.05),
+          shape: const CircleBorder(),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          overlayColor: Colors.black.withValues(alpha: 0.05),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
       textTheme: _buildTextTheme(
         textPrimary: lightTextPrimary,
         textSecondary: lightTextSecondary,
@@ -173,7 +190,24 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: darkBackground,
-      splashFactory: InkSparkle.splashFactory,
+      splashFactory: NoSplash.splashFactory,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          overlayColor: Colors.white.withValues(alpha: 0.08),
+          shape: const CircleBorder(),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          overlayColor: Colors.white.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
       textTheme: _buildTextTheme(
         textPrimary: darkTextPrimary,
         textSecondary: darkTextSecondary,

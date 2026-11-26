@@ -4,6 +4,7 @@
 // Persistance SharedPreferences, dictionnaire exhaustif et formateurs
 // ============================================================
 
+import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +17,7 @@ class AppLocale extends ChangeNotifier {
   String get currentLang => _currentLang;
   bool get isRtl => _currentLang == 'ar';
   TextDirection get textDirection => isRtl ? TextDirection.rtl : TextDirection.ltr;
+  Locale get locale => Locale(_currentLang);
 
   Future<void> init() async {
     try {
@@ -23,6 +25,12 @@ class AppLocale extends ChangeNotifier {
       final saved = prefs.getString('darlink_app_lang');
       if (saved != null && _translations.containsKey(saved)) {
         _currentLang = saved;
+        notifyListeners();
+        return;
+      }
+      final deviceLang = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+      if (_translations.containsKey(deviceLang)) {
+        _currentLang = deviceLang;
         notifyListeners();
       }
     } catch (_) {}
@@ -55,6 +63,60 @@ class AppLocale extends ChangeNotifier {
       return langMap[key]!;
     }
     return _translations['fr']?[key] ?? key;
+  }
+
+  String trParams(String key, Map<String, Object> params) {
+    var result = tr(key);
+    params.forEach((k, v) {
+      result = result.replaceAll('{$k}', v.toString());
+    });
+    return result;
+  }
+
+  String translatePropertyType(String type) {
+    switch (type.toLowerCase().trim()) {
+      case 'tous':
+      case 'all':
+        return tr('filter_all');
+      case 'appartement':
+      case 'apartment':
+        return tr('filter_apartment');
+      case 'villa':
+        return tr('filter_villa');
+      case 'maison':
+      case 'house':
+        return tr('filter_house');
+      case 'studio':
+        return tr('filter_studio');
+      case 'terrain':
+      case 'land':
+        return tr('filter_land');
+      case 'commercial':
+        return tr('filter_commercial');
+      default:
+        return type;
+    }
+  }
+
+  String translateListingStatus(String status) {
+    switch (status.toUpperCase().trim()) {
+      case 'DRAFT':
+        return tr('status_draft');
+      case 'PENDING_REVIEW':
+        return tr('status_pending');
+      case 'PUBLISHED':
+        return tr('status_published');
+      case 'REJECTED':
+        return tr('status_rejected');
+      case 'SOLD':
+        return tr('status_sold');
+      case 'RENTED':
+        return tr('status_rented');
+      case 'ARCHIVED':
+        return tr('status_archived');
+      default:
+        return status;
+    }
   }
 
   String formatCurrency(num price, {bool isRental = false}) {
@@ -243,6 +305,103 @@ class AppLocale extends ChangeNotifier {
       'map_center': 'Centrer sur ma position',
       'map_back': 'Retour',
       'map_home': 'Accueil',
+
+      // App & Badges
+      'app_title': 'DarLink Immobilier',
+      'splash_tagline': 'Immobilier d’exception • Tunisie',
+      'filter_land': 'Terrain',
+      'filter_studio': 'Studio',
+      'filter_commercial': 'Commercial',
+      'status_draft': 'Brouillon',
+      'status_pending': 'En attente de validation',
+      'status_published': 'Publié',
+      'status_rejected': 'Refusé',
+      'status_sold': 'Vendu',
+      'status_rented': 'Loué',
+      'status_archived': 'Archivé',
+      'price_on_request': 'Prix sur demande',
+      'institutional_ref': 'Référence programme',
+      'official_portal_visuals': 'Visuels disponibles sur portail officiel',
+      'tunisia': 'Tunisie',
+      'section_exclusive': 'Sélection Exclusive',
+      'section_nearby': 'Biens en vedette',
+      'view_all': 'Tout voir',
+      'btn_close': 'Fermer',
+      'btn_ok': 'OK',
+
+      // Photos & Publication
+      'add_photos': 'Photos du bien',
+      'pick_from_gallery': 'Galerie photos',
+      'take_photo': 'Appareil photo',
+      'photos_selected': '{count} photo(s) sélectionnée(s)',
+      'cover_photo': 'Couverture',
+      'set_as_cover': 'Définir en couverture',
+      'uploading_photos': 'Envoi des photos ({current}/{total})...',
+      'upload_failed': 'Échec de l’envoi de la photo',
+      'photo_limit_hint': 'JPEG, PNG ou WebP • Max 5 Mo par photo (jusqu’à 8 photos)',
+      'transaction_and_status': 'Transaction & Statut',
+      'submit_for_review': 'Soumettre pour validation',
+      'save_as_draft': 'Enregistrer en brouillon',
+      'governorate': 'Gouvernorat',
+      'neighborhood_label': 'Quartier / Délégation',
+      'neighborhood_hint': 'ex: La Marsa, Les Berges du Lac',
+      'preview_listing': 'Aperçu de l’annonce',
+      'publish_error': 'Impossible d’enregistrer l’annonce. Vérifiez votre connexion.',
+      'publish_saved_status': 'Annonce "{title}" enregistrée ({status}).',
+      'validation_neighborhood': 'Veuillez saisir un quartier ou une délégation',
+      'validation_photo_required': 'Veuillez ajouter au moins une photo du bien',
+
+      // Notifications
+      'notifications_title': 'Notifications',
+      'mark_all_read': 'Tout marquer lu',
+      'no_notifications': 'Aucune notification',
+      'no_notifications_sub': 'Vos alertes de visite, messages et validations apparaîtront ici.',
+
+      // Carte
+      'map_properties_count': '{count} bien(s) sur la carte',
+      'map_approx_zone': 'Zone approximative',
+      'map_open_maps': 'Itinéraire',
+
+      // Recherche
+      'search_title': 'Recherche avancée',
+      'sort_by': 'Trier par',
+      'sort_newest': 'Plus récents',
+      'sort_price_asc': 'Prix croissant',
+      'sort_price_desc': 'Prix décroissant',
+      'min_area': 'Surface min (m²)',
+      'max_area': 'Surface max (m²)',
+      'results_count': '{count} résultat(s)',
+
+      // Profil & Compte
+      'forgot_password': 'Mot de passe oublié ?',
+      'reset_password_sent': 'Un e-mail de réinitialisation a été envoyé.',
+      'verify_email': 'Vérifier mon e-mail',
+      'verify_email_sent': 'E-mail de vérification envoyé.',
+      'email_verified': 'E-mail vérifié',
+      'email_unverified': 'E-mail non vérifié',
+      'change_password': 'Changer le mot de passe',
+      'change_email': 'Changer l’e-mail',
+      'delete_account': 'Supprimer mon compte',
+      'delete_account_confirm': 'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est définitive.',
+      'contact_requests_received': 'Demandes reçues',
+      'contact_requests_sent': 'Demandes envoyées',
+      'no_contact_requests': 'Aucune demande de contact pour le moment.',
+      'about_darlink': 'À propos de DarLink',
+      'version_label': 'Version 1.0.0 • Cloud Firestore',
+      'avatar_updated': 'Photo de profil mise à jour.',
+
+      // Détails & Contact
+      'share_property': 'Partager',
+      'share_copied': 'Informations du bien copiées.',
+      'contact_message_hint': 'Bonjour, je souhaite obtenir plus d’informations ou planifier une visite...',
+      'contact_success': 'Votre demande a été envoyée au propriétaire.',
+      'contact_error': 'Impossible d’envoyer la demande.',
+      'gallery_photo_of': '{current} / {total}',
+      'bedrooms_short': 'ch.',
+      'bathrooms_short': 'sdb.',
+      'area_unit': 'm²',
+      'edit_property_btn': 'Modifier',
+      'delete_property_btn': 'Supprimer',
     },
 
     // ========================================================
@@ -383,6 +542,103 @@ class AppLocale extends ChangeNotifier {
       'map_center': 'تحديد موقعي',
       'map_back': 'رجوع',
       'map_home': 'الرئيسية',
+
+      // App & Badges
+      'app_title': 'دار لينك العقارية',
+      'splash_tagline': 'عقارات استثنائية • تونس',
+      'filter_land': 'أرض',
+      'filter_studio': 'ستوديو',
+      'filter_commercial': 'تجاري',
+      'status_draft': 'مسودة',
+      'status_pending': 'قيد المراجعة',
+      'status_published': 'منشور',
+      'status_rejected': 'مرفوض',
+      'status_sold': 'تم البيع',
+      'status_rented': 'تم الإيجار',
+      'status_archived': 'مؤرشف',
+      'price_on_request': 'السعر عند الطلب',
+      'institutional_ref': 'مرجع المشروع',
+      'official_portal_visuals': 'الصور متوفرة على البوابة الرسمية',
+      'tunisia': 'تونس',
+      'section_exclusive': 'مختارات حصرية',
+      'section_nearby': 'عقارات مميزة',
+      'view_all': 'عرض الكل',
+      'btn_close': 'إغلاق',
+      'btn_ok': 'حسناً',
+
+      // Photos & Publication
+      'add_photos': 'صور العقار',
+      'pick_from_gallery': 'معرض الصور',
+      'take_photo': 'الكاميرا',
+      'photos_selected': 'تم اختيار {count} صورة',
+      'cover_photo': 'الغلاف',
+      'set_as_cover': 'تعيين كغلاف',
+      'uploading_photos': 'جاري رفع الصور ({current}/{total})...',
+      'upload_failed': 'فشل رفع الصورة',
+      'photo_limit_hint': 'JPEG أو PNG أو WebP • الحد الأقصى 5 ميغابايت للصورة (حتى 8 صور)',
+      'transaction_and_status': 'نوع المعاملة والحالة',
+      'submit_for_review': 'إرسال للمراجعة',
+      'save_as_draft': 'حفظ كمسودة',
+      'governorate': 'الولاية',
+      'neighborhood_label': 'الحي / المعتمدية',
+      'neighborhood_hint': 'مثال: المرسى، ضفاف البحيرة',
+      'preview_listing': 'معاينة الإعلان',
+      'publish_error': 'تعذر حفظ الإعلان. يرجى التحقق من الاتصال.',
+      'publish_saved_status': 'تم حفظ الإعلان "{title}" ({status}).',
+      'validation_neighborhood': 'يرجى إدخال الحي أو المعتمدية',
+      'validation_photo_required': 'يرجى إضافة صورة واحدة على الأقل للعقار',
+
+      // Notifications
+      'notifications_title': 'الإشعارات',
+      'mark_all_read': 'تحديد الكل كمقروء',
+      'no_notifications': 'لا توجد إشعارات',
+      'no_notifications_sub': 'ستظهر هنا تنبيهات الزيارات والرسائل وحالة الإعلانات.',
+
+      // Carte
+      'map_properties_count': '{count} عقار على الخريطة',
+      'map_approx_zone': 'منطقة تقريبية',
+      'map_open_maps': 'الاتجاهات',
+
+      // Recherche
+      'search_title': 'بحث متقدم',
+      'sort_by': 'ترتيب حسب',
+      'sort_newest': 'الأحدث',
+      'sort_price_asc': 'السعر: من الأقل',
+      'sort_price_desc': 'السعر: من الأعلى',
+      'min_area': 'المساحة الأدنى (م²)',
+      'max_area': 'المساحة القصوى (م²)',
+      'results_count': '{count} نتيجة',
+
+      // Profil & Compte
+      'forgot_password': 'نسيت كلمة المرور؟',
+      'reset_password_sent': 'تم إرسال رابط إعادة تعيين كلمة المرور.',
+      'verify_email': 'تأكيد البريد الإلكتروني',
+      'verify_email_sent': 'تم إرسال رسالة التأكيد.',
+      'email_verified': 'البريد مؤكد',
+      'email_unverified': 'البريد غير مؤكد',
+      'change_password': 'تغيير كلمة المرور',
+      'change_email': 'تغيير البريد الإلكتروني',
+      'delete_account': 'حذف حسابي',
+      'delete_account_confirm': 'هل أنت متأكد من حذف حسابك؟ هذا الإجراء نهائي لا يمكن التراجع عنه.',
+      'contact_requests_received': 'الطلبات المستلمة',
+      'contact_requests_sent': 'الطلبات المرسلة',
+      'no_contact_requests': 'لا توجد طلبات تواصل حالياً.',
+      'about_darlink': 'حول دار لينك',
+      'version_label': 'الإصدار 1.0.0 • Cloud Firestore',
+      'avatar_updated': 'تم تحديث صورة الملف الشخصي.',
+
+      // Détails & Contact
+      'share_property': 'مشاركة',
+      'share_copied': 'تم نسخ تفاصيل العقار.',
+      'contact_message_hint': 'مرحباً، أرغب في معرفة المزيد من التفاصيل أو حجز موعد للمعاينة...',
+      'contact_success': 'تم إرسال طلبك إلى المالك بنجاح.',
+      'contact_error': 'تعذر إرسال الطلب.',
+      'gallery_photo_of': '{current} / {total}',
+      'bedrooms_short': 'غرف',
+      'bathrooms_short': 'حمام',
+      'area_unit': 'م²',
+      'edit_property_btn': 'تعديل',
+      'delete_property_btn': 'حذف',
     },
 
     // ========================================================
@@ -523,6 +779,103 @@ class AppLocale extends ChangeNotifier {
       'map_center': 'Center on My Location',
       'map_back': 'Back',
       'map_home': 'Home',
+
+      // App & Badges
+      'app_title': 'DarLink Real Estate',
+      'splash_tagline': 'Luxury Real Estate • Tunisia',
+      'filter_land': 'Land',
+      'filter_studio': 'Studio',
+      'filter_commercial': 'Commercial',
+      'status_draft': 'Draft',
+      'status_pending': 'Pending Review',
+      'status_published': 'Published',
+      'status_rejected': 'Rejected',
+      'status_sold': 'Sold',
+      'status_rented': 'Rented',
+      'status_archived': 'Archived',
+      'price_on_request': 'Price on request',
+      'institutional_ref': 'Program Reference',
+      'official_portal_visuals': 'Visuals available on official portal',
+      'tunisia': 'Tunisia',
+      'section_exclusive': 'Exclusive Selection',
+      'section_nearby': 'Featured Properties',
+      'view_all': 'View all',
+      'btn_close': 'Close',
+      'btn_ok': 'OK',
+
+      // Photos & Publication
+      'add_photos': 'Property Photos',
+      'pick_from_gallery': 'Photo Gallery',
+      'take_photo': 'Camera',
+      'photos_selected': '{count} photo(s) selected',
+      'cover_photo': 'Cover',
+      'set_as_cover': 'Set as cover',
+      'uploading_photos': 'Uploading photos ({current}/{total})...',
+      'upload_failed': 'Photo upload failed',
+      'photo_limit_hint': 'JPEG, PNG or WebP • Max 5 MB per photo (up to 8 photos)',
+      'transaction_and_status': 'Transaction & Status',
+      'submit_for_review': 'Submit for Review',
+      'save_as_draft': 'Save as Draft',
+      'governorate': 'Governorate',
+      'neighborhood_label': 'Neighborhood / Delegation',
+      'neighborhood_hint': 'e.g. La Marsa, Les Berges du Lac',
+      'preview_listing': 'Listing Preview',
+      'publish_error': 'Unable to save listing. Check your connection.',
+      'publish_saved_status': 'Listing "{title}" saved ({status}).',
+      'validation_neighborhood': 'Please enter a neighborhood or delegation',
+      'validation_photo_required': 'Please add at least one property photo',
+
+      // Notifications
+      'notifications_title': 'Notifications',
+      'mark_all_read': 'Mark all read',
+      'no_notifications': 'No Notifications',
+      'no_notifications_sub': 'Visit requests, messages, and listing updates will appear here.',
+
+      // Carte
+      'map_properties_count': '{count} properties on map',
+      'map_approx_zone': 'Approximate area',
+      'map_open_maps': 'Directions',
+
+      // Recherche
+      'search_title': 'Advanced Search',
+      'sort_by': 'Sort by',
+      'sort_newest': 'Newest',
+      'sort_price_asc': 'Price: Low to High',
+      'sort_price_desc': 'Price: High to Low',
+      'min_area': 'Min area (m²)',
+      'max_area': 'Max area (m²)',
+      'results_count': '{count} result(s)',
+
+      // Profil & Compte
+      'forgot_password': 'Forgot password?',
+      'reset_password_sent': 'Password reset email sent.',
+      'verify_email': 'Verify Email',
+      'verify_email_sent': 'Verification email sent.',
+      'email_verified': 'Email verified',
+      'email_unverified': 'Email not verified',
+      'change_password': 'Change Password',
+      'change_email': 'Change Email',
+      'delete_account': 'Delete My Account',
+      'delete_account_confirm': 'Are you sure you want to delete your account? This action is permanent.',
+      'contact_requests_received': 'Received Requests',
+      'contact_requests_sent': 'Sent Requests',
+      'no_contact_requests': 'No contact requests yet.',
+      'about_darlink': 'About DarLink',
+      'version_label': 'Version 1.0.0 • Cloud Firestore',
+      'avatar_updated': 'Profile photo updated.',
+
+      // Détails & Contact
+      'share_property': 'Share',
+      'share_copied': 'Property details copied.',
+      'contact_message_hint': 'Hello, I would like more information or to schedule a visit...',
+      'contact_success': 'Your request was sent to the owner.',
+      'contact_error': 'Unable to send request.',
+      'gallery_photo_of': '{current} / {total}',
+      'bedrooms_short': 'bd.',
+      'bathrooms_short': 'ba.',
+      'area_unit': 'm²',
+      'edit_property_btn': 'Edit',
+      'delete_property_btn': 'Delete',
     },
   };
 }

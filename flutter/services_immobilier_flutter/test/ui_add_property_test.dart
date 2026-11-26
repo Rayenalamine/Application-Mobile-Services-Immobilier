@@ -26,25 +26,42 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Déposer une annonce'), findsOneWidget);
-      expect(find.text('Titre de l\'annonce *'), findsOneWidget);
-      expect(find.text('Prix (DT) *'), findsOneWidget);
-      expect(find.text('Surface (m²) *'), findsOneWidget);
+      expect(find.text('Photos du bien'), findsOneWidget);
       expect(find.text('Type de bien'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Titre de l\'annonce'), findsOneWidget);
+      expect(find.text('Prix (TND)'), findsOneWidget);
+      expect(find.text('Surface (m²)'), findsOneWidget);
       expect(find.text('Gouvernorat'), findsOneWidget);
-      expect(find.text('Publier l\'annonce sur DarLink'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      expect(find.text('Publier l\'annonce'), findsOneWidget);
     });
 
     testWidgets('2. Déclenchement des validations en cas de soumission vide', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      final submitBtn = find.text('Publier l\'annonce sur DarLink');
-      await tester.ensureVisible(submitBtn);
+      final submitBtn = find.text('Publier l\'annonce');
+      await tester.scrollUntilVisible(
+        submitBtn,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(submitBtn);
       await tester.pumpAndSettle();
 
-      expect(find.text('Veuillez saisir un titre'), findsOneWidget);
-      expect(find.text('Prix requis'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Veuillez saisir un titre valide'),
+        -300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Veuillez saisir un titre valide'), findsOneWidget);
+      expect(find.text('Veuillez saisir un prix strictement positif'), findsOneWidget);
     });
 
     testWidgets('3. Remplissage des champs obligatoires et sélection des atouts', (tester) async {

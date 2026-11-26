@@ -34,6 +34,7 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
+import { useTranslation } from '../../../../core/localization/LocalizationContext';
 import { LiquidGlassView } from '../../../../core/designSystem/LiquidGlass';
 import { triggerHaptic } from '../../../../core/designSystem/tokens';
 import { findGovernorate } from '../../../../core/constants/tunisiaLocations';
@@ -96,6 +97,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
   initialProperty,
 }) => {
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [containerSize, setContainerSize] = useState({
     width: windowWidth || 390,
@@ -433,10 +435,10 @@ export const MapScreen: React.FC<MapScreenProps> = ({
 
           <View style={{ flex: 1 }}>
             <Text style={[styles.titleText, { color: colors.textPrimary }]}>
-              Carte Immobilière Tunisie
+              {t('map_title')}
             </Text>
             <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
-              {properties.length} bien(s) • {selectedGov}
+              {t('map_properties_count', { count: properties.length })} • {selectedGov}
             </Text>
           </View>
           {loading && <ActivityIndicator size="small" color={colors.accentChampagne} />}

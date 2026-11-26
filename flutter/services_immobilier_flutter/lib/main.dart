@@ -3,6 +3,7 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_locale.dart';
 import 'core/firebase/firebase_sdk.dart';
@@ -31,8 +32,19 @@ class ServicesImmobilierApp extends StatelessWidget {
           valueListenable: AppTheme.themeModeNotifier,
           builder: (context, mode, child) {
             return MaterialApp(
-              title: 'DarLink Immobilier',
+              title: AppLocale.instance.tr('app_title'),
               debugShowCheckedModeBanner: false,
+              locale: AppLocale.instance.locale,
+              supportedLocales: const [
+                Locale('fr'),
+                Locale('ar'),
+                Locale('en'),
+              ],
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: mode,

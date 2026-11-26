@@ -30,7 +30,7 @@ type TabKey = 'home' | 'search' | 'favorites' | 'profile';
 const MainNavigationContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const { isDark, colors } = useTheme();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const renderIcon = (key: TabKey, isActive: boolean) => {
     const iconColor = isActive ? colors.dockActiveIcon : colors.dockInactiveIcon;
@@ -82,6 +82,7 @@ const MainNavigationContent: React.FC = () => {
         {
           backgroundColor: colors.background,
           paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 0,
+          direction: isRTL ? 'rtl' : 'ltr',
         },
       ]}
     >
@@ -89,7 +90,7 @@ const MainNavigationContent: React.FC = () => {
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
       <View style={styles.dockWrapper} pointerEvents="box-none">
-        <LiquidGlassView borderRadius={34} intensity={isDark ? 55 : 70} style={styles.dockContainer}>
+        <LiquidGlassView useBlur borderRadius={34} intensity={isDark ? 55 : 70} style={styles.dockContainer}>
           <View style={styles.dockRow}>
             {tabs.map((tab) => {
               const isActive = activeTab === tab.key;

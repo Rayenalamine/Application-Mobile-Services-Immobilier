@@ -56,19 +56,19 @@ void main() {
       expect(find.text('mohamed@darlink.tn'), findsOneWidget);
       expect(find.text('CLIENT'), findsOneWidget);
 
-      final editBtn = find.text('Modifier profil');
+      final editBtn = find.text('Modifier mon profil');
       expect(editBtn, findsOneWidget);
       await tester.tap(editBtn);
       await tester.pumpAndSettle();
 
-      expect(find.text('Modifier mon profil'), findsOneWidget);
+      expect(find.text('Modifier mon profil'), findsNWidgets(2));
       expect(find.text('Nom complet'), findsOneWidget);
       expect(find.text('Téléphone'), findsOneWidget);
       expect(find.text('Annuler'), findsOneWidget);
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
-      expect(find.text('Modifier mon profil'), findsNothing);
+      expect(find.text('Modifier mon profil'), findsOneWidget);
     });
   });
 }

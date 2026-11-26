@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/design_system/liquid_glass.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../../properties/data/property_api_service.dart';
 import '../../../properties/domain/models/relationships.dart';
 import '../../../properties/presentation/screens/property_details_screen.dart';
@@ -173,8 +174,7 @@ class _EcranNotificationsState extends State<EcranNotifications> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('ACTIVITÉ', style: AppTypography.micro(AppColors.accentChampagne)),
-                        Text('Notifications', style: AppTypography.pageTitle(textPrim).copyWith(fontSize: 22)),
+                        Text(AppLocale.instance.tr('notifications_title'), style: AppTypography.pageTitle(textPrim).copyWith(fontSize: 22)),
                       ],
                     ),
                   ),
@@ -182,7 +182,7 @@ class _EcranNotificationsState extends State<EcranNotifications> {
                     GlassOrbButton(
                       icon: Icons.done_all_rounded,
                       size: 40,
-                      tooltip: 'Tout marquer comme lu',
+                      tooltip: AppLocale.instance.tr('mark_all_read'),
                       onTap: _toutMarquerCommeLu,
                     ),
                 ],
@@ -228,10 +228,10 @@ class _EcranNotificationsState extends State<EcranNotifications> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                   : filtered.isEmpty
-                      ? const LuxuryEmptyState(
+                      ? LuxuryEmptyState(
                           icon: Icons.notifications_none_rounded,
-                          title: 'Tout est à jour',
-                          message: 'Vos alertes de visites, validations et comptes apparaîtront ici.',
+                          title: AppLocale.instance.tr('no_notifications'),
+                          message: AppLocale.instance.tr('no_notifications_sub'),
                         )
                       : RefreshIndicator(
                           onRefresh: _chargerNotifications,

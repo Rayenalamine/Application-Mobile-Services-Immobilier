@@ -4,7 +4,6 @@
 // horizontal architectural showcase + vertical live Firestore feed.
 // ============================================================
 
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -105,18 +104,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
   }
 
   String _nomFiltre(String f) {
-    switch (f) {
-      case 'Tous':
-        return AppLocale.instance.tr('filter_all');
-      case 'Appartement':
-        return AppLocale.instance.tr('filter_apartment');
-      case 'Villa':
-        return AppLocale.instance.tr('filter_villa');
-      case 'Maison':
-        return AppLocale.instance.tr('filter_house');
-      default:
-        return f;
-    }
+    return AppLocale.instance.translatePropertyType(f);
   }
 
   Widget _buildDiagnosticPill(BuildContext context, bool isDark) {
@@ -237,7 +225,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                           size: 38,
                           iconSize: 17,
-                          tooltip: isDark ? 'Passer au mode clair' : 'Passer au mode sombre',
+                          tooltip: AppLocale.instance.tr('dark_mode'),
                           onTap: () => AppTheme.basculerTheme(),
                         ),
                         const SizedBox(width: 6),
@@ -245,7 +233,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           icon: Icons.add_rounded,
                           size: 38,
                           iconSize: 18,
-                          tooltip: 'Déposer une annonce',
+                          tooltip: AppLocale.instance.tr('add_title'),
                           onTap: () {
                             Navigator.of(context)
                                 .push(MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()))
@@ -257,7 +245,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           icon: Icons.notifications_none_rounded,
                           size: 38,
                           iconSize: 17,
-                          tooltip: 'Centre de notifications',
+                          tooltip: AppLocale.instance.tr('notifications_title'),
                           badgeCount: NotificationService.instance.unreadCount,
                           onTap: () {
                             Navigator.of(context).push(
@@ -270,7 +258,7 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           icon: Icons.map_outlined,
                           size: 38,
                           iconSize: 17,
-                          tooltip: 'Afficher la carte',
+                          tooltip: AppLocale.instance.tr('nav_map'),
                           iconColor: AppColors.accentChampagne,
                           onTap: () {
                             Navigator.of(context).push(
@@ -412,10 +400,9 @@ class _EcranAccueilState extends State<EcranAccueil> {
                     else if (filtered.isEmpty)
                       LuxuryEmptyState(
                         icon: Icons.real_estate_agent_outlined,
-                        title: 'Aucun bien disponible',
-                        message:
-                            'Aucune annonce ou référence ne correspond actuellement à cette catégorie.',
-                        actionLabel: 'Réinitialiser',
+                        title: AppLocale.instance.tr('empty_search'),
+                        message: AppLocale.instance.tr('welcome_banner_sub'),
+                        actionLabel: AppLocale.instance.tr('btn_reset'),
                         onAction: () => setState(() => _filtreActif = 'Tous'),
                       )
                     else ...[
@@ -423,8 +410,8 @@ class _EcranAccueilState extends State<EcranAccueil> {
                       if (filtered.length > 1) ...[
                         const SizedBox(height: 6),
                         EditorialSectionHeader(
-                          title: 'Sélection en Tunisie',
-                          subtitle: 'Références et biens disponibles',
+                          title: AppLocale.instance.tr('section_exclusive'),
+                          subtitle: AppLocale.instance.tr('section_nearby'),
                           trailing: Text(
                             '${filtered.length}',
                             style: AppTypography.caption(AppColors.accentChampagne),
@@ -468,7 +455,7 @@ class _HorizontalCollectionTile extends StatelessWidget {
     final textPrim = AppColors.textPrimaryOf(context);
     final textSec = AppColors.textSecondaryOf(context);
     final priceDisplay = propriete.priceOnRequest || propriete.prix <= 0
-        ? 'Prix sur demande'
+        ? AppLocale.instance.tr('price_on_request')
         : AppLocale.instance.formatCurrency(propriete.prix, isRental: propriete.estLocation);
 
     return GestureDetector(
@@ -491,10 +478,11 @@ class _HorizontalCollectionTile extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               if (propriete.imageUrl.isNotEmpty)
-                Image.network(
-                  propriete.imageUrl,
+                LuxuryNetworkImage(
+                  imageUrl: propriete.imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Center(
+                  memCacheWidth: 600,
+                  fallbackBuilder: (_) => const Center(
                     child: Icon(Icons.apartment_rounded, size: 32, color: AppColors.accentChampagne),
                   ),
                 )
@@ -519,41 +507,35 @@ class _HorizontalCollectionTile extends StatelessWidget {
                 left: 10,
                 right: 10,
                 bottom: 10,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: Container(
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xCC14161B) : const Color(0xD9FFFFFF),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.14)
-                              : Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            priceDisplay,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${propriete.type} • ${propriete.governorate}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.caption(textSec),
-                          ),
-                        ],
-                      ),
+                child: Container(
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xD914161B) : const Color(0xEBFFFFFF),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.14)
+                          : Colors.white.withValues(alpha: 0.9),
                     ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        priceDisplay,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${AppLocale.instance.translatePropertyType(propriete.type)} • ${propriete.governorate}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption(textSec),
+                      ),
+                    ],
                   ),
                 ),
               ),

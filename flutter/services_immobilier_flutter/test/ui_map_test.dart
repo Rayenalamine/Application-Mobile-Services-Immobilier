@@ -25,7 +25,7 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Carte Immobilière Tunisie'), findsOneWidget);
+      expect(find.textContaining('Cartographie OpenStreetMap'), findsOneWidget);
       expect(find.textContaining('OpenStreetMap contributors'), findsOneWidget);
       expect(find.byIcon(Icons.add), findsOneWidget);
       expect(find.byIcon(Icons.remove), findsOneWidget);

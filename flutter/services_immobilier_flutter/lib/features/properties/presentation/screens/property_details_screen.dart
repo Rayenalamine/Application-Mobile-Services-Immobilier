@@ -302,14 +302,15 @@ class _EcranDetailsState extends State<EcranDetails> {
   }
 
   void _confirmerSuppression(BuildContext context) {
+    final loc = AppLocale.instance;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Supprimer ce bien ?'),
-        content: Text('Êtes-vous certain de vouloir supprimer "${widget.propriete.titre}" ?'),
+        title: Text(loc.tr('delete_confirm_title')),
+        content: Text(loc.tr('delete_confirm_msg')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(loc.tr('btn_cancel'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentRed, foregroundColor: Colors.white),
             onPressed: () async {
@@ -317,14 +318,14 @@ class _EcranDetailsState extends State<EcranDetails> {
               await PropertyApiService.instance.deleteProperty(widget.propriete.id);
               if (!mounted || !context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Bien immobilier supprimé de Cloud Firestore.'),
+                SnackBar(
+                  content: Text(loc.tr('btn_delete_property')),
                   backgroundColor: AppColors.accentRed,
                 ),
               );
               Navigator.pop(context);
             },
-            child: const Text('Supprimer'),
+            child: Text(loc.tr('btn_delete')),
           ),
         ],
       ),
@@ -440,17 +441,18 @@ class _EcranDetailsState extends State<EcranDetails> {
                         PageView.builder(
                           itemCount: images.length,
                           onPageChanged: (idx) => setState(() => _indexImage = idx),
-                          itemBuilder: (_, idx) => Image.network(
-                            images[idx],
+                          itemBuilder: (_, idx) => LuxuryNetworkImage(
+                            imageUrl: images[idx],
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => _GalleryFallback(propriete: p),
+                            memCacheWidth: 1200,
+                            fallbackBuilder: (_) => _GalleryFallback(propriete: p),
                           ),
                         )
                       else
                         _GalleryFallback(propriete: p),
                       if (images.length > 1)
-                        Positioned(
-                          right: 16,
+                        PositionedDirectional(
+                          end: 16,
                           bottom: 38,
                           child: LiquidGlassSurface(
                             borderRadius: AppSpacing.radiusPill,
@@ -506,7 +508,9 @@ class _EcranDetailsState extends State<EcranDetails> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    p.estLocation ? 'À Louer' : 'À Vendre',
+                                    p.estLocation
+                                        ? AppLocale.instance.tr('for_rent')
+                                        : AppLocale.instance.tr('for_sale'),
                                     style: AppTypography.micro(textPrim),
                                   ),
                                 ],
@@ -521,7 +525,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                                   borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
                                 ),
                                 child: Text(
-                                  'Référence programme',
+                                  AppLocale.instance.tr('institutional_ref'),
                                   style: AppTypography.micro(AppColors.accentChampagne),
                                 ),
                               ),
@@ -587,7 +591,7 @@ class _EcranDetailsState extends State<EcranDetails> {
                                   child: Text(p.localisation, style: AppTypography.body(textPrim)),
                                 ),
                                 Text(
-                                  'Carte',
+                                  AppLocale.instance.tr('nav_map'),
                                   style: AppTypography.caption(AppColors.accentChampagne),
                                 ),
                                 const SizedBox(width: 2),

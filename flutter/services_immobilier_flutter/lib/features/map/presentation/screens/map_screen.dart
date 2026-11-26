@@ -13,6 +13,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/tunisia_locations.dart';
 import '../../../../core/design_system/liquid_glass.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../../properties/data/property_api_service.dart';
 import '../../../properties/domain/models/property.dart';
 import '../../../properties/presentation/screens/property_details_screen.dart';
@@ -398,8 +399,8 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('Carte Immobilière Tunisie', style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
-                              Text('${_proprietes.length} bien(s) • $_gouvernoratFiltre', style: AppTypography.caption(textSec).copyWith(fontSize: 11.5)),
+                              Text(AppLocale.instance.tr('map_title'), style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
+                              Text('${AppLocale.instance.trParams('map_properties_count', {'count': _proprietes.length})} • $_gouvernoratFiltre', style: AppTypography.caption(textSec).copyWith(fontSize: 11.5)),
                             ],
                           ),
                         ),
@@ -516,12 +517,15 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(14),
                           child: _proprieteSelectionnee!.imageUrl.isNotEmpty
-                              ? Image.network(
-                                  _proprieteSelectionnee!.imageUrl,
+                              ? SizedBox(
                                   width: 84,
                                   height: 80,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => _emptyThumb(isDark),
+                                  child: LuxuryNetworkImage(
+                                    imageUrl: _proprieteSelectionnee!.imageUrl,
+                                    fit: BoxFit.cover,
+                                    memCacheWidth: 300,
+                                    fallbackBuilder: (_) => _emptyThumb(isDark),
+                                  ),
                                 )
                               : _emptyThumb(isDark),
                         ),

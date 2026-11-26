@@ -10,6 +10,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/tunisia_locations.dart';
 import '../../../../core/design_system/liquid_glass.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../../map/presentation/screens/map_screen.dart';
 import '../../../properties/data/property_api_service.dart';
 import '../../../properties/domain/models/property.dart';
@@ -525,10 +526,10 @@ class _EcranRechercheState extends State<EcranRecherche> {
                         const SizedBox(height: 22),
 
                         EditorialSectionHeader(
-                          title: 'Résultats (${_proprietesTrouvees.length})',
+                          title: AppLocale.instance.trParams('results_count', {'count': _proprietesTrouvees.length}),
                           trailing: GestureDetector(
                             onTap: _reinitialiserFiltres,
-                            child: Text('Réinitialiser', style: AppTypography.caption(AppColors.accentChampagne)),
+                            child: Text(AppLocale.instance.tr('btn_reset'), style: AppTypography.caption(AppColors.accentChampagne)),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -538,9 +539,9 @@ class _EcranRechercheState extends State<EcranRecherche> {
                         else if (_proprietesTrouvees.isEmpty)
                           LuxuryEmptyState(
                             icon: Icons.search_off_rounded,
-                            title: 'Aucun bien ne correspond à ces critères',
-                            message: 'Ajustez vos filtres ou réinitialisez la recherche.',
-                            actionLabel: 'Tout réinitialiser',
+                            title: AppLocale.instance.tr('empty_search'),
+                            message: AppLocale.instance.tr('welcome_banner_sub'),
+                            actionLabel: AppLocale.instance.tr('btn_reset'),
                             onAction: _reinitialiserFiltres,
                           )
                         else ...[

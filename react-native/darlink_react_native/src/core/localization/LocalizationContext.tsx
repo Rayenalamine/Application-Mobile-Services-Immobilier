@@ -1,18 +1,25 @@
 // ============================================================
 // DARLINK — CONTEXTE DE LOCALISATION TRILINGUE (React Native)
 // Arabe (RTL), Français (LTR), Anglais (LTR)
+// Persistance AsyncStorage + détection automatique de la langue système.
 // ============================================================
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
 import { translations, Language } from './translations';
+
+const LANG_STORAGE_KEY = 'darlink_app_lang';
 
 export interface LocalizationContextValue {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
   isRTL: boolean;
-  formatPrice: (amount: number) => string;
+  formatPrice: (amount: number, isRental?: boolean) => string;
   translateAmenity: (amenity: string) => string;
+  translatePropertyType: (type: string) => string;
+  translateListingStatus: (status: string) => string;
 }
 
 const LocalizationContext = createContext<LocalizationContextValue>({
@@ -22,13 +29,39 @@ const LocalizationContext = createContext<LocalizationContextValue>({
   isRTL: false,
   formatPrice: (amt) => `${amt} DT`,
   translateAmenity: (a) => a,
+  translatePropertyType: (t) => t,
+  translateListingStatus: (s) => s,
 });
 
 export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('fr');
 
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem(LANG_STORAGE_KEY);
+        if (mounted && (saved === 'fr' || saved === 'ar' || saved === 'en')) {
+          setLanguageState(saved);
+          return;
+        }
+        const locales = Localization.getLocales();
+        const deviceCode = locales?.[0]?.languageCode?.toLowerCase();
+        if (mounted && (deviceCode === 'ar' || deviceCode === 'en' || deviceCode === 'fr')) {
+          setLanguageState(deviceCode);
+        }
+      } catch {
+        // Fallback silently to 'fr'
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
+    AsyncStorage.setItem(LANG_STORAGE_KEY, lang).catch(() => {});
   };
 
   const isRTL = language === 'ar';
@@ -44,27 +77,76 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
     return text;
   };
 
-  const formatPrice = (amount: number): string => {
-    const formatted = Math.round(amount).toLocaleString(language === 'ar' ? 'ar-TN' : 'fr-TN');
+  const formatPrice = (amount: number, isRental = false): string => {
+    const formatted = Math.round(amount)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     const curr = t('currency');
-    return isRTL ? `${formatted} ${curr}` : `${formatted} ${curr}`;
+    const suffix = isRental ? t('per_month') : '';
+    return `${formatted} ${curr}${suffix}`;
   };
 
   const translateAmenity = (amenity: string): string => {
-    const keyMap: Record<string, string> = {
-      'Wi-Fi haut débit': 'amenity_wifi',
-      'Piscine privée': 'amenity_pool',
-      'Parking sécurisé': 'amenity_parking',
-      'Climatisation centrale': 'amenity_ac',
-      'Jardin paysager': 'amenity_garden',
-      'Vue panoramique sur mer': 'amenity_sea_view',
-      'Terrasse ensoleillée': 'amenity_terrace',
-      'Ascenseur': 'amenity_elevator',
-      'Sécurité & Alarme 24/7': 'amenity_security',
-      'Chauffage central': 'amenity_heating',
-    };
-    const key = keyMap[amenity];
-    return key ? t(key) : amenity;
+    const lower = amenity.toLowerCase().trim();
+    if (lower.includes('wi-fi') || lower.includes('wifi')) return t('amenity_wifi');
+    if (lower.includes('piscine') || lower.includes('pool')) return t('amenity_pool');
+    if (lower.includes('park') || lower.includes('garage')) return t('amenity_parking');
+    if (lower.includes('clim') || lower.includes('a/c')) return t('amenity_ac');
+    if (lower.includes('jardin') || lower.includes('garden')) return t('amenity_garden');
+    if (lower.includes('mer') || lower.includes('sea')) return t('amenity_sea_view');
+    if (lower.includes('terrasse') || lower.includes('terrace')) return t('amenity_terrace');
+    if (lower.includes('ascenseur') || lower.includes('elevator')) return t('amenity_elevator');
+    if (lower.includes('sécurité') || lower.includes('secur') || lower.includes('alarm')) {
+      return t('amenity_security');
+    }
+    if (lower.includes('chauff') || lower.includes('heat')) return t('amenity_heating');
+    return amenity;
+  };
+
+  const translatePropertyType = (type: string): string => {
+    switch (type.toLowerCase().trim()) {
+      case 'tous':
+      case 'all':
+        return t('filter_all');
+      case 'appartement':
+      case 'apartment':
+        return t('filter_apartment');
+      case 'villa':
+        return t('filter_villa');
+      case 'maison':
+      case 'house':
+        return t('filter_house');
+      case 'studio':
+        return t('filter_studio');
+      case 'terrain':
+      case 'land':
+        return t('filter_land');
+      case 'commercial':
+        return t('filter_commercial');
+      default:
+        return type;
+    }
+  };
+
+  const translateListingStatus = (status: string): string => {
+    switch (status.toUpperCase().trim()) {
+      case 'DRAFT':
+        return t('status_draft');
+      case 'PENDING_REVIEW':
+        return t('status_pending');
+      case 'PUBLISHED':
+        return t('status_published');
+      case 'REJECTED':
+        return t('status_rejected');
+      case 'SOLD':
+        return t('status_sold');
+      case 'RENTED':
+        return t('status_rented');
+      case 'ARCHIVED':
+        return t('status_archived');
+      default:
+        return status;
+    }
   };
 
   return (
@@ -76,6 +158,8 @@ export const LocalizationProvider: React.FC<{ children: ReactNode }> = ({ childr
         isRTL,
         formatPrice,
         translateAmenity,
+        translatePropertyType,
+        translateListingStatus,
       }}
     >
       {children}
