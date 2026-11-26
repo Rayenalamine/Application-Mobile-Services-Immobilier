@@ -37,13 +37,13 @@ const PROPERTY_TYPES = ['Tous', 'Appartement', 'Villa', 'Maison', 'Studio', 'Ter
 const BEDROOMS = ['Tous', '1+', '2+', '3+', '4+'] as const;
 const BATHROOMS = ['Tous', '1+', '2+', '3+'] as const;
 const SORT_OPTIONS = [
-  { key: 'newest', label: 'Plus récentes' },
-  { key: 'price_asc', label: 'Prix croissant' },
-  { key: 'price_desc', label: 'Prix décroissant' },
+  { key: 'newest', labelKey: 'sort_newest' },
+  { key: 'price_asc', labelKey: 'sort_price_asc' },
+  { key: 'price_desc', labelKey: 'sort_price_desc' },
 ] as const;
 
 export const SearchScreen: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, translatePropertyType } = useTranslation();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedSegment, setSelectedSegment] = useState<string>('Tous');
   const [selectedType, setSelectedType] = useState<string>('Tous');
@@ -167,14 +167,14 @@ export const SearchScreen: React.FC = () => {
           <View>
             <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>{t('exploration_tag')}</Text>
             <Text style={[TypographyScale.pageTitle, { color: colors.textPrimary, fontSize: 22 }]}>
-              Recherche avancée
+              {t('search_title')}
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <GlassOrbButton size={40} onPress={() => setShowMap(true)} accessibilityLabel="Carte">
+            <GlassOrbButton size={40} onPress={() => setShowMap(true)} accessibilityLabel={t('nav_map')}>
               <MapIcon size={17} color={colors.accentChampagne} />
             </GlassOrbButton>
-            <GlassOrbButton size={40} onPress={handleReset} accessibilityLabel="Réinitialiser">
+            <GlassOrbButton size={40} onPress={handleReset} accessibilityLabel={t('btn_reset')}>
               <RotateCcw size={17} color={colors.textPrimary} />
             </GlassOrbButton>
           </View>
@@ -186,7 +186,7 @@ export const SearchScreen: React.FC = () => {
             <TextInput
               testID="search_input"
               style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder="Ville, délégation, résidence, mot-clé..."
+              placeholder={t('search_input_placeholder')}
               placeholderTextColor={colors.textTertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -204,6 +204,7 @@ export const SearchScreen: React.FC = () => {
         <View style={[styles.segmentedControl, { backgroundColor: colors.segmentedBg, borderColor: colors.border }]}>
           {SEGMENTS.map((seg) => {
             const isSelected = selectedSegment === seg;
+            const segLabel = seg === 'Tous' ? t('filter_all') : seg === 'Acheter' ? t('segment_buy') : t('segment_rent');
             return (
               <TouchableOpacity
                 key={seg}
@@ -214,7 +215,7 @@ export const SearchScreen: React.FC = () => {
                 }}
               >
                 <Text style={{ color: isSelected ? colors.textPrimary : colors.textSecondary, fontWeight: isSelected ? '600' : '500', fontSize: 13 }}>
-                  {seg}
+                  {segLabel}
                 </Text>
               </TouchableOpacity>
             );
@@ -223,7 +224,7 @@ export const SearchScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginBottom: 10 }]}>
-            Gouvernorats (24)
+            {t('governorates_24')}
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             <TouchableOpacity
@@ -255,7 +256,7 @@ export const SearchScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginBottom: 10 }]}>
-            Type de bien
+            {t('property_type')}
           </Text>
           <View style={styles.wrapRow}>
             {PROPERTY_TYPES.map((type) => {
@@ -270,7 +271,7 @@ export const SearchScreen: React.FC = () => {
                   }}
                 >
                   <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12.5, fontWeight: active ? '600' : '500' }}>
-                    {type}
+                    {translatePropertyType(type)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -282,7 +283,7 @@ export const SearchScreen: React.FC = () => {
           <View style={styles.rangeGrid}>
             <TextInput
               style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
-              placeholder="Prix min (DT)"
+              placeholder={t('search_min_price')}
               placeholderTextColor={colors.textTertiary}
               keyboardType="numeric"
               value={minPriceStr}
@@ -290,7 +291,7 @@ export const SearchScreen: React.FC = () => {
             />
             <TextInput
               style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
-              placeholder="Prix max (DT)"
+              placeholder={t('search_max_price')}
               placeholderTextColor={colors.textTertiary}
               keyboardType="numeric"
               value={maxPriceStr}
@@ -300,7 +301,7 @@ export const SearchScreen: React.FC = () => {
           <View style={styles.rangeGrid}>
             <TextInput
               style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
-              placeholder="Surface min (m²)"
+              placeholder={t('min_area')}
               placeholderTextColor={colors.textTertiary}
               keyboardType="numeric"
               value={minAreaStr}
@@ -308,7 +309,7 @@ export const SearchScreen: React.FC = () => {
             />
             <TextInput
               style={[styles.rangeInput, { backgroundColor: colors.surfaceElevated, color: colors.textPrimary }]}
-              placeholder="Surface max (m²)"
+              placeholder={t('max_area')}
               placeholderTextColor={colors.textTertiary}
               keyboardType="numeric"
               value={maxAreaStr}
@@ -319,7 +320,7 @@ export const SearchScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, fontSize: 15, marginBottom: 10 }]}>
-            Chambres, SDB & Tri
+            {t('search_rooms_and_sort')}
           </Text>
           <View style={styles.wrapRow}>
             {BEDROOMS.map((b) => {
@@ -331,7 +332,7 @@ export const SearchScreen: React.FC = () => {
                   onPress={() => setSelectedBedrooms(b)}
                 >
                   <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12 }}>
-                    {b === 'Tous' ? 'Ch: Toutes' : `Ch: ${b}`}
+                    {b === 'Tous' ? t('search_beds_all') : t('search_beds_prefix', { count: b })}
                   </Text>
                 </TouchableOpacity>
               );
@@ -345,7 +346,7 @@ export const SearchScreen: React.FC = () => {
                   onPress={() => setSelectedBathrooms(b)}
                 >
                   <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12 }}>
-                    {b === 'Tous' ? 'SDB: Toutes' : `SDB: ${b}`}
+                    {b === 'Tous' ? t('search_baths_all') : t('search_baths_prefix', { count: b })}
                   </Text>
                 </TouchableOpacity>
               );
@@ -359,7 +360,7 @@ export const SearchScreen: React.FC = () => {
                   onPress={() => setSortBy(opt.key)}
                 >
                   <Text style={{ color: active ? activeFg : colors.textSecondary, fontSize: 12, fontWeight: active ? '600' : '500' }}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -369,7 +370,7 @@ export const SearchScreen: React.FC = () => {
 
         <View style={styles.section}>
           <EditorialSectionHeader
-            title={`Résultats (${properties.length})`}
+            title={t('search_results_header', { count: properties.length })}
             trailing={
               <TouchableOpacity onPress={handleReset}>
                 <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>{t('btn_reset')}</Text>
@@ -382,9 +383,9 @@ export const SearchScreen: React.FC = () => {
           <ActivityIndicator size="large" color={colors.accentChampagne} style={{ marginVertical: 28 }} />
         ) : properties.length === 0 ? (
           <EmptyStateView
-            title="Aucun bien trouvé"
-            message="Modifiez vos filtres ou réinitialisez la recherche."
-            actionLabel="Tout réinitialiser"
+            title={t('search_empty_title')}
+            message={t('search_empty_message')}
+            actionLabel={t('search_reset_all')}
             onAction={handleReset}
           />
         ) : (

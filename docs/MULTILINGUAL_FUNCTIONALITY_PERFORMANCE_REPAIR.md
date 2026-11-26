@@ -79,3 +79,4 @@
 ## 7. Remaining Limitations
 
 - Physical-device Expo Go & Android/iOS camera/gallery runtime tests and visual screenshots in FR/AR/EN were not executed in this terminal-only session.
+

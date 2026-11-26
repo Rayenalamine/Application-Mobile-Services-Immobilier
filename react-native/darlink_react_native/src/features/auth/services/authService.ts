@@ -46,24 +46,24 @@ function normalizeRole(raw?: string): AccountRole {
 function mapFirebaseAuthError(code?: string): string {
   switch (code) {
     case 'EMAIL_EXISTS':
-      return 'Cette adresse e-mail est déjà associée à un compte DarLink.';
+      return 'auth/email-exists';
     case 'EMAIL_NOT_FOUND':
     case 'INVALID_LOGIN_CREDENTIALS':
     case 'INVALID_PASSWORD':
-      return 'Adresse e-mail ou mot de passe incorrect.';
+      return 'auth/invalid-credentials';
     case 'USER_DISABLED':
-      return 'Ce compte a été désactivé par l’administration.';
+      return 'auth/user-disabled';
     case 'TOO_MANY_ATTEMPTS_TRY_LATER':
-      return 'Trop de tentatives. Veuillez réessayer dans quelques minutes.';
+      return 'auth/too-many-attempts';
     case 'INVALID_EMAIL':
-      return 'Format d’adresse e-mail invalide.';
+      return 'auth/invalid-email';
     case 'WEAK_PASSWORD':
-      return 'Mot de passe trop faible (minimum 8 caractères requis).';
+      return 'auth/weak-password';
     case 'CREDENTIAL_TOO_OLD_LOGIN_AGAIN':
     case 'TOKEN_EXPIRED':
-      return 'Session expirée. Veuillez vous reconnecter pour cette action sensible.';
+      return 'auth/session-expired';
     default:
-      return code ? `Erreur d’authentification Firebase (${code}).` : 'Erreur d’authentification Firebase.';
+      return 'auth/firebase-error';
   }
 }
 
@@ -71,18 +71,24 @@ export function evaluatePasswordStrength(password: string): PasswordStrengthResu
   const issues: string[] = [];
   let score = 0;
   if (password.length >= 8) score++;
-  else issues.push('Au moins 8 caractères');
+  else issues.push('pw_issue_min_length');
 
   if (/[A-Z]/.test(password)) score++;
-  else issues.push('Une lettre majuscule');
+  else issues.push('pw_issue_uppercase');
 
   if (/[0-9]/.test(password)) score++;
-  else issues.push('Un chiffre');
+  else issues.push('pw_issue_digit');
 
   if (/[^A-Za-z0-9]/.test(password)) score++;
-  else issues.push('Un caractère spécial');
+  else issues.push('pw_issue_special');
 
-  const labels = ['Très faible', 'Faible', 'Moyen', 'Bon', 'Excellent'];
+  const labels = [
+    'pw_strength_very_weak',
+    'pw_strength_weak',
+    'pw_strength_medium',
+    'pw_strength_good',
+    'pw_strength_excellent',
+  ];
   return {
     score,
     label: labels[score],
@@ -271,7 +277,7 @@ class AuthService {
     const cleanEmail = email.trim().toLowerCase();
     this.lastError = null;
     if (!cleanEmail || !password) {
-      this.lastError = 'Veuillez saisir votre adresse e-mail et votre mot de passe.';
+      this.lastError = 'auth/missing-credentials';
       return false;
     }
 
@@ -337,7 +343,7 @@ class AuthService {
       this.notify();
       return true;
     } catch {
-      this.lastError = 'Impossible de joindre Firebase Authentication. Vérifiez votre connexion.';
+      this.lastError = 'auth/network-error';
       return false;
     }
   }
@@ -355,20 +361,20 @@ class AuthService {
     this.lastError = null;
 
     if (!cleanName || cleanName.length < 2) {
-      this.lastError = 'Veuillez saisir votre nom complet.';
+      this.lastError = 'auth/missing-full-name';
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      this.lastError = 'Format d’adresse e-mail invalide.';
+      this.lastError = 'auth/invalid-email';
       return false;
     }
     const strength = evaluatePasswordStrength(password);
     if (!strength.valid) {
-      this.lastError = `Mot de passe insuffisant : ${strength.issues.join(', ')}.`;
+      this.lastError = 'auth/password-too-weak';
       return false;
     }
     if (confirmPassword !== undefined && password !== confirmPassword) {
-      this.lastError = 'La confirmation du mot de passe ne correspond pas.';
+      this.lastError = 'auth/password-mismatch';
       return false;
     }
 
@@ -432,14 +438,14 @@ class AuthService {
       this.notify();
       return true;
     } catch {
-      this.lastError = 'Erreur réseau lors de la création du compte Firebase.';
+      this.lastError = 'auth/network-error';
       return false;
     }
   }
 
   public async resendVerificationEmail(): Promise<boolean> {
     if (!this.token) {
-      this.lastError = 'Vous devez être connecté pour envoyer l’e-mail de vérification.';
+      this.lastError = 'auth/not-authenticated';
       return false;
     }
     try {
@@ -455,7 +461,7 @@ class AuthService {
       }
       return true;
     } catch {
-      this.lastError = 'Impossible d’envoyer l’e-mail de vérification.';
+      this.lastError = 'auth/verification-send-failed';
       return false;
     }
   }
@@ -475,7 +481,7 @@ class AuthService {
   public async sendPasswordResetEmail(email: string): Promise<string | null> {
     const cleanEmail = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      return 'Veuillez saisir une adresse e-mail valide.';
+      return 'auth/invalid-email';
     }
     try {
       const res = await fetch(`${IDENTITY_BASE}/accounts:sendOobCode?key=${this.apiKey}`, {
@@ -489,7 +495,7 @@ class AuthService {
       }
       return null;
     } catch {
-      return 'Impossible d’envoyer l’e-mail de réinitialisation.';
+      return 'auth/reset-send-failed';
     }
   }
 
@@ -544,7 +550,7 @@ class AuthService {
   }
 
   private async reauthenticate(currentPassword: string): Promise<string | null> {
-    if (!this.currentUser) return 'Utilisateur non connecté.';
+    if (!this.currentUser) return 'auth/not-authenticated';
     const res = await fetch(`${IDENTITY_BASE}/accounts:signInWithPassword?key=${this.apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -565,10 +571,10 @@ class AuthService {
   }
 
   public async changePassword(currentPassword: string, newPassword: string): Promise<string | null> {
-    if (!this.currentUser || !this.token) return 'Utilisateur non connecté.';
+    if (!this.currentUser || !this.token) return 'auth/not-authenticated';
     const strength = evaluatePasswordStrength(newPassword);
     if (!strength.valid) {
-      return `Nouveau mot de passe insuffisant : ${strength.issues.join(', ')}.`;
+      return 'auth/password-too-weak';
     }
 
     const reauthErr = await this.reauthenticate(currentPassword);
@@ -590,15 +596,15 @@ class AuthService {
       }
       return null;
     } catch {
-      return 'Erreur lors de la mise à jour du mot de passe.';
+      return 'auth/password-update-failed';
     }
   }
 
   public async changeEmail(currentPassword: string, newEmail: string): Promise<string | null> {
-    if (!this.currentUser || !this.token) return 'Utilisateur non connecté.';
+    if (!this.currentUser || !this.token) return 'auth/not-authenticated';
     const cleanEmail = newEmail.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      return 'Format d’adresse e-mail invalide.';
+      return 'auth/invalid-email';
     }
 
     const reauthErr = await this.reauthenticate(currentPassword);
@@ -630,7 +636,7 @@ class AuthService {
       this.notify();
       return null;
     } catch {
-      return 'Erreur lors du changement d’adresse e-mail.';
+      return 'auth/email-update-failed';
     }
   }
 
@@ -638,7 +644,7 @@ class AuthService {
    * Suppression sécurisée du compte avec réauthentification et anonymisation/archivage des annonces
    */
   public async deleteAccount(currentPassword: string): Promise<string | null> {
-    if (!this.currentUser || !this.token) return 'Utilisateur non connecté.';
+    if (!this.currentUser || !this.token) return 'auth/not-authenticated';
     const uid = this.currentUser.id;
 
     const reauthErr = await this.reauthenticate(currentPassword);
@@ -683,7 +689,7 @@ class AuthService {
       await this.logout();
       return null;
     } catch {
-      return 'Erreur lors de la suppression du compte.';
+      return 'auth/account-delete-failed';
     }
   }
 

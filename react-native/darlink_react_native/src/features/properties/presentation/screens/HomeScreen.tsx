@@ -70,7 +70,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
   const [headerVisible, setHeaderVisible] = useState<boolean>(true);
   const lastScrollY = useRef<number>(0);
   const { isDark, toggleTheme, colors } = useTheme();
-  const { t, language, setLanguage } = useTranslation();
+  const { t, language, setLanguage, translatePropertyType } = useTranslation();
 
   const refreshNotifCount = useCallback(async () => {
     try {
@@ -114,20 +114,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     loadProperties();
   }, [loadProperties]);
 
-  const getFilterLabel = (pill: string) => {
-    switch (pill) {
-      case 'Tous':
-        return t('filter_all');
-      case 'Appartement':
-        return t('filter_apartment');
-      case 'Villa':
-        return t('filter_villa');
-      case 'Maison':
-        return t('filter_house');
-      default:
-        return pill;
-    }
-  };
+  const getFilterLabel = (pill: string) => translatePropertyType(pill);
 
   const filteredProperties = properties.filter((p) => {
     if (searchQuery.trim()) {
@@ -245,10 +232,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
 
               <View style={{ flex: 1 }}>
                 <Text style={[TypographyScale.caption, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {currentUser ? 'Bonjour • DarLink' : 'Bienvenue • DarLink'}
+                  {currentUser ? t('home_greeting_user') : t('home_greeting_guest')}
                 </Text>
                 <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {currentUser ? currentUser.fullName : 'Visiteur'}
+                  {currentUser ? currentUser.fullName : t('guest_label')}
                 </Text>
               </View>
             </View>
@@ -257,7 +244,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               <GlassOrbButton
                 size={38}
                 onPress={toggleTheme}
-                accessibilityLabel="Basculer le thème"
+                accessibilityLabel={t('home_toggle_theme')}
               >
                 {isDark ? (
                   <Sun size={17} color={colors.textPrimary} />
@@ -273,7 +260,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                   else if (language === 'ar') setLanguage('en');
                   else setLanguage('fr');
                 }}
-                accessibilityLabel="Changer de langue"
+                accessibilityLabel={t('language_choice')}
               >
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
                   {language.toUpperCase()}
@@ -311,7 +298,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
         {/* Editorial Hero Headline */}
         <View style={styles.heroBlock}>
           <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>
-            IMMOBILIER EN TUNISIE
+            {t('home_hero_eyebrow')}
           </Text>
         </View>
 
@@ -340,7 +327,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                 triggerHaptic('selection');
                 if (onNavigateToSearch) onNavigateToSearch();
               }}
-              accessibilityLabel="Filtres avancés"
+              accessibilityLabel={t('search_title')}
             >
               <SlidersHorizontal size={16} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -464,7 +451,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             trailing={
               <View style={[styles.countChip, { backgroundColor: colors.surfaceElevated }]}>
                 <Text style={[TypographyScale.micro, { color: colors.textSecondary }]}>
-                  {filteredProperties.length} {filteredProperties.length <= 1 ? 'bien' : 'biens'}
+                  {t(filteredProperties.length <= 1 ? 'home_property_count_one' : 'home_property_count_many', { count: filteredProperties.length })}
                 </Text>
               </View>
             }
