@@ -56,7 +56,7 @@ interface ProfileScreenProps {
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddProperty }) => {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { t, language, setLanguage } = useTranslation();
+  const { t, language, setLanguage, translateListingStatus } = useTranslation();
 
   const [user, setUser] = useState<UserProfile | null>(authService.getCurrentUser());
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(authService.isAuthenticated());
@@ -538,7 +538,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               }}
             >
               <Edit3 size={14} color={colors.accentChampagne} />
-              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Modifier profil</Text>
+              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>{t('edit_profile_dialog')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -546,7 +546,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               onPress={() => setEmailModal(true)}
             >
               <Mail size={14} color={colors.accentChampagne} />
-              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Changer e-mail</Text>
+              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>{t('change_email')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -554,7 +554,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
               onPress={() => setPasswordModal(true)}
             >
               <KeyRound size={14} color={colors.accentChampagne} />
-              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Mot de passe</Text>
+              <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>{t('change_password')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -565,7 +565,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
           >
             <Plus size={18} color={isDark ? '#1D1D1F' : '#FFFFFF'} />
             <Text style={[styles.addPropButtonText, { color: isDark ? '#1D1D1F' : '#FFFFFF' }]}>
-              Publier une annonce
+              {t('add_title')}
             </Text>
           </TouchableOpacity>
 
@@ -574,7 +574,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Building2 size={16} color={colors.accentChampagne} />
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                Mes annonces ({myProperties.length})
+                {t('my_listings')} ({myProperties.length})
               </Text>
             </View>
             <TouchableOpacity onPress={loadDashboard}>
@@ -586,7 +586,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
             <ActivityIndicator color={colors.accentChampagne} style={{ marginVertical: 12 }} />
           ) : myProperties.length === 0 ? (
             <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Aucune annonce publiée.</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{t('no_listings')}</Text>
             </View>
           ) : (
             myProperties.map((prop) => (
@@ -596,15 +596,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToAddPro
                     {prop.titre}
                   </Text>
                   <Text style={[styles.myPropPrice, { color: colors.accentChampagne }]}>
-                    {formatPrice(prop.prix, Boolean(prop.estLocation), Boolean(prop.priceOnRequest))} • {prop.listingStatus}
+                    {formatPrice(prop.prix, Boolean(prop.estLocation), Boolean(prop.priceOnRequest))} • {translateListingStatus(prop.listingStatus || 'DRAFT')}
                   </Text>
                 </View>
                 <TouchableOpacity
                   onPress={() =>
-                    Alert.alert('Supprimer', `Supprimer "${prop.titre}" ?`, [
-                      { text: 'Annuler', style: 'cancel' },
+                    Alert.alert(t('btn_delete'), t('delete_confirm_msg'), [
+                      { text: t('btn_cancel'), style: 'cancel' },
                       {
-                        text: 'Supprimer',
+                        text: t('btn_delete'),
                         style: 'destructive',
                         onPress: async () => {
                           await propertyApiService.deleteProperty(prop.id || '');

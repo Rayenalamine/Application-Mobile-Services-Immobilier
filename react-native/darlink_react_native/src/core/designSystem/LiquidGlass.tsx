@@ -26,6 +26,7 @@ interface LiquidGlassProps {
   borderRadius?: number;
   intensity?: number;
   elevated?: boolean;
+  useBlur?: boolean;
 }
 
 export const LiquidGlassView: React.FC<LiquidGlassProps> = ({
@@ -34,10 +35,11 @@ export const LiquidGlassView: React.FC<LiquidGlassProps> = ({
   borderRadius = RadiusScale.lg,
   intensity,
   elevated = true,
+  useBlur = false,
 }) => {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
   const blurIntensity = intensity ?? (isDark ? 48 : 65);
-  const bgFallback = isDark ? 'rgba(22, 24, 30, 0.72)' : 'rgba(255, 255, 255, 0.78)';
+  const bgFallback = isDark ? 'rgba(22, 24, 30, 0.84)' : 'rgba(255, 255, 255, 0.88)';
 
   return (
     <View
@@ -51,15 +53,15 @@ export const LiquidGlassView: React.FC<LiquidGlassProps> = ({
         },
         elevated && {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: isDark ? 0.36 : 0.07,
-          shadowRadius: 22,
-          elevation: 6,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: isDark ? 0.34 : 0.06,
+          shadowRadius: 18,
+          elevation: 5,
         },
         style,
       ]}
     >
-      {Platform.OS !== 'web' ? (
+      {useBlur && Platform.OS !== 'web' ? (
         <BlurView
           intensity={blurIntensity}
           tint={isDark ? 'dark' : 'light'}

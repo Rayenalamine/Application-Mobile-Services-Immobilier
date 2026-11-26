@@ -357,6 +357,7 @@ class PropertyApiService {
     if (payload.surfaceM2 !== undefined) safePatch.surfaceM2 = payload.surfaceM2;
     if (payload.isRental !== undefined) safePatch.isRental = payload.isRental;
     if (payload.imageUrl !== undefined) safePatch.imageUrl = payload.imageUrl;
+    if (payload.galleryUrls !== undefined) safePatch.galleryUrls = payload.galleryUrls;
     if (payload.amenities !== undefined) safePatch.amenities = payload.amenities;
     if (payload.listingStatus !== undefined) safePatch.listingStatus = payload.listingStatus;
 

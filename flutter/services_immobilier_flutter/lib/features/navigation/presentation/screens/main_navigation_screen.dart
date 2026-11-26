@@ -1,6 +1,7 @@
 // ============================================================
 // DARLINK — FLOATING LIQUID GLASS NAVIGATION BAR (Flutter)
-// extendBody: true lets content glide visibly behind the blurred dock.
+// Custom pill-dock with zero rectangular ink artifacts, smooth
+// scale/color transitions, RTL support & full i18n labels.
 // ============================================================
 
 import 'dart:ui' show ImageFilter;
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/localization/app_locale.dart';
 import '../../../properties/presentation/screens/home_screen.dart';
 import 'favorites_screen.dart';
 import 'profile_screen.dart';
@@ -32,21 +34,63 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    AppLocale.instance.addListener(_onLocaleChange);
+  }
+
+  @override
+  void dispose() {
+    AppLocale.instance.removeListener(_onLocaleChange);
+    super.dispose();
+  }
+
+  void _onLocaleChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = AppColors.isDark(context);
     final bgColor = AppColors.backgroundOf(context);
-    final dockFill = isDark ? const Color(0xBD15171C) : const Color(0xCCFFFFFF);
+    final dockFill = isDark ? const Color(0xCC15171C) : const Color(0xD9FFFFFF);
     final dockBorder = isDark ? const Color(0x2BFFFFFF) : const Color(0x161D1D1F);
-    final indicatorColor = isDark ? const Color(0xFFF5F5F7) : const Color(0xFF1D1D1F);
-    final selectedIconColor = isDark ? const Color(0xFF1D1D1F) : Colors.white;
-    final unselectedIconColor = isDark ? const Color(0xFF98989D) : const Color(0xFF6E6E73);
-    final selectedLabelColor = isDark ? const Color(0xFFF5F5F7) : const Color(0xFF1D1D1F);
-    final unselectedLabelColor = isDark ? const Color(0xFF636366) : const Color(0xFF8E8E93);
+    final activeBg = isDark ? const Color(0xFFF5F5F7) : const Color(0xFF1D1D1F);
+    final activeIcon = isDark ? const Color(0xFF1D1D1F) : Colors.white;
+    final inactiveIcon = isDark ? const Color(0xFF98989D) : const Color(0xFF6E6E73);
+    final activeLabel = isDark ? const Color(0xFFF5F5F7) : const Color(0xFF1D1D1F);
+    final inactiveLabel = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73);
+
+    final items = [
+      (
+        icon: Icons.explore_outlined,
+        selectedIcon: Icons.explore_rounded,
+        label: AppLocale.instance.tr('nav_home'),
+      ),
+      (
+        icon: Icons.search_rounded,
+        selectedIcon: Icons.search_rounded,
+        label: AppLocale.instance.tr('nav_search'),
+      ),
+      (
+        icon: Icons.favorite_outline_rounded,
+        selectedIcon: Icons.favorite_rounded,
+        label: AppLocale.instance.tr('nav_favorites'),
+      ),
+      (
+        icon: Icons.person_outline_rounded,
+        selectedIcon: Icons.person_rounded,
+        label: AppLocale.instance.tr('nav_profile'),
+      ),
+    ];
 
     return Scaffold(
       backgroundColor: bgColor,
       extendBody: true,
-      body: _ecrans[_indexCourant],
+      body: IndexedStack(
+        index: _indexCourant,
+        children: _ecrans,
+      ),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -56,18 +100,19 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
               borderRadius: BorderRadius.circular(AppSpacing.radiusXL),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
-                  blurRadius: 28,
-                  offset: const Offset(0, 12),
+                  color: Colors.black.withValues(alpha: isDark ? 0.42 : 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppSpacing.radiusXL),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
                 child: Container(
                   height: 68,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
                     color: dockFill,
                     borderRadius: BorderRadius.circular(AppSpacing.radiusXL),
@@ -78,76 +123,118 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
                       colors: [
                         isDark
                             ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.white.withValues(alpha: 0.88),
+                            : Colors.white.withValues(alpha: 0.9),
                         dockFill,
                       ],
                     ),
                   ),
-                  child: NavigationBarTheme(
-                    data: NavigationBarThemeData(
-                      backgroundColor: Colors.transparent,
-                      surfaceTintColor: Colors.transparent,
-                      indicatorColor: indicatorColor,
-                      indicatorShape: const StadiumBorder(),
-                      elevation: 0,
-                      height: 68,
-                      iconTheme: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return IconThemeData(color: selectedIconColor, size: 20);
-                        }
-                        return IconThemeData(color: unselectedIconColor, size: 20);
-                      }),
-                      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return TextStyle(
-                            color: selectedLabelColor,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.1,
-                          );
-                        }
-                        return TextStyle(
-                          color: unselectedLabelColor,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w500,
-                        );
-                      }),
-                    ),
-                    child: NavigationBar(
-                      selectedIndex: _indexCourant,
-                      onDestinationSelected: (index) {
-                        HapticFeedback.selectionClick();
-                        setState(() => _indexCourant = index);
-                      },
-                      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                      destinations: const [
-                        NavigationDestination(
-                          icon: Icon(Icons.explore_outlined),
-                          selectedIcon: Icon(Icons.explore_rounded),
-                          label: 'Accueil',
+                  child: Row(
+                    children: List.generate(items.length, (i) {
+                      final item = items[i];
+                      final selected = _indexCourant == i;
+                      return Expanded(
+                        child: _NavDockItem(
+                          icon: selected ? item.selectedIcon : item.icon,
+                          label: item.label,
+                          selected: selected,
+                          activeBg: activeBg,
+                          activeIcon: activeIcon,
+                          inactiveIcon: inactiveIcon,
+                          activeLabel: activeLabel,
+                          inactiveLabel: inactiveLabel,
+                          onTap: () {
+                            if (_indexCourant != i) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _indexCourant = i);
+                            }
+                          },
                         ),
-                        NavigationDestination(
-                          icon: Icon(Icons.search_rounded),
-                          selectedIcon: Icon(Icons.search_rounded),
-                          label: 'Recherche',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.favorite_outline_rounded),
-                          selectedIcon: Icon(Icons.favorite_rounded),
-                          label: 'Favoris',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.person_outline_rounded),
-                          selectedIcon: Icon(Icons.person_rounded),
-                          label: 'Profil',
-                        ),
-                      ],
-                    ),
+                      );
+                    }),
                   ),
                 ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavDockItem extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final Color activeBg;
+  final Color activeIcon;
+  final Color inactiveIcon;
+  final Color activeLabel;
+  final Color inactiveLabel;
+  final VoidCallback onTap;
+
+  const _NavDockItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.activeBg,
+    required this.activeIcon,
+    required this.inactiveIcon,
+    required this.activeLabel,
+    required this.inactiveLabel,
+    required this.onTap,
+  });
+
+  @override
+  State<_NavDockItem> createState() => _NavDockItemState();
+}
+
+class _NavDockItemState extends State<_NavDockItem> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 110),
+        curve: Curves.easeOutCubic,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: widget.selected ? 50 : 38,
+              height: 30,
+              decoration: BoxDecoration(
+                color: widget.selected ? widget.activeBg : Colors.transparent,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(
+                widget.icon,
+                size: 20,
+                color: widget.selected ? widget.activeIcon : widget.inactiveIcon,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              widget.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w500,
+                color: widget.selected ? widget.activeLabel : widget.inactiveLabel,
+                letterSpacing: -0.1,
+              ),
+            ),
+          ],
         ),
       ),
     );

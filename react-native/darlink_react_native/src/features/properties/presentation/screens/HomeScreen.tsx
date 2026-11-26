@@ -15,10 +15,10 @@ import {
   SafeAreaView,
   Platform,
   RefreshControl,
-  Image,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { Image } from 'expo-image';
 import {
   Sun,
   Moon,
@@ -313,7 +313,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               <GlassOrbButton
                 size={38}
                 onPress={() => setCurrentView('add')}
-                accessibilityLabel="Déposer une annonce"
+                accessibilityLabel={t('add_title')}
               >
                 <Plus size={18} color={colors.textPrimary} />
               </GlassOrbButton>
@@ -322,7 +322,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                 size={38}
                 badgeCount={unreadNotifCount}
                 onPress={() => setCurrentView('notifications')}
-                accessibilityLabel="Centre de notifications"
+                accessibilityLabel={t('notifications_title')}
               >
                 <Bell size={17} color={colors.textPrimary} />
               </GlassOrbButton>
@@ -330,7 +330,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
               <GlassOrbButton
                 size={38}
                 onPress={() => setCurrentView('map')}
-                accessibilityLabel="Ouvrir la carte"
+                accessibilityLabel={t('nav_map')}
               >
                 <MapIcon size={17} color={colors.accentChampagne} />
               </GlassOrbButton>
@@ -430,8 +430,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
         {!loading && filteredProperties.length > 1 && (
           <View style={styles.collectionSection}>
             <EditorialSectionHeader
-              title="Sélection en Tunisie"
-              subtitle="Références et biens disponibles"
+              title={t('section_exclusive')}
+              subtitle={t('section_nearby')}
               trailing={
                 <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>
                   {filteredProperties.length}
@@ -463,13 +463,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
                     <Image
                       source={{ uri: prop.imageUrl }}
                       style={StyleSheet.absoluteFill}
-                      resizeMode="cover"
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      transition={200}
                     />
                   ) : (
                     <View style={styles.collectionFallback}>
                       <Building2 size={28} color={colors.accentChampagne} strokeWidth={1.6} />
                       <Text style={[TypographyScale.micro, { color: colors.accentChampagne, marginTop: 6 }]}>
-                        {prop.governorate || 'Tunisie'}
+                        {prop.governorate || t('tunisia')}
                       </Text>
                     </View>
                   )}
@@ -509,9 +511,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           </View>
         ) : filteredProperties.length === 0 ? (
           <EmptyStateView
-            title="Aucun bien disponible"
-            message="Aucune annonce ou référence ne correspond actuellement à cette recherche."
-            actionLabel="Réinitialiser"
+            title={t('empty_search')}
+            message={t('home_welcome_sub')}
+            actionLabel={t('btn_reset')}
             onAction={() => {
               setActiveFilter('Tous');
               setSearchQuery('');

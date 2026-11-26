@@ -4,7 +4,6 @@
 // ============================================================
 
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:services_immobilier_flutter/features/properties/data/property_api_service.dart';
 import 'package:services_immobilier_flutter/main.dart';
@@ -25,10 +24,7 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(const ServicesImmobilierApp());
 
-      // Vérification de la présence du widget NavigationBar
-      expect(find.byType(NavigationBar), findsOneWidget);
-
-      // Vérification des 4 libellés d'onglets
+      // Vérification des 4 libellés d'onglets du dock Liquid Glass
       expect(find.text('Accueil'), findsOneWidget);
       expect(find.text('Recherche'), findsOneWidget);
       expect(find.text('Favoris'), findsOneWidget);

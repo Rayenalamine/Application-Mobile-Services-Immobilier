@@ -5,13 +5,15 @@
 // ============================================================
 
 import 'dart:ui' show ImageFilter;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_spacing.dart';
 
-/// Frosted Liquid Glass surface with realistic backdrop blur, specular
+/// Frosted Liquid Glass surface with optional backdrop blur, specular
 /// top-rim highlight, hairline border, and restrained depth shadow.
+/// Keep [useBlur] false inside scrolling list cards for 60fps performance.
 class LiquidGlassSurface extends StatelessWidget {
   final Widget child;
   final double borderRadius;
@@ -19,6 +21,7 @@ class LiquidGlassSurface extends StatelessWidget {
   final double blurSigma;
   final Color? tintColor;
   final bool elevatedShadow;
+  final bool useBlur;
 
   const LiquidGlassSurface({
     super.key,
@@ -28,15 +31,32 @@ class LiquidGlassSurface extends StatelessWidget {
     this.blurSigma = 22,
     this.tintColor,
     this.elevatedShadow = true,
+    this.useBlur = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = AppColors.isDark(context);
-    final fill = tintColor ?? (isDark ? const Color(0xB8181A20) : const Color(0xCCFFFFFF));
+    final fill = tintColor ?? (isDark ? const Color(0xCC181A20) : const Color(0xE6FFFFFF));
     final border = isDark ? const Color(0x28FFFFFF) : const Color(0x161D1D1F);
     final specularTop = isDark ? const Color(0x22FFFFFF) : const Color(0x88FFFFFF);
     final specularBottom = isDark ? const Color(0x05FFFFFF) : const Color(0x14FFFFFF);
+
+    final inner = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: border, width: 0.9),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [specularTop, fill, specularBottom],
+          stops: const [0.0, 0.35, 1.0],
+        ),
+      ),
+      child: child,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -45,33 +65,63 @@ class LiquidGlassSurface extends StatelessWidget {
             ? [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: isDark ? 0.36 : 0.06),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ]
             : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              color: fill,
-              borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(color: border, width: 0.9),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [specularTop, fill, specularBottom],
-                stops: const [0.0, 0.35, 1.0],
-              ),
-            ),
-            child: child,
+        child: useBlur
+            ? BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                child: inner,
+              )
+            : inner,
+      ),
+    );
+  }
+}
+
+/// Cached, memory-bounded network image with smooth fade-in and error fallback.
+class LuxuryNetworkImage extends StatelessWidget {
+  final String imageUrl;
+  final BoxFit fit;
+  final int? memCacheWidth;
+  final Widget Function(BuildContext context) fallbackBuilder;
+
+  const LuxuryNetworkImage({
+    super.key,
+    required this.imageUrl,
+    this.fit = BoxFit.cover,
+    this.memCacheWidth = 960,
+    required this.fallbackBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clean = imageUrl.trim();
+    if (clean.isEmpty) {
+      return fallbackBuilder(context);
+    }
+    final isDark = AppColors.isDark(context);
+    return CachedNetworkImage(
+      imageUrl: clean,
+      fit: fit,
+      memCacheWidth: memCacheWidth,
+      fadeInDuration: const Duration(milliseconds: 220),
+      placeholder: (ctx, _) => Container(
+        color: isDark ? const Color(0xFF151820) : const Color(0xFFF0EDE6),
+        child: Center(
+          child: Icon(
+            Icons.apartment_rounded,
+            size: 26,
+            color: AppColors.accentChampagne.withValues(alpha: 0.45),
           ),
         ),
       ),
+      errorWidget: (ctx, _, _) => fallbackBuilder(ctx),
     );
   }
 }
@@ -137,9 +187,9 @@ class _GlassOrbButtonState extends State<GlassOrbButton> {
               ),
             ),
             if (widget.badgeCount > 0)
-              Positioned(
+              PositionedDirectional(
                 top: -2,
-                right: -2,
+                end: -2,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                   decoration: BoxDecoration(

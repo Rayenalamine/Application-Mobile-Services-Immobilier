@@ -9,10 +9,10 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Animated,
 } from 'react-native';
+import { Image } from 'expo-image';
 import {
   Heart,
   MapPin,
@@ -70,7 +70,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
     Boolean(property.sourceName && !property.republicationAuthorized);
 
   const statusLabel = isInstitutional
-    ? 'Référence programme'
+    ? t('institutional_ref')
     : property.estLocation
     ? t('for_rent')
     : t('for_sale');
@@ -102,7 +102,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
           <Image
             source={{ uri: property.imageUrl }}
             style={styles.heroImage}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
             onError={() => setImageError(true)}
           />
         ) : (
@@ -127,10 +129,10 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress })
               {(property.sourceName || property.type).toUpperCase()}
             </Text>
             <Text style={[TypographyScale.cardTitle, { color: colors.textPrimary, marginTop: 3 }]}>
-              {property.governorate || property.city || 'Tunisie'}
+              {property.governorate || property.city || t('tunisia')}
             </Text>
             <Text style={[TypographyScale.caption, { color: colors.textSecondary, marginTop: 2, fontSize: 11.5 }]}>
-              Visuels disponibles sur portail officiel
+              {isInstitutional ? t('official_portal_visuals') : t('no_photo')}
             </Text>
           </View>
         )}

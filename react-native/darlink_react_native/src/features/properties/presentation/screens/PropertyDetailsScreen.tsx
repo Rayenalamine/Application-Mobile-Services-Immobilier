@@ -10,7 +10,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   SafeAreaView,
   Alert,
@@ -19,6 +18,7 @@ import {
   Linking,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import {
   ArrowLeft,
   Heart,
@@ -111,20 +111,19 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
 
   const handleDeleteProperty = () => {
     Alert.alert(
-      'Supprimer ce bien',
-      `Voulez-vous supprimer définitivement "${property.titre}" ?`,
+      t('delete_confirm_title'),
+      t('delete_confirm_msg'),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('btn_cancel'), style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: t('btn_delete'),
           style: 'destructive',
           onPress: async () => {
             const ok = await propertyApiService.deleteProperty(propId);
             if (ok) {
-              Alert.alert('Supprimé', 'Le bien a été supprimé de Cloud Firestore.');
               onBack();
             } else {
-              Alert.alert('Refusé', 'Seul le propriétaire authentifié ou un administrateur peut supprimer ce bien.');
+              Alert.alert(t('publish_error'), t('auth_required_publish'));
             }
           },
         },
@@ -209,7 +208,9 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                     key={`${img}_${idx}`}
                     source={{ uri: img }}
                     style={{ width: width || 390, height: 370 }}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={200}
                     onError={() => setImageErrors((prev) => ({ ...prev, [idx]: true }))}
                   />
                 ) : (
@@ -288,7 +289,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             {isInstitutional && (
               <View style={[styles.refPill, { backgroundColor: 'rgba(154,123,79,0.14)' }]}>
                 <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>
-                  Référence programme
+                  {t('institutional_ref')}
                 </Text>
               </View>
             )}
@@ -319,7 +320,7 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
             </Text>
             {onLocateOnMap ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>Carte</Text>
+                <Text style={[TypographyScale.caption, { color: colors.accentChampagne }]}>{t('nav_map')}</Text>
                 <ChevronRight size={16} color={colors.accentChampagne} />
               </View>
             ) : null}

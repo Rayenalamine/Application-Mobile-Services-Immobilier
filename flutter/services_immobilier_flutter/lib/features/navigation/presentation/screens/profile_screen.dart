@@ -645,17 +645,17 @@ class _EcranProfilState extends State<EcranProfil> {
                         children: [
                           OutlinedButton.icon(
                             icon: const Icon(Icons.edit_outlined, size: 15),
-                            label: const Text('Modifier profil'),
+                            label: Text(AppLocale.instance.tr('edit_profile_dialog')),
                             onPressed: _showEditProfileDialog,
                           ),
                           OutlinedButton.icon(
                             icon: const Icon(Icons.mail_outline_rounded, size: 15),
-                            label: const Text('Changer e-mail'),
+                            label: Text(AppLocale.instance.tr('change_email')),
                             onPressed: _showChangeEmailDialog,
                           ),
                           OutlinedButton.icon(
                             icon: const Icon(Icons.lock_reset_rounded, size: 15),
-                            label: const Text('Mot de passe'),
+                            label: Text(AppLocale.instance.tr('change_password')),
                             onPressed: _showChangePasswordDialog,
                           ),
                         ],
@@ -666,7 +666,7 @@ class _EcranProfilState extends State<EcranProfil> {
 
                 const SizedBox(height: 16),
                 LuxuryPillButton(
-                  label: 'Publier une annonce',
+                  label: AppLocale.instance.tr('add_title'),
                   icon: Icons.add_home_work_outlined,
                   onPressed: () async {
                     await Navigator.push(context, MaterialPageRoute(builder: (_) => const EcranDepotAnnonce()));
@@ -676,8 +676,7 @@ class _EcranProfilState extends State<EcranProfil> {
 
                 const SizedBox(height: 24),
                 EditorialSectionHeader(
-                  title: 'Mes annonces (${_myProperties.length})',
-                  subtitle: 'Vos biens publiés ou en attente',
+                  title: '${AppLocale.instance.tr('my_listings')} (${_myProperties.length})',
                   trailing: GlassOrbButton(
                     icon: Icons.refresh_rounded,
                     size: 36,
@@ -694,7 +693,7 @@ class _EcranProfilState extends State<EcranProfil> {
                     borderRadius: AppSpacing.radiusMD,
                     padding: const EdgeInsets.all(16),
                     elevatedShadow: false,
-                    child: Text('Aucune annonce publiée.', style: AppTypography.body(textSec)),
+                    child: Text(AppLocale.instance.tr('no_listings'), style: AppTypography.body(textSec)),
                   )
                 else
                   ..._myProperties.map(
@@ -713,11 +712,21 @@ class _EcranProfilState extends State<EcranProfil> {
                                   Text(p.titre, style: AppTypography.cardTitle(textPrim).copyWith(fontSize: 14.5)),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${p.prixAffiche} • ${p.listingStatus.value}',
+                                    '${AppLocale.instance.formatCurrency(p.prix, isRental: p.estLocation)} • ${AppLocale.instance.translateListingStatus(p.listingStatus.value)}',
                                     style: AppTypography.caption(AppColors.accentChampagne).copyWith(fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, color: AppColors.accentChampagne, size: 20),
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => EcranDepotAnnonce(proprieteAEditer: p)),
+                                );
+                                _loadDashboard();
+                              },
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline_rounded, color: AppColors.accentRed, size: 20),
@@ -734,8 +743,8 @@ class _EcranProfilState extends State<EcranProfil> {
 
                 const SizedBox(height: 16),
                 EditorialSectionHeader(
-                  title: 'Activité & Demandes',
-                  subtitle: '${_receivedRequests.length} demandes • ${_notifications.length} notifications',
+                  title: AppLocale.instance.tr('contact_requests_received'),
+                  subtitle: '${_receivedRequests.length} • ${_notifications.length}',
                 ),
                 const SizedBox(height: 10),
                 if (_receivedRequests.isEmpty && _notifications.isEmpty)
@@ -743,7 +752,7 @@ class _EcranProfilState extends State<EcranProfil> {
                     borderRadius: AppSpacing.radiusMD,
                     padding: const EdgeInsets.all(16),
                     elevatedShadow: false,
-                    child: Text('Aucune demande ou alerte récente.', style: AppTypography.body(textSec)),
+                    child: Text(AppLocale.instance.tr('no_contact_requests'), style: AppTypography.body(textSec)),
                   )
                 else
                   LiquidGlassSurface(
@@ -869,7 +878,7 @@ class _EcranProfilState extends State<EcranProfil> {
               if (isAuthenticated) ...[
                 const SizedBox(height: 18),
                 LuxuryPillButton(
-                  label: 'Se déconnecter',
+                  label: AppLocale.instance.tr('btn_logout'),
                   icon: Icons.logout_rounded,
                   isSecondary: true,
                   foregroundColor: AppColors.accentRed,
@@ -879,7 +888,7 @@ class _EcranProfilState extends State<EcranProfil> {
                 TextButton(
                   onPressed: _showDeleteAccountDialog,
                   child: Text(
-                    'Supprimer définitivement mon compte',
+                    AppLocale.instance.tr('delete_account'),
                     style: AppTypography.caption(textSec),
                   ),
                 ),
