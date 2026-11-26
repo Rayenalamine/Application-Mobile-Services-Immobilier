@@ -28,8 +28,19 @@ type TabKey = 'home' | 'search' | 'favorites' | 'profile';
 
 const MainNavigationContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
+  const [visitedTabs, setVisitedTabs] = useState<Record<TabKey, boolean>>({
+    home: true,
+    search: false,
+    favorites: false,
+    profile: false,
+  });
   const { isDark, colors } = useTheme();
   const { t, isRTL } = useTranslation();
+
+  const selectTab = (tab: TabKey) => {
+    setActiveTab(tab);
+    setVisitedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
+  };
 
   const renderIcon = (key: TabKey, isActive: boolean) => {
     const iconColor = isActive ? colors.dockActiveIcon : colors.dockInactiveIcon;
@@ -59,20 +70,28 @@ const MainNavigationContent: React.FC = () => {
     { key: 'profile', label: t('nav_profile') },
   ];
 
-  const renderActiveScreen = () => {
-    switch (activeTab) {
-      case 'home':
-        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
-      case 'search':
-        return <SearchScreen />;
-      case 'favorites':
-        return <FavoritesScreen />;
-      case 'profile':
-        return <ProfileScreen />;
-      default:
-        return <HomeScreen onNavigateToSearch={() => setActiveTab('search')} />;
-    }
-  };
+  const renderActiveScreen = () => (
+    <>
+      <View style={[styles.tabPane, activeTab !== 'home' && styles.hiddenPane]}>
+        <HomeScreen onNavigateToSearch={() => selectTab('search')} />
+      </View>
+      {visitedTabs.search && (
+        <View style={[styles.tabPane, activeTab !== 'search' && styles.hiddenPane]}>
+          <SearchScreen />
+        </View>
+      )}
+      {visitedTabs.favorites && (
+        <View style={[styles.tabPane, activeTab !== 'favorites' && styles.hiddenPane]}>
+          <FavoritesScreen />
+        </View>
+      )}
+      {visitedTabs.profile && (
+        <View style={[styles.tabPane, activeTab !== 'profile' && styles.hiddenPane]}>
+          <ProfileScreen />
+        </View>
+      )}
+    </>
+  );
 
   return (
     <SafeAreaView
@@ -99,7 +118,7 @@ const MainNavigationContent: React.FC = () => {
                   style={styles.tabButton}
                   onPress={() => {
                     triggerHaptic('selection');
-                    setActiveTab(tab.key);
+                    selectTab(tab.key);
                   }}
                   activeOpacity={0.85}
                   accessibilityRole="button"
@@ -143,6 +162,8 @@ export const MainNavigationScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   screenContainer: { flex: 1 },
+  tabPane: { flex: 1 },
+  hiddenPane: { display: 'none' },
   dockWrapper: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 24 : 14,

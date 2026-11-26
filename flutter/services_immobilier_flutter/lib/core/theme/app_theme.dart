@@ -128,8 +128,22 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          overlayColor: Colors.black.withValues(alpha: 0.05),
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
+          elevation: 0,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
         ),
       ),
       textTheme: _buildTextTheme(
@@ -204,8 +218,22 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          overlayColor: Colors.white.withValues(alpha: 0.08),
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
+          elevation: 0,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          overlayColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
         ),
       ),
       textTheme: _buildTextTheme(
