@@ -11,12 +11,11 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   SafeAreaView,
   Platform,
   RefreshControl,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from 'react-native';
 import { Image } from 'expo-image';
 import {
@@ -143,19 +142,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
     return p.type.toLowerCase() === activeFilter.toLowerCase();
   });
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const currentY = event.nativeEvent.contentOffset.y;
-    const diff = currentY - lastScrollY.current;
-    if (currentY <= 12) {
-      setHeaderVisible(true);
-    } else if (diff > 14 && currentY > 60) {
-      setHeaderVisible(false);
-    } else if (diff < -10) {
-      setHeaderVisible(true);
-    }
-    lastScrollY.current = currentY;
-  }, []);
-
   if (currentView === 'map') {
     return (
       <MapScreen
@@ -224,24 +210,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           .toUpperCase()
       : 'DL';
 
-  return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              loadProperties();
-            }}
-          />
-        }
-      >
+  const headerComponent = (
+    <>
         {__DEV__ && headerVisible && (
           <View style={styles.diagRow}>
             <View
@@ -503,34 +473,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
             }
           />
         </View>
+    </>
+  );
 
-        {loading ? (
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <FlatList
+        data={loading ? [] : filteredProperties}
+        keyExtractor={(item, index) => (item.id ? String(item.id) : `prop_${index}`)}
+        ListHeaderComponent={headerComponent}
+        ListEmptyComponent={
+          loading ? (
+            <View style={styles.feedWrap}>
+              <LoadingSkeleton height={340} borderRadius={RadiusScale.lg} style={{ marginBottom: 20 }} />
+              <LoadingSkeleton height={340} borderRadius={RadiusScale.lg} />
+            </View>
+          ) : (
+            <EmptyStateView
+              title={t('empty_search')}
+              message={t('home_welcome_sub')}
+              actionLabel={t('btn_reset')}
+              onAction={() => {
+                setActiveFilter('Tous');
+                setSearchQuery('');
+              }}
+            />
+          )
+        }
+        renderItem={({ item }) => (
           <View style={styles.feedWrap}>
-            <LoadingSkeleton height={340} borderRadius={RadiusScale.lg} style={{ marginBottom: 20 }} />
-            <LoadingSkeleton height={340} borderRadius={RadiusScale.lg} />
-          </View>
-        ) : filteredProperties.length === 0 ? (
-          <EmptyStateView
-            title={t('empty_search')}
-            message={t('home_welcome_sub')}
-            actionLabel={t('btn_reset')}
-            onAction={() => {
-              setActiveFilter('Tous');
-              setSearchQuery('');
-            }}
-          />
-        ) : (
-          <View style={styles.feedWrap}>
-            {filteredProperties.map((prop, index) => (
-              <PropertyCard
-                key={prop.id ? String(prop.id) : `prop_${index}`}
-                property={prop}
-                onPress={(selected) => setSelectedProperty(selected)}
-              />
-            ))}
+            <PropertyCard
+              property={item}
+              onPress={(selected) => setSelectedProperty(selected)}
+            />
           </View>
         )}
-      </ScrollView>
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS !== 'web'}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              loadProperties();
+            }}
+          />
+        }
+      />
     </SafeAreaView>
   );
 };

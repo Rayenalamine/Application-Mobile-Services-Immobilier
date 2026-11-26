@@ -277,10 +277,15 @@ class _EcranAccueilState extends State<EcranAccueil> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _chargerBiens,
-                child: ListView(
+                child: CustomScrollView(
                   controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
-                  children: [
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                     // Editorial Hero Headline
                     Text(
                       'Bienvenue sur Services Immobilier',
@@ -430,9 +435,22 @@ class _EcranAccueilState extends State<EcranAccueil> {
                           ),
                         ),
                         const SizedBox(height: 22),
-                        ...filtered.skip(1).map((prop) => CartePropriete(propriete: prop)),
                       ],
                     ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (!_isLoading && filtered.length > 1)
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                        sliver: SliverList.builder(
+                          itemCount: filtered.length - 1,
+                          itemBuilder: (context, index) => CartePropriete(propriete: filtered[index + 1]),
+                        ),
+                      )
+                    else
+                      const SliverToBoxAdapter(child: SizedBox(height: 120)),
                   ],
                 ),
               ),
