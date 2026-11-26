@@ -28,6 +28,7 @@ import { useTranslation } from '../localization/LocalizationContext';
 import { favoritesApiService } from '../../features/favorites/services/favoritesApiService';
 import { LiquidGlassView } from '../designSystem/LiquidGlass';
 import { RadiusScale, TypographyScale, triggerHaptic } from '../designSystem/tokens';
+import { resolveImageSource } from '../utils/imageUtils';
 
 interface PropertyCardProps {
   readonly property: Property;
@@ -64,7 +65,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = React.memo(({ property,
     favoritesApiService.toggleFavorite(property.id, property);
   };
 
-  const hasValidImage = Boolean(property.imageUrl && property.imageUrl.trim().length > 0 && !imageError);
+  const imageSource = resolveImageSource(property.imageUrl);
+  const hasValidImage = Boolean(imageSource && !imageError);
   const isInstitutional =
     property.listingCategory === 'DEVELOPMENT_REFERENCE' ||
     Boolean(property.sourceName && !property.republicationAuthorized);
@@ -100,7 +102,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = React.memo(({ property,
       >
         {hasValidImage ? (
           <Image
-            source={{ uri: property.imageUrl }}
+            source={imageSource}
             style={styles.heroImage}
             contentFit="cover"
             cachePolicy="memory-disk"

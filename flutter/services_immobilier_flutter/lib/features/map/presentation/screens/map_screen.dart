@@ -60,8 +60,12 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
     if (!mounted) return;
     setState(() {
       _proprietes = list;
-      if (_proprieteSelectionnee == null && list.isNotEmpty) {
-        _proprieteSelectionnee = list.first;
+      if (list.isNotEmpty) {
+        if (_proprieteSelectionnee == null || !list.any((p) => p.id == _proprieteSelectionnee!.id)) {
+          _proprieteSelectionnee = list.first;
+        }
+      } else {
+        _proprieteSelectionnee = null;
       }
       _isLoading = false;
     });
@@ -223,9 +227,10 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
 
     final quickGovernorates = const ['Tous', 'Tunis', 'Ariana', 'Ben Arous', 'Nabeul', 'Bizerte', 'Sousse', 'Sfax', 'Médenine', 'Kairouan'];
 
+    const maptilerKey = String.fromEnvironment('MAPTILER_API_KEY', defaultValue: '5y3oKTTSOXa9eD0KObiE');
     final tileUrl = isDark
-        ? 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-        : 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+        ? 'https://api.maptiler.com/maps/streets-v2-dark/256/{z}/{x}/{y}.png?key=$maptilerKey'
+        : 'https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=$maptilerKey';
 
     return Scaffold(
       body: Stack(
@@ -245,6 +250,7 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
             children: [
               TileLayer(
                 urlTemplate: tileUrl,
+                subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'tn.darlink.app',
                 maxZoom: 19,
               ),
@@ -481,7 +487,7 @@ class _EcranCarteInteractiveState extends State<EcranCarteInteractive> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                '© OpenStreetMap contributors © CARTO',
+                '© MapTiler © OpenStreetMap contributors',
                 style: TextStyle(color: Colors.white, fontSize: 9.5),
               ),
             ),

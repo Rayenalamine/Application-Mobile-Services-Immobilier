@@ -44,6 +44,7 @@ import { favoritesApiService } from '../../../favorites/services/favoritesApiSer
 import { contactApiService } from '../../../contact/services/contactApiService';
 import { propertyApiService } from '../../services/propertyApiService';
 import { authService } from '../../../auth/services/authService';
+import { resolveImageSource } from '../../../../core/utils/imageUtils';
 import {
   LiquidGlassView,
   GlassOrbButton,
@@ -64,10 +65,16 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
   onLocateOnMap,
 }) => {
   const { width } = useWindowDimensions();
-  const allImages = [
+  const rawImages = [
     ...(property.imageUrl ? [property.imageUrl] : []),
     ...(property.imagesGalerie ?? []),
   ];
+  const allImages =
+    rawImages.length > 0
+      ? rawImages
+      : [
+          'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        ];
   const [imageIndex, setImageIndex] = useState<number>(0);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const propId = property.id || '1';
@@ -204,11 +211,12 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                 setImageIndex(idx);
               }}
             >
-              {allImages.map((img, idx) =>
-                !imageErrors[idx] ? (
+              {allImages.map((img, idx) => {
+                const src = resolveImageSource(img);
+                return !imageErrors[idx] && src ? (
                   <Image
                     key={`${img}_${idx}`}
-                    source={{ uri: img }}
+                    source={src}
                     style={{ width: width || 390, height: 370 }}
                     contentFit="cover"
                     cachePolicy="memory-disk"
@@ -225,8 +233,8 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                   >
                     <Building2 size={46} color={colors.accentChampagne} strokeWidth={1.6} />
                   </View>
-                )
-              )}
+                );
+              })}
             </ScrollView>
           ) : (
             <View

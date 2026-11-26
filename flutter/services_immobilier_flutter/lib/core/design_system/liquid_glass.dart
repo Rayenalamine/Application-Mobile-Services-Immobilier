@@ -101,9 +101,15 @@ class LuxuryNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clean = imageUrl.trim();
-    if (clean.isEmpty) {
-      return fallbackBuilder(context);
+    final clean = imageUrl.trim().isEmpty
+        ? 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80'
+        : imageUrl.trim();
+    if (clean.startsWith('assets/')) {
+      return Image.asset(
+        clean,
+        fit: fit,
+        errorBuilder: (_, __, ___) => fallbackBuilder(context),
+      );
     }
     final isDark = AppColors.isDark(context);
     return CachedNetworkImage(
