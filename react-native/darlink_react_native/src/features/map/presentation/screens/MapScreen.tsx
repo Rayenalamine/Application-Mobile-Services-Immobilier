@@ -19,6 +19,7 @@ import {
   PanResponderGestureState,
   ActivityIndicator,
   Modal,
+  Platform,
 } from 'react-native';
 import * as Location from 'expo-location';
 import {
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../../../core/theme/ThemeContext';
 import { LiquidGlassView } from '../../../../core/designSystem/LiquidGlass';
+import { triggerHaptic } from '../../../../core/designSystem/tokens';
 import { findGovernorate } from '../../../../core/constants/tunisiaLocations';
 import { propertyApiService } from '../../../properties/services/propertyApiService';
 import { Property, formatPrice } from '../../../properties/domain/models/property';
@@ -45,7 +47,8 @@ interface MapScreenProps {
 }
 
 function latToY(lat: number, zoom: number): number {
-  const n = Math.pow(2.0, zoom);
+  const z = Math.round(zoom);
+  const n = Math.pow(2.0, z);
   const clamped = Math.max(-85.0511, Math.min(85.0511, lat));
   const radClamped = (clamped * Math.PI) / 180.0;
   return (
@@ -56,17 +59,20 @@ function latToY(lat: number, zoom: number): number {
 }
 
 function lngToX(lng: number, zoom: number): number {
-  const n = Math.pow(2.0, zoom);
+  const z = Math.round(zoom);
+  const n = Math.pow(2.0, z);
   return ((lng + 180.0) / 360.0) * n * 256.0;
 }
 
 function xToLng(x: number, zoom: number): number {
-  const n = Math.pow(2.0, zoom);
+  const z = Math.round(zoom);
+  const n = Math.pow(2.0, z);
   return (x / (n * 256.0)) * 360.0 - 180.0;
 }
 
 function yToLat(y: number, zoom: number): number {
-  const n = Math.pow(2.0, zoom);
+  const z = Math.round(zoom);
+  const n = Math.pow(2.0, z);
   const latRad = Math.atan(Math.sinh(Math.PI * (1.0 - (2.0 * y) / (n * 256.0))));
   return (latRad * 180.0) / Math.PI;
 }
@@ -112,6 +118,31 @@ export const MapScreen: React.FC<MapScreenProps> = ({
   const startCoordsRef = useRef({ lat: centerLat, lng: centerLng });
   const coordsRef = useRef({ lat: centerLat, lng: centerLng, zoom });
   coordsRef.current = { lat: centerLat, lng: centerLng, zoom };
+  const rafId = useRef<number | null>(null);
+
+  const [failedTiles, setFailedTiles] = useState<Record<string, boolean>>({});
+
+  // Synchronisation dynamique si initialProperty change (zoom entier 14)
+  useEffect(() => {
+    if (initialProperty) {
+      setSelectedProperty(initialProperty);
+      if (typeof initialProperty.latitude === 'number') {
+        setCenterLat(initialProperty.latitude);
+      }
+      if (typeof initialProperty.longitude === 'number') {
+        setCenterLng(initialProperty.longitude);
+      }
+      setZoom(14);
+    }
+  }, [initialProperty]);
+
+  useEffect(() => {
+    return () => {
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -144,32 +175,49 @@ export const MapScreen: React.FC<MapScreenProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, g: PanResponderGestureState) =>
-        Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4,
+        Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => false,
       onPanResponderGrant: () => {
         startCoordsRef.current = { lat: coordsRef.current.lat, lng: coordsRef.current.lng };
       },
       onPanResponderMove: (_, g: PanResponderGestureState) => {
-        const curZoom = coordsRef.current.zoom;
-        const cx = lngToX(startCoordsRef.current.lng, curZoom);
-        const cy = latToY(startCoordsRef.current.lat, curZoom);
-        setCenterLng(xToLng(cx - g.dx, curZoom));
-        setCenterLat(yToLat(cy - g.dy, curZoom));
+        if (rafId.current !== null) {
+          cancelAnimationFrame(rafId.current);
+        }
+        rafId.current = requestAnimationFrame(() => {
+          const curZoom = Math.max(5, Math.min(18, Math.round(coordsRef.current.zoom)));
+          const cx = lngToX(startCoordsRef.current.lng, curZoom);
+          const cy = latToY(startCoordsRef.current.lat, curZoom);
+          const nextLng = Math.max(-180, Math.min(180, xToLng(cx - g.dx, curZoom)));
+          const nextLat = Math.max(-85, Math.min(85, yToLat(cy - g.dy, curZoom)));
+          setCenterLng(nextLng);
+          setCenterLat(nextLat);
+        });
+      },
+      onPanResponderRelease: () => {
+        if (rafId.current !== null) {
+          cancelAnimationFrame(rafId.current);
+          rafId.current = null;
+        }
       },
     })
   ).current;
 
-  const viewW = containerSize.width > 0 ? containerSize.width : windowWidth || 390;
-  const viewH = containerSize.height > 0 ? containerSize.height : windowHeight || 700;
-  const centerX = lngToX(centerLng, zoom);
-  const centerY = latToY(centerLat, zoom);
+  const curZoom = Math.max(5, Math.min(18, Math.round(zoom)));
+  const viewW = containerSize.width > 50 ? containerSize.width : windowWidth || 390;
+  const viewH = containerSize.height > 50 ? containerSize.height : windowHeight || 700;
+  const centerX = lngToX(centerLng, curZoom);
+  const centerY = latToY(centerLat, curZoom);
   const viewLeft = centerX - viewW / 2;
   const viewTop = centerY - viewH / 2;
 
-  const minTileX = Math.floor(viewLeft / 256.0);
-  const maxTileX = Math.floor((viewLeft + viewW) / 256.0);
-  const minTileY = Math.floor(viewTop / 256.0);
-  const maxTileY = Math.floor((viewTop + viewH) / 256.0);
-  const numTiles = Math.pow(2, zoom);
+  // Extra padding de 1 tuile pour éliminer les bords vides lors du déplacement
+  const minTileX = Math.floor(viewLeft / 256.0) - 1;
+  const maxTileX = Math.floor((viewLeft + viewW) / 256.0) + 1;
+  const minTileY = Math.floor(viewTop / 256.0) - 1;
+  const maxTileY = Math.floor((viewTop + viewH) / 256.0) + 1;
+  const numTiles = Math.pow(2, curZoom);
 
   const visibleTiles: { tx: number; ty: number; x: number; y: number; key: string }[] = [];
   for (let tx = minTileX; tx <= maxTileX; tx++) {
@@ -181,7 +229,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
           ty,
           x: tx * 256.0 - viewLeft,
           y: ty * 256.0 - viewTop,
-          key: `${zoom}-${wrappedTx}-${ty}`,
+          key: `${curZoom}-${wrappedTx}-${ty}`,
         });
       }
     }
@@ -238,10 +286,24 @@ export const MapScreen: React.FC<MapScreenProps> = ({
     }
   };
 
-  const getTileUri = (tile: { tx: number; ty: number }) => {
+  const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_KEY || '5y3oKTTSOXa9eD0KObiE';
+
+  const getTileUri = (tile: { tx: number; ty: number }, fallback: boolean = false) => {
+    const z = curZoom;
+    if (fallback) {
+      return `https://tile.openstreetmap.org/${z}/${tile.tx}/${tile.ty}.png`;
+    }
+    // 1. MapTiler Cloud CDN haute performance (clé utilisateur officielle)
+    if (MAPTILER_KEY) {
+      const style = isDark ? 'streets-v2-dark' : 'streets-v2';
+      return `https://api.maptiler.com/maps/${style}/256/${z}/${tile.tx}/${tile.ty}.png?key=${MAPTILER_KEY}`;
+    }
+    // 2. Repli CARTO Voyager / Dark Matter
+    const subdomains = ['a', 'b', 'c', 'd'];
+    const s = subdomains[Math.abs(tile.tx + tile.ty) % subdomains.length];
     return isDark
-      ? `https://basemaps.cartocdn.com/dark_all/${zoom}/${tile.tx}/${tile.ty}.png`
-      : `https://basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tile.tx}/${tile.ty}.png`;
+      ? `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${tile.tx}/${tile.ty}.png`
+      : `https://${s}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${tile.tx}/${tile.ty}.png`;
   };
 
   const precisionLabel = (precision?: string) => {
@@ -255,12 +317,21 @@ export const MapScreen: React.FC<MapScreenProps> = ({
       style={[styles.container, { backgroundColor: isDark ? '#1A1D24' : '#E5E9F0' }]}
       onLayout={handleLayout}
     >
-      {/* 1. CARTE SLIPPY MAP CARTO */}
+      {/* 1. CARTE SLIPPY MAP CARTO + OSM REPLI */}
       <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers}>
         {visibleTiles.map((tile) => (
           <Image
             key={tile.key}
-            source={{ uri: getTileUri(tile) }}
+            source={{
+              uri: failedTiles[tile.key]
+                ? getTileUri(tile, true)
+                : getTileUri(tile, false),
+            }}
+            onError={() => {
+              if (!failedTiles[tile.key]) {
+                setFailedTiles((prev) => ({ ...prev, [tile.key]: true }));
+              }
+            }}
             style={[styles.tile, { left: tile.x, top: tile.y }]}
             fadeDuration={0}
             resizeMode="cover"
@@ -273,8 +344,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({
             style={[
               styles.myLocationMarker,
               {
-                left: lngToX(userGps.lng, zoom) - viewLeft - 11,
-                top: latToY(userGps.lat, zoom) - viewTop - 11,
+                left: lngToX(userGps.lng, curZoom) - viewLeft - 11,
+                top: latToY(userGps.lat, curZoom) - viewTop - 11,
               },
             ]}
           >
@@ -286,8 +357,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({
         {properties.map((prop) => {
           const lat = prop.latitude ?? 36.8065;
           const lng = prop.longitude ?? 10.1815;
-          const px = lngToX(lng, zoom) - viewLeft;
-          const py = latToY(lat, zoom) - viewTop;
+          const px = lngToX(lng, curZoom) - viewLeft;
+          const py = latToY(lat, curZoom) - viewTop;
           const isSelected = selectedProperty?.id === prop.id;
           const priceShort =
             prop.priceOnRequest || !prop.prix || prop.prix <= 0
@@ -299,6 +370,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
               key={prop.id || prop.titre}
               activeOpacity={0.85}
               onPress={() => {
+                triggerHaptic('selection');
                 setSelectedProperty(prop);
                 setCenterLat(lat);
                 setCenterLng(lng);
@@ -419,14 +491,14 @@ export const MapScreen: React.FC<MapScreenProps> = ({
       <View style={styles.controlsContainer}>
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: cardSurface(isDark), borderColor: colors.border }]}
-          onPress={() => setZoom((z) => Math.min(18, z + 1))}
+          onPress={() => setZoom((z) => Math.min(18, Math.round(z) + 1))}
           accessibilityLabel="Zoom avant"
         >
           <Plus size={18} color={colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: cardSurface(isDark), borderColor: colors.border }]}
-          onPress={() => setZoom((z) => Math.max(5, z - 1))}
+          onPress={() => setZoom((z) => Math.max(5, Math.round(z) - 1))}
           accessibilityLabel="Zoom arrière"
         >
           <Minus size={18} color={colors.textPrimary} />
@@ -445,8 +517,17 @@ export const MapScreen: React.FC<MapScreenProps> = ({
       </View>
 
       {/* 4. ATTRIBUTION LÉGALE */}
-      <View style={[styles.attributionBadge, { bottom: selectedProperty ? 196 : 18 }]}>
-        <Text style={styles.attributionText}>© OpenStreetMap contributors © CARTO</Text>
+      <View
+        style={[
+          styles.attributionBadge,
+          {
+            bottom: selectedProperty
+              ? (Platform.OS === 'ios' ? 228 : 214)
+              : (Platform.OS === 'ios' ? 98 : 84),
+          },
+        ]}
+      >
+        <Text style={styles.attributionText}>© MapTiler © OpenStreetMap contributors</Text>
       </View>
 
       {/* 5. CARTE D'APERÇU DU BIEN SÉLECTIONNÉ */}
@@ -643,7 +724,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 24,
+    bottom: Platform.OS === 'ios' ? 104 : 90,
     flexDirection: 'row',
     padding: 12,
     borderRadius: 24,

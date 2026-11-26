@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  LayoutAnimation,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Compass, Search, Heart, User } from 'lucide-react-native';
@@ -98,6 +99,9 @@ const MainNavigationContent: React.FC = () => {
                   style={styles.tabButton}
                   onPress={() => {
                     triggerHaptic('selection');
+                    if (Platform.OS !== 'web') {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    }
                     setActiveTab(tab.key);
                   }}
                   activeOpacity={0.85}
@@ -174,6 +178,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     marginBottom: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabLabel: {
     fontSize: 10.5,

@@ -563,12 +563,12 @@ class _EcranRechercheState extends State<EcranRecherche> {
               ],
             ),
 
-            // Floating Frosted Bottom Apply Bar ONLY when pushed standalone
+            // Floating Frosted Bottom Apply Bar positioned cleanly above bottom navigation dock
             if (Navigator.of(context).canPop())
               Positioned(
                 left: 18,
                 right: 18,
-                bottom: 16,
+                bottom: 92,
                 child: LiquidGlassSurface(
                   borderRadius: 28,
                   blurSigma: 22,

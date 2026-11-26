@@ -46,7 +46,15 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
     return Scaffold(
       backgroundColor: bgColor,
       extendBody: true,
-      body: _ecrans[_indexCourant],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        child: KeyedSubtree(
+          key: ValueKey<int>(_indexCourant),
+          child: _ecrans[_indexCourant],
+        ),
+      ),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -67,7 +75,7 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
                 child: Container(
-                  height: 68,
+                  height: 72,
                   decoration: BoxDecoration(
                     color: dockFill,
                     borderRadius: BorderRadius.circular(AppSpacing.radiusXL),
@@ -88,9 +96,11 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
                       backgroundColor: Colors.transparent,
                       surfaceTintColor: Colors.transparent,
                       indicatorColor: indicatorColor,
-                      indicatorShape: const StadiumBorder(),
+                      indicatorShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       elevation: 0,
-                      height: 68,
+                      height: 72,
                       iconTheme: WidgetStateProperty.resolveWith((states) {
                         if (states.contains(WidgetState.selected)) {
                           return IconThemeData(color: selectedIconColor, size: 20);
@@ -115,6 +125,7 @@ class _EcranNavigationPrincipaleState extends State<EcranNavigationPrincipale> {
                     ),
                     child: NavigationBar(
                       selectedIndex: _indexCourant,
+                      animationDuration: const Duration(milliseconds: 320),
                       onDestinationSelected: (index) {
                         HapticFeedback.selectionClick();
                         setState(() => _indexCourant = index);
