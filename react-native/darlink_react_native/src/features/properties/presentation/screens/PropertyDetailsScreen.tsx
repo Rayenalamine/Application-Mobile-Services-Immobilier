@@ -42,6 +42,7 @@ import { favoritesApiService } from '../../../favorites/services/favoritesApiSer
 import { contactApiService } from '../../../contact/services/contactApiService';
 import { propertyApiService } from '../../services/propertyApiService';
 import { authService } from '../../../auth/services/authService';
+import { resolveImageSource } from '../../../../core/utils/imageUtils';
 import {
   LiquidGlassView,
   GlassOrbButton,
@@ -202,11 +203,12 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                 setImageIndex(idx);
               }}
             >
-              {allImages.map((img, idx) =>
-                !imageErrors[idx] ? (
+              {allImages.map((img, idx) => {
+                const src = resolveImageSource(img);
+                return !imageErrors[idx] && src ? (
                   <Image
                     key={`${img}_${idx}`}
-                    source={{ uri: img }}
+                    source={src}
                     style={{ width: width || 390, height: 370 }}
                     contentFit="cover"
                     cachePolicy="memory-disk"
@@ -223,8 +225,8 @@ export const PropertyDetailsScreen: React.FC<PropertyDetailsScreenProps> = ({
                   >
                     <Building2 size={46} color={colors.accentChampagne} strokeWidth={1.6} />
                   </View>
-                )
-              )}
+                );
+              })}
             </ScrollView>
           ) : (
             <View

@@ -343,9 +343,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSearch }) =>
           <Text style={[TypographyScale.micro, { color: colors.accentChampagne }]}>
             IMMOBILIER EN TUNISIE
           </Text>
-          <Text style={[TypographyScale.heroDisplay, { color: colors.textPrimary, fontSize: 28, marginTop: 6 }]}>
-            {t('hero_title')}
-          </Text>
         </View>
 
         {/* Liquid Glass Search Input */}

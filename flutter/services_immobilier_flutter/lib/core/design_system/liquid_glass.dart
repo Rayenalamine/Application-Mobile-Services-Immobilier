@@ -105,6 +105,13 @@ class LuxuryNetworkImage extends StatelessWidget {
     if (clean.isEmpty) {
       return fallbackBuilder(context);
     }
+    if (clean.startsWith('assets/')) {
+      return Image.asset(
+        clean,
+        fit: fit,
+        errorBuilder: (_, __, ___) => fallbackBuilder(context),
+      );
+    }
     final isDark = AppColors.isDark(context);
     return CachedNetworkImage(
       imageUrl: clean,
